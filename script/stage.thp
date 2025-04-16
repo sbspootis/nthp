@@ -1,0 +1,172 @@
+
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/                               STAGE BINARY STRUCTURE SECTION                                          /
+
+STRUCT stageObj {
+        col_x
+        col_y
+        col_w
+        col_h
+
+        isHazard
+}
+
+PRIVATE p_stagePtr
+PRIVATE p_tempAlloc
+PRIVATE ps_currentStageSize
+
+PRIVATE p_extern
+
+/ Populates an address (and the active stage) with a new stage structure of size 1 /
+FUNC s_createStage {
+        ALLOC 1 &p_stagePtr                     / Init a new block with 1 entry. /
+        SET &ps_currentStageSize $p_stagePtr
+        SET $ps_currentStageSize 0
+
+        SET &p_extern $argReg0                  / Copy the new block ptr_descriptor to the external address /
+        SET $argReg0 $p_stagePtr
+
+}
+
+
+/ Reallocates using a second block with 'p_tempAlloc' and adds a new object, freeing the old one. /
+FUNC s_addobj {
+        CONST new_x $argReg0
+        CONST new_y $argReg1
+        CONST new_w $argReg2
+        CONST new_h $argReg3
+        CONST new_haz $argReg4
+
+
+        CONST old_size $mathReg0
+
+        SET &mathReg0 *ps_currentStageSize              / mathReg0 is now the old size. /
+        INC $ps_currentStageSize
+
+        MUL *ps_currentStageSize >stageObj &mathReg1    / MathReg1 is now the new size. /
+        INC &mathReg1
+
+        ALLOC $mathReg1 &p_tempAlloc
+        MUL $mathReg0 >stageObj &mathReg0
+        INC &mathReg0                                   / mathReg0 is also the origin of the new object. /
+
+        COPY $p_stagePtr $mathReg0 $p_tempAlloc
+        
+        INDEX &p_tempAlloc $mathReg0
+
+        ASSIGN stageObj p_tempAlloc                     / Copy all the data into the block. /
+                SET $p_tempAlloc.col_x #new_x
+                SET $p_tempAlloc.col_y #new_y
+                SET $p_tempAlloc.col_w #new_w
+                SET $p_tempAlloc.col_h #new_h
+                SET $p_tempAlloc.isHazard #new_haz
+        UNASSIGN p_tempAlloc
+
+        FREE $p_stagePtr
+        INDEX &p_tempAlloc 0
+
+        SET &p_stagePtr $p_tempAlloc
+        SET &ps_currentStageSize $p_tempAlloc           / ps_currentStageSize is the new size; set above. /
+        SET $p_extern $p_stagePtr                       / Update external interface to the new block. /
+
+
+}
+
+FUNC s_setActiveStage {
+        SET &p_stagePtr *argReg0
+        SET &ps_currentStageSize *argReg0
+        SET &p_extern $argReg0
+}
+
+
+MACRO sf_addObject {
+        SET &argReg0 #ar0
+        SET &argReg1 #ar1
+        SET &argReg2 #ar2
+        SET &argReg3 #ar3
+        SET &argReg4 #ar4
+        %s_addobj
+}
+
+
+MACRO sf_createStage {
+        SET &argReg0 #ar0
+        %s_createStage
+}
+
+MACRO sf_setActiveStage {
+        SET &argReg0 #ar0
+        %s_setActiveStage
+}
+
+
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/                               STAGE GENERATION AND ENTITY CONFIG SECTION                              /
+
+
+CONST e_player  0
+CONST e_pan     1
+
+FUNC s_initStage {
+        IF *ps_currentStageSize LSTE 0                  / Make sure stage actually fucking exists. /
+
+                STRING stage_error_noSize "Error: Stage size 0; no init."
+                PRINT ~stage_error_noSize
+                RETURN
+        END
+
+        ADD 2 *ps_currentStageSize &mathReg0            / mathReg0 is the number of entities to allocate (with player+pan included) /
+        ENT_DEFINE $mathReg0
+
+        ENT_SETFRAMERANGE #e_player #f0_player 1
+        ENT_SETRENDERSIZE #e_player 10 10
+        ENT_SETHITBOXSIZE #e_player 10 10
+        ENT_SETCURRENTFRAME #e_player 0 
+
+        ENT_SETFRAMERANGE #e_pan #f0_pan 1
+        ENT_SETRENDERSIZE #e_pan 4 4
+        ENT_SETHITBOXSIZE #e_pan 4 4
+        ENT_SETCURRENTFRAME #e_pan 0
+
+        SET &mathReg1 0                                 / mathReg1 is a counter to loop through generated stage data. /
+        SET &mathReg2 0                                 / mathReg2 is the calculated origin of each object. /
+        SET &mathReg3 2                                 / mathReg3 is the absolute entity position counter. /
+        ASSIGN stageObj p_stagePtr
+
+        LABEL 1
+                MUL $mathReg1 >stageObj &mathReg2
+                INC &mathReg2
+
+                INDEX &p_stagePtr $mathReg2              / p_stagePtr now points to the current object; access with STRUCT offsets. /
+
+
+                
+                ENT_SETHITBOXSIZE $mathReg3 *p_stagePtr.col_w *p_stagePtr.col_h         / Copy data and configure entity. /
+                ENT_SETPOS $mathReg3 *p_stagePtr.col_x *p_stagePtr.col_y
+
+                / TODO: Different texture when hazardous. /
+
+                ENT_SETFRAMERANGE $mathReg3 #f0_wall 1
+                ENT_SETCURRENTFRAME $mathReg3 0
+                ENT_SETRENDERSIZE $mathReg3 *p_stagePtr.col_w *p_stagePtr.col_h
+
+                INC &mathReg3
+                INC &mathReg1
+                IF $mathReg3 LST $mathReg0
+                        GOTO 1
+                END
+
+        UNASSIGN p_stagePtr
+
+}
+
+MACRO sf_initStage {
+        %s_initStage
+}
+
+
+EXIT

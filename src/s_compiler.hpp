@@ -69,6 +69,7 @@ namespace nthp {
                 struct STR_DEF {
                         std::string name;
                         uint32_t objectPosition;
+                        uint8_t length;
                 };
 
                 // Structure for declaring complex variables (STRUCT). Defines a VAR (PRIVATE or otherwise) structure map,

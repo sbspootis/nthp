@@ -7,7 +7,7 @@ char nthp::script::stageMemory[STAGEMEM_MAX];
 nthp::texture::Palette nthp::script::activePalette;
 
 
-inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
+static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) {
                 ref.value = data->globalVarSet[nthp::fixedToInt(ref.value)];
 
@@ -272,7 +272,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ELSE) {
 DEFINE_EXECUTION_BEHAVIOUR(SKIP) {
         uint32_t skip_to = *(uint32_t*)(data->nodeSet[data->currentNode].access.data);
 
-        data->currentNode = skip_to;
+        data->currentNode = skip_to + data->currentScriptHeaderLocation;
         return 0;
 }
 
@@ -950,16 +950,17 @@ DEFINE_EXECUTION_BEHAVIOUR(ACTION_DEFINE) {
 
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_BIND) {
         stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        uint32_t var = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        int32_t key = *(int32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(uint32_t));
+        ptrRef var = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        int32_t key = *(int32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(ptrRef));
 
         EVAL_STDREF(target);
+        EVAL_PTRREF(var);
 
-        data->actionList[nthp::fixedToInt(target.value)].varIndex = var;  
+        data->actionList[nthp::fixedToInt(target.value)].varLocation = target_dsc;  
         data->actionList[nthp::fixedToInt(target.value)].boundKey = key;
 
 #ifdef PM
-        GENERIC_PRINT("bound ACTION [%d] key index [%d] to GLOBAL [%u]\n", nthp::fixedToInt(target.value), key, var);
+        GENERIC_PRINT("bound ACTION [%d] key index [%d] to ptrRef [b%ua%u]\n", nthp::fixedToInt(target.value), key, nthp::script::parsePtrDescriptor(var.value).block, nthp::script::parsePtrDescriptor(var.value).address);
 #endif
         return 0;
 }
@@ -1290,6 +1291,58 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(STRING_COPY) {
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        strRef c_string = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+
+        EVAL_PTRREF(target);
+        auto str = EVAL_STRREF(c_string);
+
+        memcpy(target_dsc, str, c_string.offset);
+        
+        return 0;
+}
+
+
+DEFINE_EXECUTION_BEHAVIOUR(IB_SET_TARGET) {
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(target);
+
+        data->ibTargetOrigin = (char*)target_dsc;
+        data->ibTargetSet = true;
+        data->ibTargetPosition = 0;
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(IB_WRITE_STRING) {
+        if(!data->ibTargetSet) {
+                PRINT_DEBUG_ERROR("IB_WRITE_STRING failed; target not set.\n");
+                return 1;
+        }
+
+        for(size_t i = 0; (data->inputBuffer[i]); ++i) {
+                data->ibTargetOrigin[data->ibTargetPosition] = data->inputBuffer[i] & 255;
+                ++(data->ibTargetPosition);
+        }
+
+        return 0;
+}
+
+
+DEFINE_EXECUTION_BEHAVIOUR(IB_STOP) {
+        data->ibTargetOrigin[data->ibTargetPosition] = '\0';
+
+        data->ibTargetOrigin = NULL;
+        data->ibTargetSet = false;
+        data->ibTargetPosition = 0;
+
+        return 0;
+}
+
+
+
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {
         const uint32_t headerLocation = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(uint32_t));
         data->currentScriptHeaderLocation = headerLocation;
@@ -1299,10 +1352,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {
 
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_CALL) {
         const uint32_t location = *(uint32_t*)(data->nodeSet[data->currentNode].access.data);
-
-        nthp::script::Script::ReturnStackEntry newEntry;
-        newEntry.sourceDestination = data->currentNode + 1;
-        newEntry.sourceHeaderLocation = data->currentScriptHeaderLocation;
+        const nthp::script::Script::ReturnStackEntry newEntry = { data->currentScriptHeaderLocation, data->currentNode + 1 };
 
         data->returnStack[data->stackPointer] = newEntry;
         ++(data->stackPointer);

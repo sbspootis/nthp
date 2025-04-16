@@ -52,8 +52,8 @@ namespace script {
         public:
 
                 struct Action {
-                        Action() { varIndex = 0; boundKey = SDLK_UNKNOWN; }
-                        uint32_t varIndex;
+                        Action() { varLocation = nullptr; boundKey = SDLK_UNKNOWN; }
+                        nthp::script::stdVarWidth* varLocation;
                         int boundKey;
                 };
 
@@ -97,8 +97,16 @@ namespace script {
                         Action* actionList; // Tracks keypresses; created with ACTION_DEFINE and ACTION_BIND to configure.
                         size_t  actionListSize;
 
-                        ReturnStackEntry returnStack[256];
+                        ReturnStackEntry returnStack[256]; // Used to track function returns.
                         uint8_t stackPointer;
+
+                        int inputBuffer[256];
+                        uint8_t inputBufferPtr;
+
+                        char* ibTargetOrigin;
+                        unsigned int ibTargetPosition;  // No file data/maximums needed, so use standard int.
+                        bool ibTargetSet;
+                        
 
                         unsigned short penColor; // stores a color as an index to the palette to draw primitives with the DRAW instruction.
 

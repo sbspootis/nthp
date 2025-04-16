@@ -1,39 +1,54 @@
+IMPORT script/globals.b
+STRING windowTitle "LSBSFA - The Climb Begins"
 
 
-STRING windowTitle      "NTHP Test Runtime"
-STRING palette          "resource/genericPalette.pal"
-STRING wallTexture      "resource/wall.cst"
 
 MACRO initFlags {
-/	x		y		tx		ty		cx		cy		fs		sr		title	/
-        960		540		100	        100	        0		0		0		0		~windowTitle
+/       x       y       tx      ty      cx      cy      fs      sr      title   /
+        960     540     200     200     0       0       0       0       ~windowTitle
 }
-
-
 CORE_INIT @initFlags
 
-SET_ACTIVE_PALETTE ~palette
-CORE_SETMAXFPS 60
+STRING PaletteFile "resource/genericPalette.pal"
+SET_ACTIVE_PALETTE ~PaletteFile
+
+ACTION_DEFINE 5
+CONST a_mLeft           0
+CONST a_mRight          1
+CONST a_mJump           2
+CONST a_panThrow        3
+CONST a_return          4
+
+VAR leftKeyPress
+VAR rightKeyPress
+VAR jumpKeyPress
+VAR panKeyPress
+VAR returnKeyPress
+
+ACTION_BIND #a_mLeft &leftKeyPress      LEFT
+ACTION_BIND #a_mRight &rightKeyPress    RIGHT
+ACTION_BIND #a_mJump &jumpKeyPress      SPACE
+ACTION_BIND #a_panThrow &panKeyPress    LCTRL
+ACTION_BIND #a_return &returnKeyPress   RETURN
 
 
-TEXTURE_DEFINE 1
-CONST t_wall 0
-TEXTURE_LOAD #t_wall ~wallTexture
 
+TEXTURE_DEFINE 3
+CONST t_player  0       STRING playerTextureFile "resource/player.cst"
+CONST t_pan     1       STRING panTextureFile "resource/pan.cst"
+CONST t_wall    2       STRING wallTextureFile "resource/wall.cst"
 
-FRAME_DEFINE 1
-CONST f0_wall 0
-FRAME_SET #f0_wall 0 0 100 76 #t_wall
+TEXTURE_LOAD #t_player ~playerTextureFile
+TEXTURE_LOAD #t_pan ~panTextureFile
+TEXTURE_LOAD #t_wall ~wallTextureFile
 
-ENT_DEFINE 1
-CONST e_testEntity 0
-ENT_SETFRAMERANGE #e_testEntity 0 1
-ENT_SETRENDERSIZE #e_testEntity 1 1
-ENT_SETPOS #e_testEntity 0 0
-ENT_SETCURRENTFRAME #e_testEntity 0
-ENT_SETHITBOXOFFSET #e_testEntity 0 0
+FRAME_DEFINE 3
+CONST f0_player 0
+CONST f0_pan    1
+CONST f0_wall   2
 
-
-CONST CONTEXT_MAINPROG __DEFINED
+FRAME_SET #f0_player    0 0 20 20       #t_player
+FRAME_SET #f0_pan       0 0 63 41       #t_pan
+FRAME_SET #f0_wall      0 0 100 76      #t_wall
 
 EXIT

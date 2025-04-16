@@ -129,6 +129,10 @@ namespace ID {
                 PRINT_REF,\
                 PRINT_STRING,\
                 STRING,\
+                STRING_COPY,\
+                IB_SET_TARGET,\
+                IB_WRITE_STRING,\
+                IB_STOP,\
                 FUNC_START,\
                 FUNC_CALL\
         )
@@ -228,7 +232,7 @@ namespace Size {
 
                 ACTION_DEFINE = sizeof(stdRef),
                 ACTION_CLEAR = 0, //
-                ACTION_BIND =  sizeof(stdRef) + sizeof(uint32_t) + sizeof(int32_t), // actionIndex, varIndex, key
+                ACTION_BIND =  sizeof(stdRef) + sizeof(ptrRef) + sizeof(int32_t), // actionIndex, varIndex, key
                 STAGE_LOAD = sizeof(strRef),
 
                 POLL_ENT_POSITION = sizeof(stdRef),
@@ -257,7 +261,10 @@ namespace Size {
                 PRINT_REF = sizeof(stdRef),
                 PRINT_STRING = sizeof(strRef),
                 STRING = DYNAMIC_SIZE,
-
+                STRING_COPY = sizeof(ptrRef) + sizeof(strRef),
+                IB_SET_TARGET = sizeof(ptrRef),
+                IB_WRITE_STRING = 0,
+                IB_STOP = 0,
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
                 FUNC_CALL = sizeof(uint32_t) // Func ID, to be matched to a FUNC_START by the linker.
         );

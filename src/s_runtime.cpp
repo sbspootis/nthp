@@ -138,6 +138,8 @@ void nthp::script::Runtime::handleEvents() {
         data.globalVarSet[MOUSEPOS_X_GLOBAL_INDEX] = nthp::mousePosition.x;
         data.globalVarSet[MOUSEPOS_Y_GLOBAL_INDEX] = nthp::mousePosition.y;
 
+        data.inputBufferPtr = 0;
+
         while(SDL_PollEvent(&nthp::core.eventList)) {
                 switch(nthp::core.eventList.type) {
                 case SDL_QUIT:
@@ -145,9 +147,15 @@ void nthp::script::Runtime::handleEvents() {
                 break;
 
                 case SDL_KEYDOWN:
+                        if(nthp::core.eventList.key.keysym.sym < 256) {
+                                data.inputBuffer[data.inputBufferPtr] = nthp::core.eventList.key.keysym.sym; // Add keypress to the input buffer.
+                                ++data.inputBufferPtr;
+                        }
+                        
+
                         for(size_t i = 0; i < data.actionListSize; ++i) {
                                 if(nthp::core.eventList.key.keysym.sym == data.actionList[i].boundKey) {
-                                        data.globalVarSet[data.actionList[i].varIndex] = nthp::intToFixed(1);
+                                        *(data.actionList[i].varLocation) = nthp::intToFixed(1);
                                 }
                         }
                 break;
@@ -155,7 +163,7 @@ void nthp::script::Runtime::handleEvents() {
                 case SDL_KEYUP:
                         for(size_t i = 0; i < data.actionListSize; ++i) {
                                 if(nthp::core.eventList.key.keysym.sym == data.actionList[i].boundKey) {
-                                        data.globalVarSet[data.actionList[i].varIndex] = 0;
+                                        *(data.actionList[i].varLocation) = 0;
                                 }
                         }
                 break;
@@ -196,6 +204,8 @@ void nthp::script::Runtime::handleEvents() {
                         break;
                 }
         }
+        
+        data.inputBuffer[data.inputBufferPtr] = 0; // Mark end of buffer with 0
 }
 
 

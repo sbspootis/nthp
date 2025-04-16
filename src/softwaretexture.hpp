@@ -21,7 +21,7 @@ namespace nthp {
 
                         void regenerateTexture(nthp::texture::Palette* palette, SDL_Renderer* renderer);
                         
-                        static const uint8_t STheaderSignature = 0b11011001;
+                        static constexpr uint8_t STheaderSignature = 0b11011001;
                         struct software_texture_header {
                                 uint8_t signature;
                                 uint32_t x;

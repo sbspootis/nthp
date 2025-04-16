@@ -237,12 +237,12 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
                 if(expression == "/") {
                         if(waitForCommentEnd) {
-                                waitForCommentEnd = false; // Eval one last time to ensure the next valid symbol is always returned.
+                                waitForCommentEnd = false;
+                        }
+                        else {
+                                waitForCommentEnd = true;
                                 continue;
                         }
-
-                        waitForCommentEnd = true;
-                        continue;
                 }
 
                 if(waitForCommentEnd) continue;
@@ -288,7 +288,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
 
         // Prefixes are evaluated IN ORDER of ; ptr_dereference (*), ptr_reference (&), Negation (-), Globality (> or $)
-        // NOTE: reference (&) PTR prefixes can evaluated as constants, dereferences (*) cannot.
+        // NOTE: reference (&) PTR prefixes can evaluate as constants, dereferences (*) cannot.
         do {
                 if(expression[0] == '~') {
 
@@ -299,16 +299,21 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                 if(expression == strList[i].name) {
 
                                         ref.value = nthp::intToFixed(strList[i].objectPosition);
-                                        ref.metadata = 0; // Reset flags to ensure only STRING_PTR is set.
+                                        ref.metadata = 0;                       // Reset flags to ensure only STRING_PTR is set.
+                                        ref.offset = strList[i].length;         // the ref.offset is equal to the string length.
+                                                                                // This only applies with STRING node references. Text written
+                                                                                // to a block by the input buffer contains no indication of size.
                                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_NODE_STRING_PTR);
                                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+                                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_STRING);
 
                                         return ref;
                                 }
                         }
 
-                        PRINT_COMPILER_ERROR("Unable to match STRING node to strRef; STRING not found.\n");
-                        return ref;
+                        
+                        // If no node can be matched, assume the reference is to a string inside a block.
+                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_STRING);
                 }
 
                 if(expression[0] == '*') {
@@ -1931,11 +1936,11 @@ DEFINE_COMPILATION_BEHAVIOUR(ACTION_BIND) {
         } while(0);
 
         stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        uint32_t* _varIndex = (uint32_t*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        int32_t* _key = (int32_t*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(uint32_t));
+        ptrRef* _varIndex = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        int32_t* _key = (int32_t*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(ptrRef));
 
         *_target = target;
-        *_varIndex = (uint32_t)nthp::fixedToInt(var.value);
+        *_varIndex = var;
         *_key = key;
 
 
@@ -2256,7 +2261,7 @@ DEFINE_COMPILATION_BEHAVIOUR(PRINT) {
         auto output = EVAL_PREF();
         CHECK_REF(output);
 
-        if(PR_METADATA_GET(output, nthp::script::flagBits::IS_NODE_STRING_PTR)) {
+        if(PR_METADATA_GET(output, nthp::script::flagBits::IS_STRING)) {
                 ADD_NODE(PRINT_STRING);
 
                 strRef* out = (strRef*)(nodeList[currentNode].access.data);
@@ -2323,6 +2328,7 @@ DEFINE_COMPILATION_BEHAVIOUR(STRING) {
         nthp::script::CompilerInstance::STR_DEF def;
         def.objectPosition = currentNode;
         def.name = name;
+        def.length = nodeList[currentNode].access.size;
 
         strList.push_back(def);
 
@@ -2331,6 +2337,60 @@ DEFINE_COMPILATION_BEHAVIOUR(STRING) {
         PRINT_NODEDATA();
         return 0;
 }
+
+DEFINE_COMPILATION_BEHAVIOUR(IB_SET_TARGET) {
+        ADD_NODE(IB_SET_TARGET);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _targ = (ptrRef*)(nodeList[currentNode].access.data);
+
+        *_targ = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(IB_WRITE_STRING) {
+        ADD_NODE(IB_WRITE_STRING);
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(IB_STOP) {
+        ADD_NODE(IB_STOP);
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(STRING_COPY) {
+        ADD_NODE(STRING_COPY);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto stringRef = EVAL_PREF();
+        CHECK_REF(stringRef);
+
+        ptrRef* p_target = (ptrRef*)(nodeList[currentNode].access.data);
+        strRef* p_string = (strRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        *p_target = target;
+        *p_string = stringRef;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
 
 
 // COMPILER INSTANCE BEHAVIOUR GOES HERE                ||
@@ -2538,7 +2598,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 return 1;
                         }
 
-                        printf("YAY!\n");
                         continue;
                 }
 
@@ -2900,6 +2959,10 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                 CHECK_COMP(PRINT);
                 CHECK_COMP(STRING);
+                CHECK_COMP(STRING_COPY);
+                CHECK_COMP(IB_SET_TARGET);
+                CHECK_COMP(IB_WRITE_STRING);
+                CHECK_COMP(IB_STOP);
 
         } // Main loop
 

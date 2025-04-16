@@ -124,6 +124,8 @@ int main(int argv, char** argc) {
         std::string debugOutput;
         FILE* debug_fd = stdout;
 
+
+
 	if(argv > 1) {
                 if(std::string(argc[1]) == "-h") {
                         inHeadlessMode = true;
