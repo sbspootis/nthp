@@ -57,7 +57,6 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         
                         while((nthp::core.isRunning()) && (!mainRuntime.data.changeStage) && debuggingActiveProcess) {
                                 frameStart = SDL_GetTicks();
-                                SDL_Delay(1);
                                 
                                 mainRuntime.handleEvents();
 
@@ -636,7 +635,7 @@ int headless_runtime() {
                                                 g_access.unlock();
                                                 continue;
                                         }
-                                        PM_PRINT("Reading Memory from block %zu [%p]...\n", index, mainRuntime.data.blockData + index);
+                                        PM_PRINT("Reading Memory from block %zu [%p]...\n", index, mainRuntime.data.blockData[index].data);
                                         for(size_t i = 0; i < mainRuntime.data.blockData[index].size; ++i) {
                                                 PM_PRINT("[%04zX] = %lf,\n", i, nthp::fixedToDouble(mainRuntime.data.blockData[index].data[i]));
                                         }

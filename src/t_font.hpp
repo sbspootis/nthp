@@ -17,6 +17,7 @@ namespace nthp { namespace text {
 constexpr size_t fontByteLength = sizeof(monoPixel) * FONT_ENTRY_SIZE;
 
         class Font {
+        public:
                 Font();
                 Font(const char* fontFile);
 

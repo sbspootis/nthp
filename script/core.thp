@@ -1,35 +1,61 @@
 
 PRIVATE stage
+PRIVATE player
+
+PRIVATE sc_fps
+SET &sc_fps 60
 
 @sf_createStage ( &stage )
 
-@sf_addObject ( 0 180 200 15 0 )
-@sf_addObject ( 180 0 15 200 0 )
+@sf_addObject ( 300 180 200 15 0 )
+@sf_addObject ( 480 0 15 200 0 )
 
 @sf_initStage
 
 
-STRING testString "this is a test. Copy to block!"
-PRIVATE bString
-ALLOC 20 &bString       / Input string test. /
+@pf_setPlayerTarget ( &player )
+@pf_init
 
-PRIVATE trackingInput
-SET &trackingInput 1
-IB_SET_TARGET $bString  / Input keyboard presses into bString block. /
+CONST l_resetPlayer 10
+LABEL #l_resetPlayer
+
+SET $player.ground_acceleration 0.006
+SET $player.jump_height         0.6
+SET $player.MAX_playerSpeed     0.5
+SET $player.MAX_fallSpeed       0.5
+SET $player.onSolidGround       #TRUE
+SET $player.vel_x               0
+SET $player.vel_y               0
+SET $player.friction            0.003
+SET $player.gravity             0.002 
+
+ENT_SETPOS #e_player 0 0
 
 LABEL 1
 
-        IF $trackingInput
-                IF $returnKeyPress
-                        IB_STOP
-                        SET &trackingInput 0
-                        SKIP
-                END
-
-                IB_WRITE_STRING
+        IF $returnKeyPress
+                SET &returnKeyPress #FALSE
+                GOTO #l_resetPlayer
         END
 
-        SKIP_END
+        IF $upKeyPress
+                ADD $sc_fps 15 &sc_fps
+                CORE_SETMAXFPS $sc_fps
+                SET &upKeyPress #FALSE
+                PRINT $sc_fps
+        END
+
+        IF $downKeyPress
+                SUB $sc_fps 15 &sc_fps
+                CORE_SETMAXFPS $sc_fps
+                SET &downKeyPress #FALSE
+                PRINT $sc_fps
+        END
+
+
+        @pf_checkPlayerInput
+        @sf_checkStageCollision ( $player )
+
 
 
         SET &mathReg0 0

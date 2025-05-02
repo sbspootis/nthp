@@ -75,8 +75,9 @@ void nthp::entity::gEntity::setPosition(nthp::vectFixed newPos) {
 
 // Moves the entity by given offset (NO DELTATIME FACTOR)
 void nthp::entity::gEntity::move(nthp::vectFixed offset) {
-	hitbox.x = offset.x + hbOffset.x;
-	hitbox.y = offset.y + hbOffset.y;
+        wPosition += offset;
+	hitbox.x = wPosition.x + hbOffset.x;
+	hitbox.y = wPosition.y + hbOffset.y;
 }
 
 void nthp::entity::gEntity::setCurrentFrame(size_t cf) {

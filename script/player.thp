@@ -1,0 +1,148 @@
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/ ============================== =================================== ============================ ===== /
+/                               PLAYER CONTROL & LOGIC SCRIPT                                           /
+
+CONST l_apply_gravity 1
+
+STRUCT playerData {
+        vel_x                   / velocity vector along x. /
+        vel_y                   / velocity vector along y. /
+
+        ground_acceleration     / movement speed vector. /
+        jump_height             
+        gravity                 / gravity vector. /
+        friction                / Friction vector. /
+        MAX_playerSpeed         / Max ground speed. /
+        MAX_fallSpeed           / Max falling speed. /
+
+        onSolidGround           / BOOL /
+        currentSolidGround      / Points to the entity of a stage object. /
+}
+
+PRIVATE playerTarget
+ASSIGN playerData &playerTarget
+
+PRIVATE p_extern
+
+VAR pl_xVel     / Factored velocity values. /
+VAR pl_yVel
+
+
+/ handles input to move, jump, and throw a pan. /
+FUNC p_checkPlayerInput {
+        
+        / Factor deltaTime into player vectors. (NOTE that MAX_playerSpeed is NOT A VECTOR!) /
+
+        SET &mathReg0 *playerTarget.MAX_playerSpeed                             CONST PL_MAXSPEED $mathReg0
+        MUL $deltaTime *playerTarget.ground_acceleration        &mathReg1       CONST PL_ACCELERATION $mathReg1
+        MUL $deltaTime *playerTarget.friction                   &mathReg2       CONST PL_FRICTION $mathReg2
+        MUL $deltaTime *playerTarget.gravity                    &mathReg3       CONST PL_GRAVITY $mathReg3
+        SET &mathReg4 *playerTarget.jump_height                 &mathReg4       CONST PL_JUMPHEIGHT -$mathReg4
+
+        SET &mathReg5 #FALSE
+        SET &pl_xVel *playerTarget.vel_x
+        SET &pl_yVel *playerTarget.vel_y
+
+        IF $leftKeyPress
+                SUB $pl_xVel #PL_ACCELERATION &pl_xVel
+                SET &mathReg5 #TRUE
+        END
+
+        IF $rightKeyPress
+                ADD $pl_xVel #PL_ACCELERATION &pl_xVel
+                SET &mathReg5 #TRUE
+        END
+
+        IF $jumpKeyPress
+                IF *playerTarget.onSolidGround
+                        SET &pl_yVel #PL_JUMPHEIGHT
+                        SET $playerTarget.onSolidGround #FALSE
+                        SET $playerTarget.currentSolidGround -1
+
+                        GOTO #l_apply_gravity
+                END
+        END
+
+        IF $mathReg5
+                IF *playerTarget.onSolidGround
+                        SKIP
+                ELSE
+                        GOTO #l_apply_gravity
+                END
+        END 
+        
+        IF *playerTarget.onSolidGround
+                / Calculate friction. /
+                IF $pl_xVel GRT 0
+                        SUB $pl_xVel #PL_FRICTION &pl_xVel 
+                        IF $pl_xVel LST 0
+                                SET &pl_xVel 0
+                        END
+                ELSE
+                        ADD $pl_xVel #PL_FRICTION &pl_xVel
+                        IF $pl_xVel GRT 0
+                                SET &pl_xVel 0
+                        END
+                END
+        
+        ELSE
+                LABEL #l_apply_gravity
+                / Calculate gravity. /
+                ADD $pl_yVel #PL_GRAVITY &pl_yVel
+                IF $pl_yVel GRT *playerTarget.MAX_fallSpeed
+                        SET &pl_yVel *playerTarget.MAX_fallSpeed
+                END
+        END
+
+
+
+        / Apply maxspeed. /
+        SKIP_END
+        IF $pl_xVel GRT #PL_MAXSPEED
+                SET &pl_xVel #PL_MAXSPEED
+        ELSE
+                IF $pl_xVel LST -$mathReg0
+                        SET &pl_xVel -$mathReg0
+                END
+        END
+
+
+
+
+        SET $playerTarget.vel_x $pl_xVel
+        SET $playerTarget.vel_y $pl_yVel
+
+        MUL $deltaTime $pl_xVel &pl_xVel
+        MUL $deltaTime $pl_yVel &pl_yVel
+
+        ENT_MOVE #e_player $pl_xVel $pl_yVel
+}
+
+FUNC p_setPlayerTarget {
+        SET &p_extern $argReg0
+}
+
+FUNC p_init {
+        NEW playerData 1 &playerTarget
+        SET $p_extern $playerTarget
+}
+
+MACRO pf_setPlayerTarget {
+        SET &argReg0 #ar0
+        ASSIGN playerData #ar0
+        %p_setPlayerTarget
+}
+
+MACRO pf_init {
+        %p_init
+}
+
+MACRO pf_checkPlayerInput {
+        %p_checkPlayerInput
+}
+
+
+CONST CONTEXT_PL_STAGE __DEFINED__
+
+EXIT

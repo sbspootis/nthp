@@ -5,32 +5,40 @@ STRING windowTitle "LSBSFA - The Climb Begins"
 
 MACRO initFlags {
 /       x       y       tx      ty      cx      cy      fs      sr      title   /
-        960     540     200     200     0       0       0       0       ~windowTitle
+        960     540     500     500     0       0       0       0       ~windowTitle
 }
 CORE_INIT @initFlags
+
+CORE_SETMAXFPS 60
 
 STRING PaletteFile "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~PaletteFile
 
-ACTION_DEFINE 5
+ACTION_DEFINE 7
 CONST a_mLeft           0
 CONST a_mRight          1
 CONST a_mJump           2
 CONST a_panThrow        3
 CONST a_return          4
+CONST a_up              5
+CONST a_down            6
 
-VAR leftKeyPress
-VAR rightKeyPress
-VAR jumpKeyPress
-VAR panKeyPress
-VAR returnKeyPress
+VAR leftKeyPress        / Tracks LEFT movement.         /
+VAR rightKeyPress       / Tracks RIGHT movement.        /
+VAR jumpKeyPress        / Tracks JUMP input.            /
+VAR panKeyPress         / Tracks pan throw input.       /
+VAR returnKeyPress      / Tracks RETURN key press.      /
+VAR upKeyPress
+VAR downKeyPress
+
 
 ACTION_BIND #a_mLeft &leftKeyPress      LEFT
 ACTION_BIND #a_mRight &rightKeyPress    RIGHT
 ACTION_BIND #a_mJump &jumpKeyPress      SPACE
 ACTION_BIND #a_panThrow &panKeyPress    LCTRL
 ACTION_BIND #a_return &returnKeyPress   RETURN
-
+ACTION_BIND #a_up &upKeyPress           UP
+ACTION_BIND #a_down &downKeyPress       DOWN
 
 
 TEXTURE_DEFINE 3

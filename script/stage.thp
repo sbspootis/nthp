@@ -56,13 +56,13 @@ FUNC s_addobj {
         
         INDEX &p_tempAlloc $mathReg0
 
-        ASSIGN stageObj p_tempAlloc                     / Copy all the data into the block. /
+        ASSIGN stageObj &p_tempAlloc                     / Copy all the data into the block. /
                 SET $p_tempAlloc.col_x #new_x
                 SET $p_tempAlloc.col_y #new_y
                 SET $p_tempAlloc.col_w #new_w
                 SET $p_tempAlloc.col_h #new_h
                 SET $p_tempAlloc.isHazard #new_haz
-        UNASSIGN p_tempAlloc
+        UNASSIGN &p_tempAlloc
 
         FREE $p_stagePtr
         INDEX &p_tempAlloc 0
@@ -119,7 +119,7 @@ FUNC s_initStage {
                 RETURN
         END
 
-        ADD 2 *ps_currentStageSize &mathReg0            / mathReg0 is the number of entities to allocate (with player+pan included) /
+        ADD 3 *ps_currentStageSize &mathReg0            / mathReg0 is the number of entities to allocate (with player+pan included) /
         ENT_DEFINE $mathReg0
 
         ENT_SETFRAMERANGE #e_player #f0_player 1
@@ -134,8 +134,8 @@ FUNC s_initStage {
 
         SET &mathReg1 0                                 / mathReg1 is a counter to loop through generated stage data. /
         SET &mathReg2 0                                 / mathReg2 is the calculated origin of each object. /
-        SET &mathReg3 2                                 / mathReg3 is the absolute entity position counter. /
-        ASSIGN stageObj p_stagePtr
+        SET &mathReg3 3                                 / mathReg3 is the absolute entity position counter. /
+        ASSIGN stageObj &p_stagePtr
 
         LABEL 1
                 MUL $mathReg1 >stageObj &mathReg2
@@ -160,13 +160,132 @@ FUNC s_initStage {
                         GOTO 1
                 END
 
-        UNASSIGN p_stagePtr
+        UNASSIGN &p_stagePtr
 
 }
 
 MACRO sf_initStage {
         %s_initStage
 }
+
+
+PRIVATE pl_x
+PRIVATE pl_y
+PRIVATE pl_w
+PRIVATE pl_h
+
+PRIVATE ent_counter
+PRIVATE vx_vy
+
+PRIVATE pl_target ASSIGN playerData &pl_target
+
+FUNC s_checkStageCollision {
+        SET &pl_target $argReg0
+
+        SET &ent_counter 2
+        ADD 2 *ps_currentStageSize &mathReg0
+
+        IF *pl_target.vel_y NOT 0
+                DIV *pl_target.vel_x *pl_target.vel_y &vx_vy
+        ELSE
+                SET &vx_vy *pl_target.vel_x
+        END
+
+        ABS $vx_vy &vx_vy
+        PRINT $vx_vy
+
+        LABEL 200
+
+                ENT_CHECKCOLLISION #e_player $ent_counter &mathReg1
+                IF $mathReg1
+
+                        POLL #e_player HITBOX
+                        COPY &r_poll1 4 &pl_x
+                        POLL $ent_counter HITBOX
+
+                        ADD $pl_x $pl_w &mathReg0       CONST pl_x+w $mathReg0
+                        ADD $pl_y $pl_h &mathReg1       CONST pl_y+h $mathReg1
+                        ADD $r_poll1 $r_poll3 &mathReg2 CONST ent_x+w $mathReg2
+                        ADD $r_poll2 $r_poll4 &mathReg3 CONST ent_y+h $mathReg3
+
+                        CONST ent_x $r_poll1
+                        CONST ent_y $r_poll2
+                        CONST ent_w $r_poll3
+                        CONST ent_h $r_poll4
+
+                        IF $pl_y LST #ent_y
+
+                                IF $pl_x GRT #ent_x
+
+                                        IF #pl_x+w LST #ent_x+w
+                                                / STRAIGHT-CENTER /
+                                                / Set Solid ground. /
+                                                SUB #ent_y $pl_h &mathReg4
+
+                                                ENT_SETPOS #e_player $pl_x $mathReg4
+                                                SET $pl_target.onSolidGround #TRUE 
+                                                SET $pl_target.vel_y 0
+                                                SET $pl_target.currentSolidGround $ent_counter
+
+                                                SKIP
+                                        ELSE
+
+                                                / LEFT-CORNER /
+                                                / Set Solid ground. /
+                                                SUB #ent_y $pl_h &mathReg4
+
+                                                ENT_SETPOS #e_player $pl_x $mathReg4
+                                                SET $pl_target.onSolidGround #TRUE 
+                                                SET $pl_target.vel_y 0
+                                                SET $pl_target.currentSolidGround $ent_counter
+
+                                                SKIP
+
+
+                                        END
+        
+                                ELSE
+                                        / RIGHT CORNER /
+                                        / Set Solid ground. /
+                                                SUB #ent_y $pl_h &mathReg4
+
+                                                ENT_SETPOS #e_player $pl_x $mathReg4
+                                                SET $pl_target.onSolidGround #TRUE 
+                                                SET $pl_target.vel_y 0
+                                                SET $pl_target.currentSolidGround $ent_counter
+
+                                                SKIP
+                                END
+                        END
+                END
+
+        SKIP_END
+
+        INC &ent_counter
+        IF $ent_counter LST $mathReg0
+                GOTO 200
+        END
+
+}
+
+
+MACRO sf_checkStageCollision {
+        SET &argReg0 #ar0
+        %s_checkStageCollision
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 EXIT

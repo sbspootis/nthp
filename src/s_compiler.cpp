@@ -238,6 +238,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
                 if(expression == "/") {
                         if(waitForCommentEnd) {
                                 waitForCommentEnd = false;
+                                continue;
                         }
                         else {
                                 waitForCommentEnd = true;
@@ -287,7 +288,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         }
 
 
-        // Prefixes are evaluated IN ORDER of ; ptr_dereference (*), ptr_reference (&), Negation (-), Globality (> or $)
+        // Prefixes are evaluated IN ORDER of ; Negation (-), ptr_dereference (*), ptr_reference (&), Globality (> or $)
         // NOTE: reference (&) PTR prefixes can evaluate as constants, dereferences (*) cannot.
         do {
                 if(expression[0] == '~') {
@@ -315,6 +316,17 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         // If no node can be matched, assume the reference is to a string inside a block.
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_STRING);
                 }
+                
+                if(expression[0] == '-') {
+                        if(expression.size() < 2) {
+                                PRINT_COMPILER_ERROR("Unable to evaluate reference [%s]; Invalid Argument.\n", expression.c_str());
+                                return ref;
+                        }
+                                
+                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_NEGATED);
+                        expression.erase(expression.begin());
+
+                }
 
                 if(expression[0] == '*') {
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_PTR);
@@ -339,17 +351,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         
                         expression.erase(expression.begin());
                         break;
-                }
-
-                if(expression[0] == '-') {
-                        if(expression.size() < 2) {
-                                PRINT_COMPILER_ERROR("Unable to evaluate reference [%s]; Invalid Argument.\n", expression.c_str());
-                                return ref;
-                        }
-                                
-                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_NEGATED);
-                        expression.erase(expression.begin());
-
                 }
 
                 
@@ -427,6 +428,11 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 if(!(validReference)) {
                         PRINT_COMPILER_ERROR("De/referenced definition [$%s] doesn't exist or is outside of scope.\n", expression.c_str());
                         return ref;
+                }
+        }
+        else { 
+                if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) {
+                        expression = "-" + expression;
                 }
         }
 
@@ -929,6 +935,29 @@ DEFINE_COMPILATION_BEHAVIOUR(SQRT) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(ABS) {
+        ADD_NODE(ABS);
+
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto ptr = EVAL_PREF();
+        CHECK_REF(ptr);
+
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _ptr = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_ptr = ptr;
+
+
+        PRINT_NODEDATA();
+        return 0;
+}
 
 
 DEFINE_COMPILATION_BEHAVIOUR(END) {
@@ -2578,19 +2607,25 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         for(size_t i = 0; i < structList.size(); ++i) {
                                 if(fileRead == structList[i].name) {
-                                        EVAL_SYMBOL();
-                                        for(size_t j = 0; j < globalList.size(); ++j) {
-                                                if(fileRead == globalList[j].varName) {
-                                                        globalList[j].isStruct = true;
-                                                        globalList[j].structID = i;
+                                        size_t pos = 0;
 
-                                                        PRINT_COMPILER("Assigned STRUCT [%s] to GLOBAL [%s].\n", structList[i].name.c_str(), globalList[j].varName.c_str());
-                                                        complete = true;
-                                                        break;
-                                                }
+                                        EVAL_SYMBOL();
+                                        auto eval_target = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                                        CHECK_REF(eval_target);
+
+                                        if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
+                                                PRINT_COMPILER_ERROR("ASSIGN instruction assignment must be a constant ptr_descriptor.\n");
+                                                return 1;
                                         }
+                                        
+                                        
+                                        globalList[pos].isStruct = true;
+                                        globalList[pos].structID = i;
+
+                                        PRINT_COMPILER("Assigned STRUCT [%s] to GLOBAL [%s].\n", structList[i].name.c_str(), globalList[pos].varName.c_str());
+                                        complete = true;
+                                        break;
                                 }
-                                if(complete) break;
                         }
 
                         if(!complete) {
@@ -2602,17 +2637,21 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 }
 
                 if(fileRead == "UNASSIGN") {
+                        size_t pos = 0;
+
                         EVAL_SYMBOL();
+                        auto eval_target = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        CHECK_REF(eval_target);
 
-                        for(size_t i = 0; i < globalList.size(); ++i) {
-                                if(fileRead == globalList[i].varName) {
-                                        globalList[i].isStruct = false;
-                                        globalList[i].structID = 0;
-
-                                        PRINT_COMPILER("Removed STRUCT assignment from [%s].\n", fileRead.c_str());
-                                        break;
-                                }
+                        if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
+                                PRINT_COMPILER_ERROR("UNASSIGN instruction assignment must be a constant ptr_descriptor.\n");
+                                return 1;
                         }
+
+                        globalList[pos].isStruct = false;
+                        globalList[pos].structID = 0;
+
+                        PRINT_COMPILER("Removed STRUCT assignment from [%s].\n", fileRead.c_str());
                         continue;
                 }
 
@@ -2876,6 +2915,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(MUL);
                 CHECK_COMP(DIV);
                 CHECK_COMP(SQRT);
+                CHECK_COMP(ABS);
 
                 CHECK_COMP(IF);
                 CHECK_COMP(END);

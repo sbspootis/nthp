@@ -18,6 +18,7 @@ static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
                         if(ptr.block) {
                                 ref.value = data->blockData[ptr.block - 1].data[ptr.address + ref.offset];
+                                if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) ref.value = -(ref.value);
                                 return;
                         }
                         ref.value = data->globalVarSet[ptr.address];
@@ -256,6 +257,19 @@ DEFINE_EXECUTION_BEHAVIOUR(SQRT) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(ABS) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        
+        EVAL_STDREF(value);
+        EVAL_PTRREF(ptr);
+
+
+        *target_dsc = std::abs(value.value);
+        return 0;
+}
+
 
 
 DEFINE_EXECUTION_BEHAVIOUR(END) {
@@ -265,7 +279,7 @@ DEFINE_EXECUTION_BEHAVIOUR(END) {
 DEFINE_EXECUTION_BEHAVIOUR(ELSE) {
         uint32_t endLocation = *(uint32_t*)(data->nodeSet[data->currentNode].access.data);
 
-        data->currentNode = endLocation;
+        data->currentNode = endLocation + data->currentScriptHeaderLocation;
         return 0;
 }
 
@@ -288,7 +302,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_IF_TRUE) {
 
         EVAL_STDREF(opA);
         if(nthp::fixedToInt(opA.value)) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
         
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -306,7 +320,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_EQU) {
         EVAL_STDREF(opB);
 
         if(opA.value == opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -323,7 +337,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_NOT) {
         EVAL_STDREF(opB);
 
         if(opA.value != opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -340,7 +354,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRT) {
         EVAL_STDREF(opB);
 
         if(opA.value > opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -357,7 +371,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LST) {
         EVAL_STDREF(opB);
 
         if(opA.value < opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -374,7 +388,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRTE) {
         EVAL_STDREF(opB);
 
         if(opA.value >= opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -392,7 +406,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LSTE) {
         EVAL_STDREF(opB);
 
         if(opA.value <= opB.value) return 0;
-        if(elseIndex) { data->currentNode = elseIndex; return 0; }
+        if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
 
@@ -809,8 +823,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_CHECKCOLLISION) {
         EVAL_STDREF(entB);
         EVAL_PTRREF(output);
 
-
-        *target_dsc = nthp::intToFixed((int)nthp::entity::checkRectCollision(data->entityBlock[nthp::fixedToInt(entA.value)].getHitbox(), data->entityBlock[nthp::fixedToInt(entB.value)].getHitbox()));
+        *target_dsc = nthp::intToFixed(nthp::entity::checkRectCollision(data->entityBlock[nthp::fixedToInt(entA.value)].getHitbox(), data->entityBlock[nthp::fixedToInt(entB.value)].getHitbox()));
 
         return 0;
 }

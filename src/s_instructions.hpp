@@ -54,6 +54,7 @@ namespace ID {
                 MUL,\
                 DIV,\
                 SQRT,\
+                ABS,\
                 LOGIC_IF_TRUE,\
                 LOGIC_EQU,\
                 LOGIC_NOT,\
@@ -170,6 +171,7 @@ namespace Size {
                 MUL = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 DIV = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 SQRT = sizeof(stdRef) + sizeof(ptrRef),
+                ABS = sizeof(stdRef) + sizeof(ptrRef),
 
 
                 LOGIC_IF_TRUE = sizeof(stdRef) + sizeof(uint32_t) + sizeof(uint32_t),
