@@ -21,8 +21,9 @@ const nthp::RenderPacket nthp::entity::gEntity::getUpdateRenderPacket(nthp::Rend
         auto pxlPos = nthp::generatePixelPosition(wPosition, context);
         nthp::RenderPacket::C_OPERATE state = nthp::RenderPacket::C_OPERATE::VALID;
 
-        if(frameData[currentFrame].texture == NULL)
-                state = nthp::RenderPacket::C_OPERATE::INVALID;
+        if(frameData == nullptr) {
+                return INVALID_RENDERPACKET;
+        }
 
 
         return nthp::generateRenderPacket(frameData[currentFrame].texture, &frameData[currentFrame].src, 
@@ -40,8 +41,9 @@ const nthp::RenderPacket nthp::entity::gEntity::abs_getRenderPacket(nthp::Render
         const auto pxlPos = nthp::generatePixelPosition(wPosition, context);
         nthp::RenderPacket::C_OPERATE state = nthp::RenderPacket::C_OPERATE::ABSOLUTE;
 
-        if(frameData[currentFrame].texture == NULL)
-                state = nthp::RenderPacket::C_OPERATE::INVALID;
+        if(frameData == nullptr) {
+                return INVALID_RENDERPACKET;
+        }
 
          return nthp::generateRenderPacket(frameData[currentFrame].texture, &frameData[currentFrame].src, 
                 {

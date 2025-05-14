@@ -19,6 +19,8 @@ PRIVATE ps_currentStageSize
 
 PRIVATE p_extern
 
+CONST requiredPlayerObjects 3
+
 / Populates an address (and the active stage) with a new stage structure of size 1 /
 FUNC s_createStage {
         ALLOC 1 &p_stagePtr                     / Init a new block with 1 entry. /
@@ -119,13 +121,15 @@ FUNC s_initStage {
                 RETURN
         END
 
-        ADD 3 *ps_currentStageSize &mathReg0            / mathReg0 is the number of entities to allocate (with player+pan included) /
+        ADD #requiredPlayerObjects *ps_currentStageSize &mathReg0            / mathReg0 is the number of entities to allocate (with player+pan+collider included) /
         ENT_DEFINE $mathReg0
 
         ENT_SETFRAMERANGE #e_player #f0_player 1
         ENT_SETRENDERSIZE #e_player 10 10
         ENT_SETHITBOXSIZE #e_player 10 10
         ENT_SETCURRENTFRAME #e_player 0 
+
+        ENT_SETHITBOXSIZE 2 0 0
 
         ENT_SETFRAMERANGE #e_pan #f0_pan 1
         ENT_SETRENDERSIZE #e_pan 4 4
@@ -134,17 +138,14 @@ FUNC s_initStage {
 
         SET &mathReg1 0                                 / mathReg1 is a counter to loop through generated stage data. /
         SET &mathReg2 0                                 / mathReg2 is the calculated origin of each object. /
-        SET &mathReg3 3                                 / mathReg3 is the absolute entity position counter. /
+        SET &mathReg3 #requiredPlayerObjects            / mathReg3 is the absolute entity position counter. /
         ASSIGN stageObj &p_stagePtr
 
+        INDEX &p_stagePtr 1
+
         LABEL 1
-                MUL $mathReg1 >stageObj &mathReg2
-                INC &mathReg2
 
-                INDEX &p_stagePtr $mathReg2              / p_stagePtr now points to the current object; access with STRUCT offsets. /
-
-
-                
+                        
                 ENT_SETHITBOXSIZE $mathReg3 *p_stagePtr.col_w *p_stagePtr.col_h         / Copy data and configure entity. /
                 ENT_SETPOS $mathReg3 *p_stagePtr.col_x *p_stagePtr.col_y
 
@@ -157,6 +158,7 @@ FUNC s_initStage {
                 INC &mathReg3
                 INC &mathReg1
                 IF $mathReg3 LST $mathReg0
+                        NEXT &p_stagePtr
                         GOTO 1
                 END
 
@@ -182,17 +184,16 @@ PRIVATE pl_target ASSIGN playerData &pl_target
 FUNC s_checkStageCollision {
         SET &pl_target $argReg0
 
-        SET &ent_counter 2
-        ADD 2 *ps_currentStageSize &mathReg0
+        SET &ent_counter #requiredPlayerObjects
+        ADD #requiredPlayerObjects *ps_currentStageSize &mathReg0
 
-        IF *pl_target.vel_y NOT 0
+        IF *pl_target.vel_y
                 DIV *pl_target.vel_x *pl_target.vel_y &vx_vy
         ELSE
                 SET &vx_vy *pl_target.vel_x
         END
 
         ABS $vx_vy &vx_vy
-        PRINT $vx_vy
 
         LABEL 200
 
@@ -221,42 +222,38 @@ FUNC s_checkStageCollision {
                                                 / STRAIGHT-CENTER /
                                                 / Set Solid ground. /
                                                 SUB #ent_y $pl_h &mathReg4
+                                                DEC &mathReg4
 
                                                 ENT_SETPOS #e_player $pl_x $mathReg4
                                                 SET $pl_target.onSolidGround #TRUE 
                                                 SET $pl_target.vel_y 0
                                                 SET $pl_target.currentSolidGround $ent_counter
 
-                                                SKIP
+                                                RETURN
                                         ELSE
 
                                                 / LEFT-CORNER /
                                                 / Set Solid ground. /
                                                 SUB #ent_y $pl_h &mathReg4
+                                                DEC &mathReg4
 
                                                 ENT_SETPOS #e_player $pl_x $mathReg4
                                                 SET $pl_target.onSolidGround #TRUE 
                                                 SET $pl_target.vel_y 0
                                                 SET $pl_target.currentSolidGround $ent_counter
 
-                                                SKIP
-
-
+                                                RETURN
                                         END
-        
-                                ELSE
-                                        / RIGHT CORNER /
-                                        / Set Solid ground. /
-                                                SUB #ent_y $pl_h &mathReg4
-
-                                                ENT_SETPOS #e_player $pl_x $mathReg4
-                                                SET $pl_target.onSolidGround #TRUE 
-                                                SET $pl_target.vel_y 0
-                                                SET $pl_target.currentSolidGround $ent_counter
-
-                                                SKIP
                                 END
+                                SKIP
                         END
+                        IF $pl_y LST #ent_y+h
+                                STRING gd "GOD NO!!!"
+                                PRINT ~gd
+                        END
+
+
+
                 END
 
         SKIP_END
@@ -265,6 +262,7 @@ FUNC s_checkStageCollision {
         IF $ent_counter LST $mathReg0
                 GOTO 200
         END
+
 
 }
 

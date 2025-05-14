@@ -65,7 +65,7 @@ int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool
 	// This ensures the correct render resolution context when calculating scale factors.
 	// If the requested resolution is too small (or too large), SDL will correct the resolution to
 	// match the aspect ratio of the display and capabilities of the graphics card. Querying for them
-        // might seem redundant, but trust bro.
+        // might seem redundant, but it isn't.
 	{
 		int w, h;
 		SDL_GetRendererOutputSize(renderer, &w, &h);
@@ -164,8 +164,7 @@ int nthp::EngineCore::render(nthp::RenderPacket packet) {
 
 
                 case nthp::RenderPacket::C_OPERATE::INVALID:
-                        PRINT_DEBUG_WARNING("Reading invalid render call. Ensure target texture is generated.\n");
-                        return -1;
+                        return 1;
                         break;
                 default:
                         break;

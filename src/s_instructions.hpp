@@ -142,9 +142,9 @@ namespace ID {
 }
 
 #define GET_INSTRUCTION_ID(instruction) nthp::script::instructions::ID::instruction
-typedef P_Reference<nthp::script::stdVarWidth> stdRef;  // The standard value type; Can be a reference to memory or a constant, 'metadata' bits can be set for type description.
-typedef stdRef ptrRef;                                  // ptrRef endpoints are evaluated as ptr_descriptors
-typedef stdRef strRef;                                  // strRef endpoints are the same as stdRef, but instead point to a STRING node.
+typedef P_Reference<nthp::script::stdVarWidth> stdRef;  // The standard value type; Can be a reference to memory or a constant, 'metadata' bits can be set for type description. The endpoint should be a workable value.
+typedef stdRef ptrRef;                                  // ptrRef endpoints are evaluated as ptr_descriptors; otherwise identical to stdRefs
+typedef stdRef strRef;                                  // strRef endpoints are the same as stdRef, but instead point to a STRING node or assumed block data (ptr_descriptor) string.
 
 
 // Sizes must have the same name as the ENUM entry in 'ID'.
@@ -192,8 +192,8 @@ namespace Size {
                 NEW = sizeof(stdRef) + sizeof(ptrRef) + sizeof(uint32_t),
                 COPY = sizeof(ptrRef) + sizeof(stdRef) + sizeof(ptrRef),
                 FREE = sizeof(ptrRef),
-                NEXT = sizeof(ptrRef),
-                PREV = sizeof(ptrRef),
+                NEXT = sizeof(ptrRef) + sizeof(uint8_t),
+                PREV = sizeof(ptrRef) + sizeof(uint8_t),
                 INDEX = sizeof(ptrRef) + sizeof(stdRef),
 
 		TEXTURE_DEFINE = sizeof(stdRef),

@@ -5,7 +5,9 @@ namespace nthp {
 namespace script {
        
         // The base unit of script execution. A Node contains an 8bit ID, defining instruction type.
-
+        // It's a union (as you can see); when writing the Node to a file (or when writing a fixed size is important) write
+        // the 'file_p' member, followed by the Node data (Node.access.data; write "Node.access.size" bytes).
+        // When using the Node (data or otherwise) in code, use the 'access' member. 
         union Node {
         public:
                 struct n_file_t {
@@ -80,7 +82,10 @@ namespace script {
         // Blocks are indexed starting at 1, as block 0 is the GLOBAL list, which cannot be changed and is defined by the
         // compiler. If a PTR VAR points to another VAR, the bits [8-15] will be 0, and bits [0-7] will be the index of the
         // VAR in the GLOBAL list. This means the same structure can be used to reference dynamic block data and static VARs.
-
+        //
+        // Data offsets (from STRUCTs in script) are applied exclusively to block memory access; even if a GLOBAL is assigned a
+        // structure, points to another GLOBAL, and is accessed with a member, the offset will be ignored, even though it's syntaxically correct and the compiler
+        // won't make a fuss.
         
         struct BlockMemoryEntry {
                 nthp::script::stdVarWidth* data;

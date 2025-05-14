@@ -13,11 +13,13 @@ namespace nthp {
                 SDL_Rect* srcRect;
                 SDL_Rect dstRect;
 
-                enum C_OPERATE { VALID, ABSOLUTE, INVALID } state;
+                enum C_OPERATE { INVALID = 0, VALID, ABSOLUTE } state;
         };
-        static nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, nthp::RenderPacket::C_OPERATE s) {
+        static const nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, nthp::RenderPacket::C_OPERATE s) {
                 return {texture, srcRect, dst, s};
         }
+
+        #define INVALID_RENDERPACKET generateRenderPacket(NULL, NULL, {0,0,0,0}, nthp::RenderPacket::C_OPERATE::INVALID)
 
 
 

@@ -1205,13 +1205,31 @@ DEFINE_COMPILATION_BEHAVIOUR(COPY) {
 DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
         ADD_NODE(NEXT);
 
+        size_t pos = 0;
+
         EVAL_SYMBOL();
-        auto ptr = EVAL_PREF();
+        auto ptr = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
-        ptrRef* p = (ptrRef*)nodeList[currentNode].access.data;
+        ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
+        uint8_t* structSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef));   // The offset of the structure in stdVarWidths.
 
         *p = ptr;
+
+        if(!PR_METADATA_GET(ptr, nthp::script::flagBits::IS_REFERENCE)) {
+                if(globalList[pos].isStruct) {
+                        *structSize = structList[globalList[pos].structID].members.size();
+                }
+                else {
+                        *structSize = 1;
+                }
+
+                PRINT_NODEDATA();
+                return 0;
+        }
+
+        *structSize = 1;
+
 
         PRINT_NODEDATA();
         return 0;
@@ -1221,13 +1239,31 @@ DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
 DEFINE_COMPILATION_BEHAVIOUR(PREV) {
         ADD_NODE(PREV);
 
+        size_t pos = 0;
+
         EVAL_SYMBOL();
-        auto ptr = EVAL_PREF();
+        auto ptr = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
-        ptrRef* p = (ptrRef*)nodeList[currentNode].access.data;
+        ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
+        uint8_t* structSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef));   // The offset of the structure in stdVarWidths.
 
         *p = ptr;
+
+        if(!PR_METADATA_GET(ptr, nthp::script::flagBits::IS_REFERENCE)) {
+                if(globalList[pos].isStruct) {
+                        *structSize = structList[globalList[pos].structID].members.size();
+                }
+                else {
+                        *structSize = 1;
+                }
+
+                PRINT_NODEDATA();
+                return 0;
+        }
+
+        *structSize = 1;
+
 
         PRINT_NODEDATA();
         return 0;

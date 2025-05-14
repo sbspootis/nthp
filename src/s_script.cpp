@@ -103,6 +103,7 @@ DEFINE_EXECUTION_BEHAVIOUR(JUMP) {
                         break;
                 }
         }
+        
         return 0;
 }
 
@@ -261,7 +262,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ABS) {
         stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        
+
         EVAL_STDREF(value);
         EVAL_PTRREF(ptr);
 
@@ -301,7 +302,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_IF_TRUE) {
 
 
         EVAL_STDREF(opA);
-        if(nthp::fixedToInt(opA.value)) return 0;
+        if(opA.value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
         
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -530,21 +531,23 @@ DEFINE_EXECUTION_BEHAVIOUR(COPY) {
 
 DEFINE_EXECUTION_BEHAVIOUR(NEXT) {
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
         
         EVAL_PTRREF(ptr);
 
        
-        *target_dsc = (*target_dsc + 1);
+        *target_dsc = (*target_dsc + offset);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(PREV) {
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
         
         EVAL_PTRREF(ptr);
 
-        *target_dsc = (*target_dsc - 1);
+        *target_dsc = (*target_dsc - offset);
         return 0;
 }
 
