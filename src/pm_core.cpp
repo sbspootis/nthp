@@ -343,7 +343,7 @@ int headless_runtime() {
 
                         if(args[0] == "test") {
                                 if(debuggingActiveProcess) {
-                                        PM_PRINT_ERROR("Target currently in active debugging session; unable to start.\n");
+                                        PM_PRINT_ERROR("Target in active debugging session; unable to start.\n");
                                         continue;
                                 }
                                 nthp::script::CompilerInstance cc;
@@ -551,10 +551,10 @@ int headless_runtime() {
 
                                         for(size_t i = 0; i < mainRuntime.data.globalMemBudget; ++i) {
                                                 index = i;
-                                                std::cout << "\t[" << i; 
+                                                printf ("\t[%04zX", i);
                                                 
                                                 if(printSymbols) { std::cout << ", [>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
-                                                std::cout << "] " << mainRuntime.data.globalVarSet + index << "; = [" << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "] ]\n";
+                                                std::cout << "] " << mainRuntime.data.globalVarSet + index << "; = [" << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
                                         }
 
                                         g_access.unlock();
@@ -577,7 +577,7 @@ int headless_runtime() {
                                         
                                         try {
                                                 if(isIndex) {
-                                                        mainRuntime.data.globalVarSet[std::stoul(args[1])] = nthp::doubleToFixed(std::stod(args[2]));
+                                                        mainRuntime.data.globalVarSet[std::stoul(args[1], NULL, 0)] = nthp::doubleToFixed(std::stod(args[2]));
                                                 }
                                                 else {
                                                         std::string reference = args[1];
@@ -680,7 +680,6 @@ int headless_runtime() {
                                 }
 
                         }
-
 
 		} // if(input != "")
 

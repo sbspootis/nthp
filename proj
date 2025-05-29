@@ -1,0 +1,10 @@
+BUILD_SYSTEM
+        script/init.thp script/init.thpcs               T_INIT
+        script/player.thp script/player.thpcs           T_HIDDEN
+        script/stage.thp script/stage.thpcs             T_HIDDEN
+
+        
+        script/core.thp script/core.thpcs               T_TICK
+END
+
+EXIT

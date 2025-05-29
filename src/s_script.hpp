@@ -24,7 +24,7 @@ namespace script {
 
         namespace debug {
         #ifdef DEBUG
-                extern nthp::vectGeneric debugInstructionCall; // Interface with the project manager debug system. x = instruction y = data
+                extern volatile nthp::vectGeneric debugInstructionCall; // Interface with the project manager debug system. x = instruction y = data
                 extern bool suspendExecution;
 
                 typedef enum {

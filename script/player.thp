@@ -116,7 +116,15 @@ FUNC p_checkPlayerInput {
         MUL $deltaTime $pl_xVel &pl_xVel
         MUL $deltaTime $pl_yVel &pl_yVel
 
+        MUL 2 $pl_xVel &mathReg0
+        MUL 2 $pl_yVel &mathReg1
+        POLL #e_player POSITION
+
+        ADD $mathReg0 $r_poll1 &mathReg0
+        ADD $mathReg1 $r_poll2 &mathReg1
+
         ENT_MOVE #e_player $pl_xVel $pl_yVel
+        ENT_SETPOS #e_playerProjectedHitbox $mathReg0 $mathReg1         / Uses the projected player collider for detection. /
 }
 
 FUNC p_setPlayerTarget {

@@ -74,6 +74,10 @@ void PRINT_COMPILER_ERROR(const char* format, ...) {
 	fprintf(NTHP_debug_output, "[t %u] ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
+        if(NTHP_debug_output != stdout) {
+                printf("[t %u] ERROR: ", SDL_GetTicks());
+                printf(format, ap);
+        }
 
 	va_end(ap);
 }
@@ -86,6 +90,11 @@ void PRINT_COMPILER_WARNING(const char* format, ...) {
 	fprintf(NTHP_debug_output, "[t %u] WARNING: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
+        if(NTHP_debug_output != stdout) {
+                printf("[t %u] WARNING: ", SDL_GetTicks());
+                printf(format, ap);
+        }
+
 
 	va_end(ap);
 }
@@ -97,6 +106,11 @@ void PRINT_COMPILER_DEPEND_ERROR(const char* format, ...) {
 
 	fprintf(NTHP_debug_output, "[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
+
+        if(NTHP_debug_output != stdout) {
+                printf("[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());
+                printf(format, ap);
+        }
 
 
 	va_end(ap);
@@ -681,8 +695,9 @@ DEFINE_COMPILATION_BEHAVIOUR(RSHIFT) {
         auto count = EVAL_PREF();
         CHECK_REF(count);
 
-        stdRef* fcount = (decltype(fcount))(nodeList[currentNode].access.data + sizeof(ptrRef));
         ptrRef* var = (decltype(var))(nodeList[currentNode].access.data);
+        stdRef* fcount = (decltype(fcount))(nodeList[currentNode].access.data + sizeof(ptrRef));
+        
 
         *var = ref;
         *fcount = count;
@@ -702,8 +717,8 @@ DEFINE_COMPILATION_BEHAVIOUR(LSHIFT) {
         auto count = EVAL_PREF();
         CHECK_REF(count);
 
-        stdRef* fcount = (decltype(fcount))(nodeList[currentNode].access.data + sizeof(ptrRef));
         ptrRef* var = (decltype(var))(nodeList[currentNode].access.data);
+        stdRef* fcount = (decltype(fcount))(nodeList[currentNode].access.data + sizeof(ptrRef));
 
         *var = ref;
         *fcount = count;
@@ -1997,6 +2012,10 @@ DEFINE_COMPILATION_BEHAVIOUR(ACTION_BIND) {
                 if(fileRead == "LEFT")          { key = SDLK_LEFT; break; }
                 if(fileRead == "RIGHT")         { key = SDLK_RIGHT; break; }
                 if(fileRead == "SPACE")         { key = SDLK_SPACE; break; }
+                if(fileRead == "BACKSPACE")     { key = SDLK_BACKSPACE; break; }
+                if(fileRead == "CAPSLOCK")      { key = SDLK_CAPSLOCK; break; }
+                if(fileRead == "LALT")          { key = SDLK_LALT; break; }
+                if(fileRead == "RALT")          { key = SDLK_RALT; break; }
 
         } while(0);
 
@@ -2045,10 +2064,10 @@ DEFINE_COMPILATION_BEHAVIOUR(POLL) {
         // What to check for
         EVAL_SYMBOL();
         do {
-                if(fileRead == "POS")           { ADD_NODE(POLL_ENT_POSITION); break; }
-                if(fileRead == "HITBOX")        { ADD_NODE(POLL_ENT_HITBOX); break; }
-                if(fileRead == "CURRENTFRAME")  { ADD_NODE(POLL_ENT_CURRENTFRAME); break; }
-                if(fileRead == "RENDERSIZE")    { ADD_NODE(POLL_ENT_RENDERSIZE); break; }
+                if(fileRead == "POSITION")              { ADD_NODE(POLL_ENT_POSITION); break; }
+                if(fileRead == "HITBOX")                { ADD_NODE(POLL_ENT_HITBOX); break; }
+                if(fileRead == "CURRENTFRAME")          { ADD_NODE(POLL_ENT_CURRENTFRAME); break; }
+                if(fileRead == "RENDERSIZE")            { ADD_NODE(POLL_ENT_RENDERSIZE); break; }
 
                 PRINT_COMPILER_ERROR("[%s] Invalid POLL request.", fileRead.c_str());
                 return 1;
@@ -2072,10 +2091,7 @@ DEFINE_COMPILATION_BEHAVIOUR(DRAW_SETCOLOR) {
         auto _colorIndex = EVAL_PREF();
         CHECK_REF(_colorIndex);
 
-        if(nthp::getFixedDecimal(_colorIndex.value) > 0) {
-                PRINT_COMPILER_WARNING("DRAW_SETCOLOR uses an invalid decimal value. Discarding decimal.\n");
-                _colorIndex.value = nthp::getFixedInteger(_colorIndex.value);
-        }
+        _colorIndex.value = nthp::getFixedInteger(_colorIndex.value);
 
         stdRef* colorIndex = (stdRef*)(nodeList[currentNode].access.data);
         *colorIndex = _colorIndex;
@@ -3286,6 +3302,15 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                         addGlobalDef("r_poll2",         "predefined");
                         addGlobalDef("r_poll3",         "predefined");
                         addGlobalDef("r_poll4",         "predefined");
+
+
+                        {
+                                CONST_DEF blockwidth;
+                                blockwidth.constName = "#blockWidth";
+                                blockwidth.value = std::to_string(sizeof(stdVarWidth));
+
+                                constantList.push_back(blockwidth);
+                        }
 
 
                         while(!file.eof()) {

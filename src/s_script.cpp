@@ -61,7 +61,7 @@ inline char* ____eval_str(ptrRef& ref, nthp::script::Script::ScriptDataSet* data
 
 
 #ifdef DEBUG
-        nthp::vectGeneric nthp::script::debug::debugInstructionCall = nthp::vectGeneric(-1, -1);
+        volatile nthp::vectGeneric nthp::script::debug::debugInstructionCall = nthp::vectGeneric(-1, -1);
         bool nthp::script::debug::suspendExecution = false;
 #endif
 
@@ -159,7 +159,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LSHIFT) {
         EVAL_PTRREF(var);
         EVAL_STDREF(count);
         
-        *target_dsc = ((data->globalVarSet[var.value]) << nthp::fixedToInt(count.value));
+        *target_dsc = (*target_dsc) << nthp::fixedToInt(count.value);
 
         return 0;
 }
@@ -173,7 +173,7 @@ DEFINE_EXECUTION_BEHAVIOUR(RSHIFT) {
         EVAL_STDREF(count);
 
         
-        *target_dsc = ((data->globalVarSet[var.value]) >> nthp::fixedToInt(count.value));
+        *target_dsc = (*target_dsc) >> nthp::fixedToInt(count.value);
 
       
 

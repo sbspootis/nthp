@@ -22,7 +22,7 @@ LABEL #l_resetPlayer
 
 SET $player.ground_acceleration 0.004
 SET $player.jump_height         0.6
-SET $player.MAX_playerSpeed     0.4
+SET $player.MAX_playerSpeed     0.3
 SET $player.MAX_fallSpeed       0.5
 SET $player.onSolidGround       #TRUE
 SET $player.vel_x               0
