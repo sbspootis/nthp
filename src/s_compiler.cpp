@@ -15,7 +15,8 @@ using namespace nthp::script::instructions;
 
 
 
-// I love this
+// I love this. Absolutely terrible. I should've switched it to a structure reference long
+// ago, but I never got around to it. Now it's too annoying to fix. 
 #define DEFINE_COMPILATION_BEHAVIOUR(instruction) int instruction (std::vector<nthp::script::Node>& nodeList,\
                                                                         std::fstream& file,\
                                                                         std::string& fileRead,\
@@ -3284,7 +3285,6 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
         while(!operationComplete) {
                 file >> fileRead;
 
-
                 if(fileRead == "BUILD_SYSTEM") {
                         globalList.clear();
 
@@ -3326,6 +3326,9 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
                                         uint8_t execFlags = 0;
 
+                                        // Originally an do while (0) for a more efficient 'if else' but I decided it could be useful for scripts to have
+                                        // multiple execution flags (i.e a script could run once in the INIT phase and then once again in the EXIT phase, without any
+                                        // fucky function shit). So the do while(0) here is pointless.
                                         do {
                                                 if(type == "T_INIT") {  execFlags |= (1 << nthp::script::CompilerInstance::TriggerBits::T_INIT);}
                                                 if(type == "T_TICK") {  execFlags |= (1 << nthp::script::CompilerInstance::TriggerBits::T_TICK); }

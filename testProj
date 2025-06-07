@@ -1,7 +1,0 @@
-BUILD_SYSTEM
-        script/stageLib.thph script/stageLib.thpcs      T_HIDDEN
-	script/init.thp script/init.thpcs               T_INIT
-	script/game.thp script/game.thpcs               T_TICK
-END
-
-EXIT

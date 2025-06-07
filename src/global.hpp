@@ -1,7 +1,8 @@
 #pragma once
 
-#define NTHP_VERSION "1.0.0"
-
+#ifndef NTHP_VERSION
+        #define NTHP_VERSION "b1.0.0"
+#endif
 
 #ifdef LINUX
 	#include <SDL2/SDL.h>

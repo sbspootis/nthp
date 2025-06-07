@@ -76,9 +76,9 @@ namespace nthp {
                 // allowing constant offsets from ptr_descriptors to be written to without INDEX, NEXT, or PREV. The structure's
                 // origin is the set address value of the assigned VARs ptr_descriptor. The exact size (or multiples) of a STRUCT def
                 // can be allocted with NEW (NEW [structname] [count] [&targetToPopulate]). Already existing VARs can be assigned
-                // a struct type with ASSIGN (ASSIGN [structname] [target]), this does not change its value. Note that no prefix is used when referencing the VAR;
+                // a struct type with ASSIGN (ASSIGN [structname] [target]); this does not change its value. Note that no prefix is used when referencing the VAR;
                 // this means only defined VARs (GLOBAL list) can be assigned as structure types. ASSIGN and UNASSIGN are NOT instructions;
-                // no readable script data is generated from their use. NEW is translated into an ALLOC instruction.
+                // no readable script data is generated from their use.
                 struct STRUCT_DEF {
                         std::string name;
                         std::vector<std::string> members;

@@ -17,6 +17,20 @@ static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_PTR)) {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
                         if(ptr.block) {
+                #ifdef DEBUG
+                                if(ptr.block > data->blockDataSize) {
+                                        PRINT_DEBUG_ERROR("Invalid block data request; Attempted read to [b%da%d]; invalid block.\n", ptr.block, ptr.address);
+                                        NTHP_GEN_DEBUG_CLOSE();
+
+                                        std::terminate();
+                                }
+                                if(ptr.address > data->blockData[ptr.block].size) {
+                                        PRINT_DEBUG_ERROR("Invalid block data request; Attempted read to [b%da%d]; invalid address.\n", ptr.block, ptr.address);
+                                        NTHP_GEN_DEBUG_CLOSE();
+
+                                        std::terminate();
+                                }
+                #endif
                                 ref.value = data->blockData[ptr.block - 1].data[ptr.address + ref.offset];
                                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) ref.value = -(ref.value);
                                 return;
@@ -1267,7 +1281,6 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
 
 
         nthp::script::stdVarWidth size = nthp::intToFixed(data->blockData[ptr.block - 1].size);
-        printf("size = %u\n", nthp::fixedToInt(size));
         file.write((char*)&size, sizeof(nthp::script::stdVarWidth));
 
         size_t byteSize = data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth);
@@ -1363,6 +1376,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {
         const uint32_t headerLocation = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(uint32_t));
         data->currentScriptHeaderLocation = headerLocation;
 
+
         return 0;
 }
 
@@ -1378,6 +1392,9 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_CALL) {
         return 0;
 }
 
+// Instruction execution behaviour functions. Use DEFINE_EXECUTION_BEHAVIOUR followed by a matching token from INSTRUCTION_TOKENS (s_instructions.hpp)
+// to define what happens for every instruction. Due to using INSTRUCTION_TOKENS as the initializer (see below), the ID of an intruction will match
+// that instruction's execution behaviour function in this array.
 // Automatically updates ID indecies and places functions accordingly. Just add/change stuff in 's_instructions.hpp'.
 // the 'nthp::script::instructions::ID' will correspond with the index of the desired instruction in this array.
 static const int (*exec_func[nthp::script::instructions::ID::numberOfInstructions])(nthp::script::Script::ScriptDataSet* data) { INSTRUCTION_TOKENS() };
@@ -1442,25 +1459,41 @@ int nthp::script::Script::import(ScriptDataSet* const dataSet, const uint32_t he
 int nthp::script::Script::execute() {
 
         #ifdef DEBUG
-                if(nthp::script::debug::suspendExecution) data->isSuspended = true;
-                else { data->isSuspended = false; }
                 std::mutex debug_access;
+                debug_access.lock();
+
+                if(nthp::script::debug::suspendExecution) { 
+                        data->isSuspended = true;
+                }
+                else { 
+                        data->isSuspended = false;
+                        data->currentNode = localCurrentNode;
+                        
+
+                        if(data->stackPointer == 0) {
+                                data->currentScriptHeaderLocation = script_begin;
+                                data->currentLabelBlock = localLabelBlock;
+                                data->currentLabelBlockSize = localLabelBlockSize;
+                        }
+                }
+                
         #else
                 data->isSuspended = false;
+
+                data->currentLabelBlock = localLabelBlock;
+                data->currentLabelBlockSize = localLabelBlockSize;
+                data->currentNode = localCurrentNode;
+                data->currentScriptHeaderLocation = script_begin;
         #endif
 
-        data->currentLabelBlock = localLabelBlock;
-        data->currentLabelBlockSize = localLabelBlockSize;
-        data->currentNode = localCurrentNode;
-        data->currentScriptHeaderLocation = script_begin;
+        
 
         #ifdef DEBUG
-
-        debug_access.lock();
                 switch(nthp::script::debug::debugInstructionCall.x) {
                         case nthp::script::debug::CONTINUE: {
                                 nthp::script::debug::suspendExecution = false;
                                 nthp::script::debug::debugInstructionCall.x = -1;
+                                goto SKIP_EXECUTION;
                         }
                                 break;
                         // Executes next instruction, then breaks.
@@ -1473,6 +1506,7 @@ int nthp::script::Script::execute() {
                         case(nthp::script::debug::JUMP_TO): {
                                 data->currentNode = nthp::script::debug::debugInstructionCall.y;
                                 localCurrentNode = nthp::script::debug::debugInstructionCall.y;
+                                data->currentScriptHeaderLocation = nthp::script::Script::findInstructionHeader(data->nodeSet, nthp::script::debug::debugInstructionCall.y);
                         }
                                 break;
 
@@ -1488,10 +1522,6 @@ int nthp::script::Script::execute() {
 #ifdef DEBUG
                         debug_access.lock();
                         switch(nthp::script::debug::debugInstructionCall.x) {
-                                case(nthp::script::debug::JUMP_TO):
-                                        data->currentNode = nthp::script::debug::debugInstructionCall.y;
-                                        localCurrentNode = nthp::script::debug::debugInstructionCall.y;
-                                break;
 
                                 case(nthp::script::debug::BREAK):
                                         nthp::script::debug::suspendExecution = true;

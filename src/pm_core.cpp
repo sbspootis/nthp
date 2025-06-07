@@ -49,6 +49,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         g_access.lock();
 
                         nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
+                        suspendExecution = true;
                         nthp::script::debug::suspendExecution = true;
                         PM_PRINT("Ready. Waiting for continue (c)...\n");
 
@@ -119,15 +120,14 @@ int main(int argv, char** argc) {
         std::mutex g_access;
 
 
-        std::thread debuggerThread(headless_runtime);
         std::string debugOutput;
         FILE* debug_fd = stdout;
-
-
 
 	if(argv > 1) {
                 if(std::string(argc[1]) == "-h") {
                         inHeadlessMode = true;
+                        std::thread debuggerThread(headless_runtime);
+
                         if(debuggerThread.joinable()) debuggerThread.join();
                         return 0;
                 }
@@ -146,12 +146,16 @@ int main(int argv, char** argc) {
         }
 
 	if(debugOutput != "stdout") {
-		debug_fd = fopen(debugOutput.c_str(), "w+");
+		debug_fd = fopen(debugOutput.c_str(), "a+");
 		if(debug_fd == NULL) {
 			PM_PRINT_ERROR("Unable to access debug output file descriptor. Defaulting to standard output.\n");
 			debug_fd = stdout;
 		}
 	}
+
+        std::thread debuggerThread(headless_runtime);
+
+
 	
 	NTHP_GEN_DEBUG_INIT(debug_fd);
 
@@ -192,16 +196,25 @@ int singleThread_debugger() {
         return 0;
 }
 
+typedef enum {
+        STD,    // 0
+        PTR,    // 1
+        STR     // 2
+} MEM_DISPLAY_FORMAT;
 
 
 int headless_runtime() {
         PM_PRINT("Pm.exe;\nNTHP Game Engine project manager v." NTHP_VERSION "\nType 'help' for instructions.\n\n");
+        if(inHeadlessMode) PM_PRINT("Headless mode; all graphics and audio disabled.\n");
 	std::vector<std::string> args;
 	std::mutex g_access;
 
 	std::string input, arg, configTestingTarget = "";
 	bool isRunning = true;
-        
+
+        int displayFormat = MEM_DISPLAY_FORMAT::STD;
+
+
 
 	while(isRunning) {
 		args.clear();
@@ -344,6 +357,10 @@ int headless_runtime() {
                         if(args[0] == "test") {
                                 if(debuggingActiveProcess) {
                                         PM_PRINT_ERROR("Target in active debugging session; unable to start.\n");
+                                        continue;
+                                }
+                                if(inHeadlessMode) {
+                                        PM_PRINT_ERROR("Currently running in headless mode; No target.\n");
                                         continue;
                                 }
                                 nthp::script::CompilerInstance cc;
@@ -551,10 +568,22 @@ int headless_runtime() {
 
                                         for(size_t i = 0; i < mainRuntime.data.globalMemBudget; ++i) {
                                                 index = i;
-                                                printf ("\t[%04zX", i);
-                                                
-                                                if(printSymbols) { std::cout << ", [>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
-                                                std::cout << "] " << mainRuntime.data.globalVarSet + index << "; = [" << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                printf ("\t[%04zX (%zu), ", i, i);
+                                                if(printSymbols) { std::cout << "[>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
+                                                std::cout << "] " << mainRuntime.data.globalVarSet + index << "; = [";
+                                                switch(displayFormat) {
+                                                        case MEM_DISPLAY_FORMAT::STD:
+                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                                break;
+                                                        case MEM_DISPLAY_FORMAT::PTR:
+                                                                const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.globalVarSet[index]);
+                                                                std::cout << 'b' << ptr.block << 'a' << ptr.address << "]\n";
+                                                                break;
+                                                        default:
+                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                                break;
+                                                }
+                                                // << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
                                         }
 
                                         g_access.unlock();
@@ -613,7 +642,7 @@ int headless_runtime() {
                                                 uint8_t b = 0;
                                                 for(size_t i = 0; i < mainRuntime.data.blockDataSize; ++i) {
                                                         b = mainRuntime.data.blockData[i].isFree;
-                                                        PM_PRINT("ID: %zu at [%p]. Contains [%zu] address space (Vacancy:%d).\n", i, mainRuntime.data.blockData[i].data, mainRuntime.data.blockData[i].size, b);
+                                                        PM_PRINT("ID: %zu(b%zu) at [%p]. Contains [%zu] address space (Vacancy:%d).\n", i, (i+1), mainRuntime.data.blockData[i].data, mainRuntime.data.blockData[i].size, b);
                                                 }
 
                                                 g_access.unlock();
@@ -630,7 +659,7 @@ int headless_runtime() {
 
                                         g_access.lock();
 
-                                        if(index > mainRuntime.data.blockDataSize) {
+                                        if(index >= mainRuntime.data.blockDataSize) {
                                                 PM_PRINT_ERROR("Invalid Argument; invalid blockID\n");
                                                 g_access.unlock();
                                                 continue;
@@ -675,6 +704,48 @@ int headless_runtime() {
 
                                         PM_PRINT_ERROR("Failure; ID or address out of bounds.\n");
                                         g_access.unlock();
+
+                                        continue;
+                                }
+
+                                if(args[0] == "info") {
+                                        if(!suspendExecution) {
+                                                PM_PRINT_ERROR("Process must be suspended (break, b) to get program info.\n");
+                                                continue;
+                                        }
+
+                                        PM_PRINT("\nRuntime script @ [%p]:\nHEAD at [%zu], current script header @ [%zu]\nRunning for %dms\n\n", &mainRuntime, mainRuntime.data.currentNode, mainRuntime.data.currentScriptHeaderLocation, SDL_GetTicks());
+                                        if(mainRuntime.data.stackPointer) {
+                                              PM_PRINT("ReturnStack state:\n\n");
+                                              for(size_t i = 0; i < mainRuntime.data.stackPointer; ++i) {
+                                                for(size_t k = 0; k < i; ++k) PM_PRINT("   ");
+                                                PM_PRINT("[%zu] Waiting for RETURN @ FUNC [%u]; Will return to [%zu] (H:%u).\n", i, (*(uint32_t*)(mainRuntime.data.nodeSet[mainRuntime.data.returnStack[i].sourceDestination - 1].access.data)) - 1, mainRuntime.data.returnStack[i].sourceDestination, mainRuntime.data.returnStack[i].sourceHeaderLocation);
+                                              } 
+                                        }
+
+                                        continue;
+                                }
+
+                                if(args[0] == "df") {
+                                        if(args.size() < 2) {
+                                                PM_PRINT_ERROR("No display format provided.\n");
+                                                continue;
+                                        }
+                                        do {
+                                                if(args[1] == "std" || args[1] == "stdRef") {
+                                                        displayFormat = MEM_DISPLAY_FORMAT::STD;
+                                                        PM_PRINT("Set memory display format to [stdRef] (decimal).\n");
+                                                        break;
+                                                }
+
+                                                if(args[1] == "ptr" || args[1] == "ptrRef") {
+                                                        displayFormat = MEM_DISPLAY_FORMAT::PTR;
+                                                        PM_PRINT("Set memory display format to [ptrRef] (pointer descriptor).\n");
+                                                        break;
+                                                }
+
+                                                PM_PRINT_ERROR("Invalid memory display format. (std, ptr)\n");
+                                        }while (0);
 
                                         continue;
                                 }

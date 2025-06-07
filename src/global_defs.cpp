@@ -40,11 +40,6 @@ void PRINT_DEBUG_ERROR(const char* format, ...) {
 	fprintf(NTHP_debug_output, "[t %u] ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
-        if(NTHP_debug_output != stdout) {
-                printf("[t %u] ERROR: ", SDL_GetTicks());
-                printf(format, ap);
-        }
-
 	va_end(ap);
 }
 
@@ -56,12 +51,6 @@ void PRINT_DEBUG_WARNING(const char* format, ...) {
 
 	fprintf(NTHP_debug_output, "[t %u] WARNING: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
-
-        if(NTHP_debug_output != stdout) {
-                printf("[t %u] WARNING: ", SDL_GetTicks());
-                printf(format, ap);
-        }
-
 
 	va_end(ap);
 }

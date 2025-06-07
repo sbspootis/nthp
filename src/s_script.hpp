@@ -144,6 +144,12 @@ namespace script {
                         memset(data, 0, sizeof(ScriptDataSet));
                 }
 
+                static inline size_t findInstructionHeader(Node* nodeset, const size_t instructionPosition) {
+                        size_t counter = instructionPosition;
+                        while(nodeset[counter].access.ID != GET_INSTRUCTION_ID(HEADER)) --counter;
+                        return counter;
+                }
+
 
 
 
