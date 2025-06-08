@@ -158,7 +158,6 @@ namespace nthp {
 #endif
 
 
-
 #if (FAST_QUOTIEN_RANGE < 0)
         #undef FAST_QUOTIENT_RANGE
         #define FAST_QUOTIENT_RANGE             (FIXED_POINT_SCALE / 2)
@@ -169,10 +168,8 @@ namespace nthp {
         #undef FAST_QUOTIENT_RANGE
         #define FAST_QUOTIENT_RANGE             (FIXED_POINT_SCALE / 2)
         #define FAST_QUOTIENT_ACCURACY          (FIXED_POINT_SCALE / 2)
-
 #else
         #define FAST_QUOTIENT_ACCURACY          (FIXED_POINT_SCALE - FAST_QUOTIENT_RANGE)
-
 #endif
 
 

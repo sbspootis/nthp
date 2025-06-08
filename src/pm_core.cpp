@@ -665,8 +665,29 @@ int headless_runtime() {
                                                 continue;
                                         }
                                         PM_PRINT("Reading Memory from block %zu [%p]...\n", index, mainRuntime.data.blockData[index].data);
+                                        bool carry_string = true;
                                         for(size_t i = 0; i < mainRuntime.data.blockData[index].size; ++i) {
-                                                PM_PRINT("[%04zX] = %lf,\n", i, nthp::fixedToDouble(mainRuntime.data.blockData[index].data[i]));
+                                                switch(displayFormat) {
+                                                        case MEM_DISPLAY_FORMAT::STD:
+                                                                PM_PRINT("[%04zX] = %lf,\n", i, nthp::fixedToDouble(mainRuntime.data.blockData[index].data[i]));
+                                                        break;
+                                                        case MEM_DISPLAY_FORMAT::PTR:
+                                                        {
+                                                                const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.blockData[index].data[i]);
+                                                                PM_PRINT("[%04zX] = [b%da%d]\n", i, ptr.block, ptr.address);
+                                                        }
+                                                        break;
+                                                        case MEM_DISPLAY_FORMAT::STR:
+                                                        {
+                                                                if(carry_string) { PM_PRINT("[%04zX] ", i); carry_string = false; }
+                                                                for(size_t ch = 0; ch < sizeof(nthp::script::stdVarWidth); ++ch) {
+                                                                        if(((char*)(&mainRuntime.data.blockData[index].data[i]))[ch] == '\0') { PM_PRINT("\n"); carry_string = true; }
+                                                                        else PM_PRINT("%c", ((char*)(&mainRuntime.data.blockData[index].data[i]))[ch]);
+                                                                }
+                                                        }
+                                                        break;
+
+                                                }
                                         }
                                         PM_PRINT("\tRead %zu entries.\n", mainRuntime.data.blockData[index].size);
 
@@ -744,7 +765,13 @@ int headless_runtime() {
                                                         break;
                                                 }
 
-                                                PM_PRINT_ERROR("Invalid memory display format. (std, ptr)\n");
+                                                if(args[1] == "str" || args[1] == "strRef") {
+                                                        displayFormat = MEM_DISPLAY_FORMAT::STR;
+                                                        PM_PRINT("Set memory display format to [strRef] (string).\n");
+                                                        break;
+                                                }
+
+                                                PM_PRINT_ERROR("Invalid memory display format. (std, ptr, str)\n");
                                         }while (0);
 
                                         continue;

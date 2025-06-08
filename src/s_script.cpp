@@ -1382,7 +1382,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {
 
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_CALL) {
         const uint32_t location = *(uint32_t*)(data->nodeSet[data->currentNode].access.data);
-        const nthp::script::Script::ReturnStackEntry newEntry = { data->currentScriptHeaderLocation, data->currentNode + 1 };
+        const nthp::script::Script::ReturnStackEntry newEntry = { data->currentScriptHeaderLocation, (uint32_t)(data->currentNode + 1) };
 
         data->returnStack[data->stackPointer] = newEntry;
         ++(data->stackPointer);

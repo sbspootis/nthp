@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef NTHP_VERSION
-        #define NTHP_VERSION "b1.0.0"
+        #define NTHP_VERSION "1.0.3"
 #endif
 
 #ifdef LINUX

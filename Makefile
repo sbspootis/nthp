@@ -2,6 +2,7 @@ TARGET = run
 CC = g++
 SRCDIR = src/
 
+VERSION = 1.0.3
 
 # The linux buildsystem relies on a standard installation of SDL2 and SDL2_image
 # (should it be used), with whatever default directories come with, as decided
@@ -32,8 +33,7 @@ debug_libTargets = global_defs_d.o core_d.o position_d.o palette_d.o rawsurface_
 lib_srcSymbols = $(SRCDIR)global_defs.cpp $(SRCDIR)core.cpp $(SRCDIR)position.cpp $(SRCDIR)palette.cpp $(SRCDIR)rawsurface.cpp $(SRCDIR)softwaretexture.cpp $(SRCDIR)e_entity.cpp $(SRCDIR)e_collision.cpp $(SRCDIR)st_compress.cpp $(SRCDIR)s_compiler.cpp $(SRCDIR)s_script.cpp $(SRCDIR)gtexture.cpp $(SRCDIR)t_font.cpp $(SRCDIR)s_linker.cpp $(SRCDIR)s_runtime.cpp
 
 
-
-PM_CLAGS = -lSDL2 -lSDL2_mixer $(SDL_imageLibInclude) -D LINUX -D DEBUG -D USE_SDLIMG=$(USE_SDLIMAGE)
+PM_CFLAGS = -lSDL2 -lSDL2_mixer $(SDL_imageLibInclude) -D LINUX -D DEBUG -D USE_SDLIMG=$(USE_SDLIMAGE)
 
 all: release debug pm
 

@@ -1,6 +1,10 @@
 IMPORT script/globals.b
 STRING windowTitle "LSBSFA - The Climb Begins"
 
+PRIVATE str_test
+ALLOC 15 &str_test
+
+STRING_COPY $str_test ~windowTitle
 
 
 MACRO initFlags {
