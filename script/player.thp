@@ -116,8 +116,8 @@ FUNC p_checkPlayerInput {
         MUL $deltaTime $pl_xVel &pl_xVel
         MUL $deltaTime $pl_yVel &pl_yVel
 
-        MUL 2 $pl_xVel &mathReg0
-        MUL 2 $pl_yVel &mathReg1
+        MUL 1.15 $pl_xVel &mathReg0
+        MUL 1.16 $pl_yVel &mathReg1
         POLL #e_player POSITION
 
         ADD $mathReg0 $r_poll1 &mathReg0

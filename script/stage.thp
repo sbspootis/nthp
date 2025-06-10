@@ -180,16 +180,61 @@ PRIVATE pl_y
 PRIVATE pl_w
 PRIVATE pl_h
 
+PRIVATE ent_x
+PRIVATE ent_y
+PRIVATE ent_w
+PRIVATE ent_h
+
 PRIVATE ent_counter
 PRIVATE vx_vy
 
+PRIVATE prt_stageSize
+
 PRIVATE pl_target ASSIGN playerData &pl_target
 
+MACRO p_placeOnTop {
+        SET $pl_target.vel_y 0
+        SET $pl_target.onSolidGround 1
+        SET $pl_target.currentSolidGround $ent_counter
+
+        SUB $ent_y $pl_h &mathReg4
+        PREV &mathReg4
+        ENT_SETPOS #e_player $pl_x $mathReg4
+        SKIP
+}
+
+MACRO p_stopLeft {
+        SUB $ent_x $pl_w &mathReg4
+        PREV &mathReg4
+        SET $pl_target.vel_x 0
+        ENT_SETPOS #e_player $mathReg4 $pl_y
+        SKIP
+}
+
+MACRO p_stopRight {
+        SET $pl_target.vel_x 0
+        SET &mathReg4 #ent_xw
+        NEXT &mathReg4
+        ENT_SETPOS #e_player $mathReg4 $pl_y
+
+        SKIP
+}
+
+MACRO p_stopBottom {
+        SET $pl_target.vel_y 0
+        ENT_SETPOS #e_player $pl_x #ent_yh
+        SKIP
+}
+
+
+
+
 FUNC s_checkStageCollision {
+
         SET &pl_target $argReg0
 
         SET &ent_counter #requiredPlayerObjects
-        ADD #requiredPlayerObjects *ps_currentStageSize &mathReg0
+        ADD #requiredPlayerObjects *ps_currentStageSize &prt_stageSize
 
         IF *pl_target.vel_y
                 DIV *pl_target.vel_x *pl_target.vel_y &vx_vy
@@ -201,20 +246,136 @@ FUNC s_checkStageCollision {
 
         LABEL 200
 
-                ENT_CHECKCOLLISION #e_playerProjectedHitbox $ent_counter &mathReg1
-                IF $mathReg1
-                        
+                IF $ent_counter NOT *pl_target.currentSolidGround
 
+                        ENT_CHECKCOLLISION #e_playerProjectedHitbox $ent_counter &mathReg1
+                        IF $mathReg1
+                                / Check bounds of player relative to object; NOT THE PROJECTED. /
+                                POLL #e_player HITBOX
+                                COPY &r_poll1 4 &pl_x
 
+                                ADD $pl_x $pl_w &mathReg0 CONST pl_xw $mathReg0
+                                ADD $pl_y $pl_h &mathReg1 CONST pl_yh $mathReg1
 
+                                POLL $ent_counter HITBOX
+                                COPY &r_poll1 4 &ent_x
+
+                                ADD $ent_x $ent_w &mathReg2 CONST ent_xw $mathReg2 / Assign hitbox bounds to math registers. /
+                                ADD $ent_y $ent_h &mathReg3 CONST ent_yh $mathReg3 / Assign hitbox bounds to math registers. /
+
+                                / FREE MATH REGISTERS:
+                                        - mathReg4
+                                        - mathReg5
+                                /
+
+                                IF $pl_x LST $ent_x
+                                        IF $pl_y LST $ent_y
+                                                / TOP-CORNER-LEFT Collision /
+                                                IF *pl_target.onSolidGround EQU 0
+                                                        RSHIFT &pl_h 1
+                                                        ADD $pl_h $pl_y &mathReg4
+                                                        IF $mathReg4 GRT $ent_y
+                                                                @p_placeOnTop
+                                                                SKIP
+                                                        ELSE
+                                                                @p_stopLeft
+                                                                SKIP
+                                                        END
+                                                END
+                                        ELSE
+
+                                                IF #pl_yh GRT #ent_yh
+                                                        / BOTTON-CORNER-LEFT Collision /
+
+                                                ELSE
+                                                        / LEFT-MIDDLE Collision /
+                                                        @p_stopLeft
+                                                        SKIP
+                                                END
+                                        END
+                                ELSE
+                                        IF #pl_xw GRT #ent_xw
+
+                                                IF $pl_y LST $ent_y
+                                                        / TOP-CORNER-RIGHT Collision /
+                                                        IF *pl_target.onSolidGround EQU 0
+                                                                SET &mathReg4 $pl_h RSHIFT &mathReg4 1
+                                                                ADD $mathReg4 $pl_y &mathReg5
+                                                                IF $mathReg5 GRT $ent_y
+                                                                        @p_placeOnTop
+                                                                ELSE
+                                                                        @p_stopRight
+                                                                END
+                                                                SKIP
+                                                        END
+                                                ELSE
+
+                                                        IF #pl_yh GRT #ent_yh
+                                                                / BOTTOM-CORNER-RIGHT Collision /
+                                                                
+                                                        ELSE
+                                                                / RIGHT-MIDDLE Collision /
+                                                                @p_stopRight
+                                                                SKIP
+                                                        END
+                                                END
+
+                                        ELSE
+                                        
+                                                IF $pl_y LST $ent_y
+                                                        / TOP-MIDDLE Collision /
+                                                        @p_placeOnTop
+                                                        SKIP
+                                                ELSE
+
+                                                        IF #pl_yh GRT #ent_yh
+                                                                / BOTTOM-MIDDLE Collision /
+                                                                @p_stopBottom
+                                                                SKIP
+                                                        ELSE
+                                                                / CENTER Collision (should be impossible.) /
+                                                        END
+                                                END
+                                        END
+                                END
+                        END     
+                        / DETECTION BLOCK /
                 END
+
+        SKIP_END
+
+        IF *pl_target.onSolidGround
+                POLL *pl_target.currentSolidGround HITBOX
+                ADD $r_poll1 $r_poll3 &mathReg2         
+                SET &ent_x $r_poll1
+
+                POLL #e_player HITBOX
+                COPY &r_poll1 4 &pl_x
+                ADD $pl_x $pl_w &mathReg0
+
+                IF $pl_x GRT #ent_xw
+                        SET $pl_target.onSolidGround 0
+                        SET $pl_target.currentSolidGround -1
+
+                        SKIP
+                END
+
+                IF #pl_xw LST $ent_x
+                        SET $pl_target.onSolidGround 0
+                        SET $pl_target.currentSolidGround -1
+
+                        SKIP
+                END
+        END
+
+
+        SKIP_END
 
 
         INC &ent_counter
-        IF $ent_counter LST $mathReg0
+        IF $ent_counter LST $prt_stageSize
                 GOTO 200
         END
-
 
 }
 

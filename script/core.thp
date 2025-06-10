@@ -20,18 +20,18 @@ SET &sc_fps 60
 CONST l_resetPlayer 10
 LABEL #l_resetPlayer
 
-SET $player.ground_acceleration 0.004
+SET $player.ground_acceleration 0.002
 SET $player.jump_height         0.6
 SET $player.MAX_playerSpeed     0.3
 SET $player.MAX_fallSpeed       0.5
-SET $player.onSolidGround       #TRUE
+SET $player.onSolidGround       #FALSE
 SET $player.vel_x               0
 SET $player.vel_y               0
 SET $player.friction            0.003
 SET $player.gravity             0.002
 
 
-ENT_SETPOS #e_player 0 0
+ENT_SETPOS #e_player 100 0
 
 LABEL 1
 
@@ -60,17 +60,19 @@ LABEL 1
 
 
 
-        SET &mathReg0 0
+        SET &mathReg0 3
         ADD #requiredPlayerObjects *stage &mathReg2
 
 
         CORE_CLEAR
         
+        CORE_QRENDER #e_player
+        CORE_QRENDER #e_pan
+
         LABEL 2
-                
+
                 CORE_QRENDER $mathReg0
                 
-
                 INC &mathReg0
                 IF $mathReg0 LST $mathReg2
                         GOTO 2
