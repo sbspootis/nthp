@@ -113,18 +113,14 @@ void nthp::texture::SoftwareTexture::regenerateTexture(nthp::texture::Palette* p
 
 void nthp::texture::SoftwareTexture::createEmptyTexture(const size_t dataSize) {
         pixelData = (NTHPST_COLOR_WIDTH*)malloc(dataSize * sizeof(NTHPST_COLOR_WIDTH));
+        this->dataSize = dataSize;
         memset(pixelData, 0, dataSize * sizeof(NTHPST_COLOR_WIDTH));
 }
 
 nthp::texture::SoftwareTexture::~SoftwareTexture() {
         PRINT_DEBUG("Destroying SoftwareTexture [%p]...\t", this);
 
-        SDL_DestroyTexture(texture);
-        
-        if(dataSize > 0)
-                free(pixelData);
-
-        NOVERB_PRINT_DEBUG("done.\n");
+        purgeTextureData();
 }
 
 
@@ -198,7 +194,7 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
                 smallestElement = 0;
                 progress = ((double)i / (double)surfaceSize) * (double)100;
         }
-  
+        
 
         std::fstream file(outputFile, std::ios::out | std::ios::binary);
         if(file.fail()) {
@@ -216,6 +212,91 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
 }
 
 #endif
+
+
+// Joins two textures into a single ST file; pass the constexpr tools::JOIN_WIDTH and tools::JOIN_HEIGHT for the ordering.
+int nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile) {
+        PRINT_DEBUG("Joining texture file [%s] with [%s]; output @ [%s]...\n", textureFileA, textureFileB, outputFile);
+        nthp::texture::SoftwareTexture a;
+        nthp::texture::SoftwareTexture b;
+
+        if(a.generateTexture(textureFileA, NULL, NULL) || b.generateTexture(textureFileB, NULL, NULL)) {
+                PRINT_DEBUG("Failed to join textures.\n");
+                return 1;
+        }
+
+        nthp::texture::SoftwareTexture output;
+        nthp::texture::SoftwareTexture::software_texture_header header;
+        output.createEmptyTexture(a.dataSize + b.dataSize);
+
+        header.signature = nthp::texture::SoftwareTexture::STheaderSignature;
+        
+
+        switch(joinMethod) {
+        case JOIN_WIDTH:
+                {
+                        header.x = a.metadata.x + b.metadata.x;
+                        if(a.metadata.y > b.metadata.y)
+                                header.y = a.metadata.y;
+                        else
+                                header.y = b.metadata.y;
+                        
+                        
+                        uint32_t aPosition = 0;
+                        uint32_t bPosition = 0;
+                        size_t outputPosition = 0;
+                        bool operationComplete = false;
+                        
+                        do {
+                                memcpy(output.pixelData + outputPosition, a.pixelData + aPosition, a.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
+                                outputPosition += a.metadata.x;
+                                aPosition += a.metadata.x;
+
+                                memcpy(output.pixelData + outputPosition, b.pixelData + bPosition, b.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
+                                outputPosition += b.metadata.x;
+                                bPosition += b.metadata.x;
+
+                        } while(outputPosition < output.dataSize);
+
+                }
+                break;
+        case JOIN_HEIGHT:
+                {
+                        header.y = a.metadata.y + b.metadata.y;
+                        if(a.metadata.x > b.metadata.x)
+                                header.x = a.metadata.x;
+                        else
+                                header.x = b.metadata.x;
+                
+                        memcpy(output.pixelData, a.pixelData, a.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                        memcpy(output.pixelData + a.dataSize, b.pixelData, b.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                        
+                }
+                break;
+
+        }
+
+
+        std::fstream file(outputFile, std::ios::out | std::ios::binary);
+        if(file.fail()) {
+                PRINT_DEBUG("Unable to output joined texture; File not accessible.\n");
+                return 1;
+        }
+
+        file.write((char*)&header, sizeof(header));
+        file.write((char*)output.pixelData, output.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+
+        file.close();
+
+        PRINT_DEBUG("Joined textures successfully.\n");
+        return 0;
+}
+
+
+
+
+
+
 
 
 #undef SUPRESS_DEBUG_OUTPUT

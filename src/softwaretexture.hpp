@@ -28,8 +28,8 @@ namespace nthp {
                                 uint32_t y;
                         };
 
-                        #define NTHPST_ALPHAMASK        0b0000000000001111
                         #define NTHPST_COLORMASK        0b1111111111110000
+                        #define NTHPST_ALPHAMASK        0b0000000000001111
                         
                         static constexpr NTHPST_COLOR_WIDTH alphaLevelSize = UINT8_MAX / NTHPST_ALPHAMASK; 
 
@@ -71,11 +71,13 @@ namespace nthp {
                 #if USE_SDLIMG == 1
                         extern int generatePaletteFromImage(const char* inputImageFile, const char* outputFile);
                         extern int generateSoftwareTextureFromImage(const char* inputImageFile, nthp::texture::Palette* palette, const char* outputFile);
-
-                #else
-
-
                 #endif
+                
+                constexpr bool JOIN_WIDTH = false;
+                constexpr bool JOIN_HEIGHT = true;
+                extern int joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile);
+
+
                 }
 
                 struct Frame {

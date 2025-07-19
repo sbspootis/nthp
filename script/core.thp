@@ -10,6 +10,9 @@ SET &sc_fps 60
 @sf_addObject ( 100 180 200 15 0 )
 @sf_addObject ( 250 0 15 200 0 )
 @sf_addObject ( 25 100 100 15 0 )
+@sf_addObject ( 125 100 100 15 0 )
+@sf_addObject ( 225 200 100 15 0 )
+
 
 @sf_initStage
 

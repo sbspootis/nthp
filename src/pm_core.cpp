@@ -279,6 +279,10 @@ int headless_runtime() {
 				continue;
 			}
                         if(args[0] == "link" || args[0] == "lk") {
+                                if(args.size() < 2) {
+                                        PM_PRINT_ERROR("Linker requires at least 1 target file.\n");
+                                        continue;
+                                }
                                 nthp::script::LinkerInstance linker;
                                 std::vector<std::string> targetFiles;
 
@@ -467,6 +471,63 @@ int headless_runtime() {
                                         continue;
                                 } 
                                 PM_PRINT("Done.\n");
+                                continue;
+                        }
+
+                        if(args[0] == "jt") {
+                                if(args.size() < 5) {
+                                        PM_PRINT_ERROR("Invalid command argument. (jt w/h textureA textureB outputTexture)\n");
+                                        continue;
+                                }
+                                if(args[1] == "w") {
+                                        PM_PRINT("Attempting to join textures [%s] & [%s] by width...\n", args[2].c_str(), args[3].c_str());
+                                        if(nthp::texture::tools::joinSoftwareTextures(args[2].c_str(), args[3].c_str(), nthp::texture::tools::JOIN_WIDTH, args[4].c_str())) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                continue; 
+                                        }
+                                }
+                                else {
+                                        PM_PRINT("Attempting to join textures [%s] & [%s] by height...\n", args[2].c_str(), args[3].c_str());
+                                        if(nthp::texture::tools::joinSoftwareTextures(args[2].c_str(), args[3].c_str(), nthp::texture::tools::JOIN_HEIGHT, args[4].c_str())) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                continue;
+                                        }
+                                }
+
+                                PM_PRINT("Successfully joined textures; output @ [%s].\n", args[4].c_str());
+                                continue;
+                        }
+
+                        if(args[0] == "tcheck") {
+                                if(args.size() < 2) {
+                                        PM_PRINT_ERROR("Invalid command argument. (tcheck filename)\n");
+                                        continue;
+                                }
+
+                                nthp::texture::SoftwareTexture::software_texture_header target;
+                                std::fstream file(args[1].c_str(), std::ios::in | std::ios::binary);
+
+                                if(file.fail()) {
+                                        PM_PRINT_ERROR("Unable to check texture file [%s]; file not found.\n");
+                                        continue;
+                                }
+
+                                file.read((char*)&target, sizeof(target));
+                                file.close();
+
+                                switch(target.signature) {
+                                case nthp::texture::SoftwareTexture::STheaderSignature:
+                                        PM_PRINT("Uncompressed ST file [%s];\nx=%u y=%u\ndataSize=%zu\n", args[1].c_str(), target.x, target.y, target.x * target.y);
+                                        break;
+
+                                case nthp::texture::compression::CSTHeaderSignature:
+                                        PM_PRINT("Compressed ST file [%s];\nx=%u y=%u\ndataSize=%zu\n", args[1].c_str(), target.x, target.y, target.x * target.y);
+                                        break;
+
+                                default:
+                                        PM_PRINT_ERROR("Unrecognized texture file format.\n");
+                                        continue;
+                                }
                                 continue;
                         }
 
