@@ -213,22 +213,66 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
 
 #endif
 
+nthp::texture::SoftwareTexture::STdata nthp::texture::tools::readTextureData(const char* textureFile) {
+        PRINT_DEBUG("Importing raw ST file [%s]...", textureFile);
+        nthp::texture::SoftwareTexture::STdata ret;
+        ret.header.signature = 0;
+
+        std::fstream file(textureFile, std::ios::in | std::ios::binary);
+        if(file.fail()) {
+                PRINT_DEBUG_ERROR("Unable to open texture file [%s].\n", textureFile);
+                return ret;
+        }
+
+        file.read((char*)&ret.header, sizeof(ret.header));
+
+        const size_t dataSize = ret.header.x * ret.header.y;
+        ret.pixelData = new NTHPST_COLOR_WIDTH[dataSize];
+
+        file.read((char*)ret.pixelData, (dataSize * sizeof(NTHPST_COLOR_WIDTH)));
+        file.close();
+
+
+        ret.header.signature = nthp::texture::SoftwareTexture::STheaderSignature;
+
+        NOVERB_PRINT_DEBUG("done.\n");
+        return ret;
+}
+
+int nthp::texture::tools::writeTextureData(nthp::texture::SoftwareTexture::STdata data, const char* outputFile) {
+        PRINT_DEBUG("Writing texture binary to file [%s]... ", outputFile);
+        std::fstream file(outputFile, std::ios::out | std::ios::binary);
+
+        file.write((char*)&data.header, sizeof(data.header));
+        const size_t dataSize = data.header.x * data.header.y;
+        file.write((char*)data.pixelData, dataSize * sizeof(NTHPST_COLOR_WIDTH));
+
+        file.close();
+
+        NOVERB_PRINT_DEBUG("done.\n");
+        return 0;
+}
+
+
 
 // Joins two textures into a single ST file; pass the constexpr tools::JOIN_WIDTH and tools::JOIN_HEIGHT for the ordering.
-int nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile) {
+const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile) {
         PRINT_DEBUG("Joining texture file [%s] with [%s]; output @ [%s]...\n", textureFileA, textureFileB, outputFile);
         nthp::texture::SoftwareTexture a;
         nthp::texture::SoftwareTexture b;
+        nthp::texture::SoftwareTexture::STdata ret;
+        ret.pixelData = NULL;
+        ret.header.signature = 0;
 
         if(a.generateTexture(textureFileA, NULL, NULL) || b.generateTexture(textureFileB, NULL, NULL)) {
                 PRINT_DEBUG("Failed to join textures.\n");
-                return 1;
+                return ret;
         }
 
-        nthp::texture::SoftwareTexture output;
         nthp::texture::SoftwareTexture::software_texture_header header;
-        output.createEmptyTexture(a.dataSize + b.dataSize);
+        const size_t dataSize = (a.dataSize + b.dataSize) * sizeof(NTHPST_COLOR_WIDTH);
 
+        ret.pixelData = new NTHPST_COLOR_WIDTH[dataSize];
         header.signature = nthp::texture::SoftwareTexture::STheaderSignature;
         
 
@@ -248,15 +292,15 @@ int nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const c
                         bool operationComplete = false;
                         
                         do {
-                                memcpy(output.pixelData + outputPosition, a.pixelData + aPosition, a.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
+                                memcpy(ret.pixelData + outputPosition, a.pixelData + aPosition, a.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
                                 outputPosition += a.metadata.x;
                                 aPosition += a.metadata.x;
 
-                                memcpy(output.pixelData + outputPosition, b.pixelData + bPosition, b.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
+                                memcpy(ret.pixelData + outputPosition, b.pixelData + bPosition, b.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
                                 outputPosition += b.metadata.x;
                                 bPosition += b.metadata.x;
 
-                        } while(outputPosition < output.dataSize);
+                        } while(outputPosition < dataSize);
 
                 }
                 break;
@@ -268,8 +312,8 @@ int nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const c
                         else
                                 header.x = b.metadata.x;
                 
-                        memcpy(output.pixelData, a.pixelData, a.dataSize * sizeof(NTHPST_COLOR_WIDTH));
-                        memcpy(output.pixelData + a.dataSize, b.pixelData, b.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                        memcpy(ret.pixelData, a.pixelData, a.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                        memcpy(ret.pixelData + a.dataSize, b.pixelData, b.dataSize * sizeof(NTHPST_COLOR_WIDTH));
                         
                 }
                 break;
@@ -277,23 +321,116 @@ int nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const c
         }
 
 
-        std::fstream file(outputFile, std::ios::out | std::ios::binary);
-        if(file.fail()) {
-                PRINT_DEBUG("Unable to output joined texture; File not accessible.\n");
-                return 1;
+        if(outputFile == NULL) {
+                ret.header = header;
+
+                PRINT_DEBUG("Joined textures successfully.\n");
+                return ret;
+        }
+        else {
+                std::fstream file(outputFile, std::ios::out | std::ios::binary);
+                if(file.fail()) {
+                        PRINT_DEBUG("Unable to output joined texture; File not accessible.\n");
+                        return ret;
+                }
+
+                file.write((char*)&header, sizeof(header));
+                file.write((char*)ret.pixelData, dataSize);
+
+                file.close();
+
+                PRINT_DEBUG("Joined textures successfully.\n");
+
+                ret.header = header;
+                delete[] ret.pixelData;
+
+                return ret;
+        }
+}
+
+const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareTextures(nthp::texture::SoftwareTexture::STdata a, nthp::texture::SoftwareTexture::STdata b, bool joinMethod) {
+        using namespace nthp::texture;
+        
+        SoftwareTexture::STdata ret;
+        ret.header.signature = 0;
+
+        if(a.header.signature != SoftwareTexture::STheaderSignature || b.header.signature != SoftwareTexture::STheaderSignature) {
+                PRINT_DEBUG_ERROR("Unable to join textures; invalid texture(s).\n");
+                return ret;
         }
 
-        file.write((char*)&header, sizeof(header));
-        file.write((char*)output.pixelData, output.dataSize * sizeof(NTHPST_COLOR_WIDTH));
+        const size_t a_dataSize = a.header.x * a.header.y;
+        const size_t b_dataSize = b.header.x * b.header.y;
 
-        file.close();
 
-        PRINT_DEBUG("Joined textures successfully.\n");
-        return 0;
+        const size_t o_dataSize = (a_dataSize + b_dataSize);
+        const size_t oBinary_dataSize = o_dataSize * sizeof(NTHPST_COLOR_WIDTH);
+
+        PRINT_DEBUG("TextureDimensions ; ax=%zu ay=%zu; bx=%zu by=%zu\n", a.header.x, a.header.y, b.header.x, b.header.y);
+
+        ret.pixelData = new NTHPST_COLOR_WIDTH[o_dataSize];
+
+        switch(joinMethod) {
+                case JOIN_WIDTH:
+                        {
+                                ret.header.x = a.header.x + b.header.x;
+                                if(a.header.y > b.header.y)
+                                        ret.header.y = a.header.y;
+                                else
+                                        ret.header.y = b.header.y;
+                                
+                                
+                                uint32_t aPosition = 0;
+                                uint32_t bPosition = 0;
+                                size_t outputPosition = 0;
+                                bool operationComplete = false;
+                                
+                                do {
+                                        memcpy(ret.pixelData + outputPosition, a.pixelData + aPosition, a.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                        outputPosition += a.header.x;
+                                        aPosition += a.header.x;
+
+                                        memcpy(ret.pixelData + outputPosition, b.pixelData + bPosition, b.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                        outputPosition += b.header.x;
+                                        bPosition += b.header.x;
+
+                                } while(outputPosition < o_dataSize);
+
+                        }
+                        break;
+                case JOIN_HEIGHT:
+                        {
+                                ret.header.y = a.header.y + b.header.y;
+                                if(a.header.x > b.header.x)
+                                        ret.header.x = a.header.x;
+                                else
+                                        ret.header.x = b.header.x;
+                        
+                                memcpy(ret.pixelData, a.pixelData, a_dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                                memcpy(ret.pixelData + a_dataSize, b.pixelData, b_dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                                
+                        }
+                        break;
+
+        }
+        PRINT_DEBUG("Copied binary successfully.\n");
+
+        ret.header.signature = SoftwareTexture::STheaderSignature;
+        return ret;
 }
 
 
+void nthp::texture::tools::destroySTdata(nthp::texture::SoftwareTexture::STdata* data) {
+        using namespace nthp::texture;
+        if((data->header.signature == SoftwareTexture::STheaderSignature) && (data->header.x > 0) && (data->header.y > 0)) {
+                delete[] data->pixelData;
+                data->header.x = 0;
+                data->header.y = 0;
+                data->header.signature = 0;
 
+                return;
+        }
+}
 
 
 

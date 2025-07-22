@@ -217,6 +217,8 @@ int headless_runtime() {
 
 
 	while(isRunning) {
+L_BEGIN:
+
 		args.clear();
 		std::cin.clear();
 
@@ -428,35 +430,36 @@ int headless_runtime() {
 
 
                         if(args[0] == "gt") {
-                                if(args.size() < 4) {
-                                        PM_PRINT_ERROR("Invalid command argument. (gt [-flag] paletteFile imageFile outputFile)\n");
+                                if(args.size() < 3) {
+                                        PM_PRINT_ERROR("Invalid command argument. (gt paletteFile imageFileA imageFileB imageFileC ...)\n");
                                         continue;
                                 }
 
-                                int offset = 0;
-                                bool compressOutput = false;
-                                if(args[1] == "-c") {
-                                        offset = 1;
-                                        compressOutput = true;
-                                }
                                 nthp::texture::Palette tempPal;
-                                if(tempPal.importPaletteFromFile(args[1 + offset].c_str())) {
-                                        PM_PRINT_ERROR("Unable to import palette [%s].\n", args[1 + offset].c_str());
+                                if(tempPal.importPaletteFromFile(args[1].c_str())) {
+                                        PM_PRINT_ERROR("Unable to import palette [%s].\n", args[1].c_str());
                                         continue;
                                 }
-                                PM_PRINT("Generating texture from file [%s] with palette [%s]...\n", args[2 + offset].c_str(), args[1 + offset].c_str());
-                                PM_PRINT("Calculating color approximations (this may take a while)...\n");
-                                if(nthp::texture::tools::generateSoftwareTextureFromImage(args[2 + offset].c_str(), &tempPal, args[3 + offset].c_str())) {
-                                        PM_PRINT_ERROR("Failed to generate new softwareTexture.\n");
-                                        continue;
-                                }
+                                std::string filename;
 
-                                if(compressOutput) {
-                                        PM_PRINT("compressing...\n");
-                                        std::string newFileName = args[3 + offset] + ".cst";
-                                        nthp::texture::compression::compressSoftwareTextureFile(args[3 + offset].c_str(), newFileName.c_str());
+                                for(size_t i = 2; i < args.size(); ++i) {
+                                        {
+                                                filename = args[i];
+                                                auto pos = filename.rfind('.');
+                                                if(pos != std::string::npos) 
+                                                        filename.erase(filename.begin()+pos, filename.end());
+                                                
+                                                filename += ".st";
+                                        }
+
+                                        PM_PRINT("Generating texture from file [%s] with palette [%s]...\n", args[i].c_str(), args[1].c_str());
+                                        PM_PRINT("Calculating color approximations (this may take a while)...\n");
+                                        if(nthp::texture::tools::generateSoftwareTextureFromImage(args[i].c_str(), &tempPal, filename.c_str())) {
+                                                PM_PRINT_ERROR("Failed to generate new softwareTexture with file [%s].\n", args[i]);
+                                                goto L_BEGIN;   // hell yeah.
+                                        }
+                                        PM_PRINT("done.\n");
                                 }
-                                PM_PRINT("done.\n");
                                 continue;
                         }
 
@@ -473,7 +476,10 @@ int headless_runtime() {
                                 PM_PRINT("Done.\n");
                                 continue;
                         }
+                        
 
+                        // Joins two target ST files into a single file; aligns dimensions and outputs a valid texture. Can
+                        // be ordered widthwise with 'w' or lengthwise with 'h'.
                         if(args[0] == "jt") {
                                 if(args.size() < 5) {
                                         PM_PRINT_ERROR("Invalid command argument. (jt w/h textureA textureB outputTexture)\n");
@@ -481,20 +487,139 @@ int headless_runtime() {
                                 }
                                 if(args[1] == "w") {
                                         PM_PRINT("Attempting to join textures [%s] & [%s] by width...\n", args[2].c_str(), args[3].c_str());
-                                        if(nthp::texture::tools::joinSoftwareTextures(args[2].c_str(), args[3].c_str(), nthp::texture::tools::JOIN_WIDTH, args[4].c_str())) {
+                                        auto textureA = nthp::texture::tools::readTextureData(args[2].c_str());
+                                        auto textureB = nthp::texture::tools::readTextureData(args[3].c_str());
+
+                                        if((textureA.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) || (textureB.header.signature != nthp::texture::SoftwareTexture::STheaderSignature)) {
                                                 PM_PRINT_ERROR("Failed to join textures.\n");
                                                 continue; 
                                         }
+
+                                        auto data =  nthp::texture::tools::joinSoftwareTextures(textureA, textureB, nthp::texture::tools::JOIN_WIDTH);
+                                        nthp::texture::tools::destroySTdata(&textureA);
+                                        nthp::texture::tools::destroySTdata(&textureB);
+                                      
+                                        if(data.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                continue; 
+                                        }
+
+
+                                        if(nthp::texture::tools::writeTextureData(data, args[4].c_str())) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                nthp::texture::tools::destroySTdata(&data);
+                                                continue; 
+                                        }
+
+                                        nthp::texture::tools::destroySTdata(&data);
                                 }
                                 else {
                                         PM_PRINT("Attempting to join textures [%s] & [%s] by height...\n", args[2].c_str(), args[3].c_str());
-                                        if(nthp::texture::tools::joinSoftwareTextures(args[2].c_str(), args[3].c_str(), nthp::texture::tools::JOIN_HEIGHT, args[4].c_str())) {
+                                        auto textureA = nthp::texture::tools::readTextureData(args[2].c_str());
+                                        auto textureB = nthp::texture::tools::readTextureData(args[3].c_str());
+
+                                        if((textureA.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) || (textureB.header.signature != nthp::texture::SoftwareTexture::STheaderSignature)) {
                                                 PM_PRINT_ERROR("Failed to join textures.\n");
-                                                continue;
+                                                continue; 
                                         }
+
+                                        auto data =  nthp::texture::tools::joinSoftwareTextures(textureA, textureB, nthp::texture::tools::JOIN_HEIGHT);
+                                        nthp::texture::tools::destroySTdata(&textureA);
+                                        nthp::texture::tools::destroySTdata(&textureB);
+                                      
+                                        if(data.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                continue; 
+                                        }
+
+
+                                        if(nthp::texture::tools::writeTextureData(data, args[4].c_str())) {
+                                                PM_PRINT_ERROR("Failed to join textures.\n");
+                                                nthp::texture::tools::destroySTdata(&data);
+                                                continue; 
+                                        }
+
+                                        nthp::texture::tools::destroySTdata(&data);
                                 }
 
                                 PM_PRINT("Successfully joined textures; output @ [%s].\n", args[4].c_str());
+                                continue;
+                        }
+                        
+                   
+                        // Joins an indefinite series of ST files into a single file; joins the output of the last operation with the next target
+                        // until every target is ordered into a sheet.
+                        if(args[0] == "js") {
+                                if(args.size() < 5) {
+                                        PM_PRINT_ERROR("Invalid command argument. (js w/h textureA textureB textureC ... outputTexture)\n");
+                                        continue;
+                                }
+
+                                bool method;        
+                                nthp::texture::SoftwareTexture::STdata output;
+                                nthp::texture::SoftwareTexture::STdata a;
+                                nthp::texture::SoftwareTexture::STdata b;
+
+                                if(args[1] == "w") {
+                                        method = nthp::texture::tools::JOIN_WIDTH;
+                                        PM_PRINT("Attempting to join texture series by width; %zu targets...\n", args.size() - 3);
+                                }
+                                else {
+                                        method = nthp::texture::tools::JOIN_HEIGHT;
+                                        PM_PRINT("Attempting to join texture series by height; %zu targets...\n", args.size() - 3);
+                                }
+
+                                a = nthp::texture::tools::readTextureData(args[2].c_str());
+                                b = nthp::texture::tools::readTextureData(args[3].c_str());
+
+                                if(a.header.signature != nthp::texture::SoftwareTexture::STheaderSignature || b.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                                        PM_PRINT_ERROR("Failed to join textures.\n");
+                                        nthp::texture::tools::destroySTdata(&a);
+                                        nthp::texture::tools::destroySTdata(&b);
+
+                                        continue; 
+                                }
+
+                                output = nthp::texture::tools::joinSoftwareTextures(a, b, method);
+                                if(output.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                                        PM_PRINT_ERROR("Failed to join textures.\n");
+                                        continue; 
+                                }
+
+                                nthp::texture::tools::destroySTdata(&a);
+                                nthp::texture::tools::destroySTdata(&b);
+
+                                for(size_t i = 4; i < args.size() - 1; ++i) {
+                                        // TODO
+
+                                        a = output;
+                                        b = nthp::texture::tools::readTextureData(args[i].c_str());
+                                        
+                                        output = nthp::texture::tools::joinSoftwareTextures(a, b, method);
+                                        if(b.header.signature != nthp::texture::SoftwareTexture::STheaderSignature || output.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                                                output.header.signature = 0;
+                                                nthp::texture::tools::destroySTdata(&a);
+                                                nthp::texture::tools::destroySTdata(&b);
+                                                nthp::texture::tools::destroySTdata(&output);
+
+                                                break;
+                                        }
+
+                                        nthp::texture::tools::destroySTdata(&a);
+                                        nthp::texture::tools::destroySTdata(&b);
+                                }
+
+                                nthp::texture::tools::destroySTdata(&a);                // It is safe to call destroySTdata on a destroyed structure.
+                                nthp::texture::tools::destroySTdata(&b);                // This is done in case only 2 textures are passed in the series.
+
+                                if(nthp::texture::tools::writeTextureData(output, args[args.size() - 1].c_str())) {
+                                        PM_PRINT_ERROR("Failed to join texture series.\n");
+                                }
+                                else {
+                                        PM_PRINT("Successfully joined texture series into sheet @ file [%s].\n", args[args.size() - 1].c_str());
+                                }
+                                
+                                nthp::texture::tools::destroySTdata(&output);
                                 continue;
                         }
 
@@ -525,7 +650,7 @@ int headless_runtime() {
                                         break;
 
                                 default:
-                                        PM_PRINT_ERROR("Unrecognized texture file format.\n");
+                                        PM_PRINT_ERROR("Invalid ST texture file format.\n");
                                         continue;
                                 }
                                 continue;
@@ -767,11 +892,18 @@ int headless_runtime() {
                                                 PM_PRINT_ERROR("Please specify blockID and address.\n\"sb [blockID] [address] [newValue]\" \n");
                                                 continue;
                                         }
-
-                                        unsigned int block = std::stoul(args[1], NULL, 0);
-                                        unsigned int address = std::stoul(args[2], NULL, 0);
-                                        nthp::script::stdVarWidth value = nthp::doubleToFixed(std::stod(args[3]));
-
+                                        unsigned int block;
+                                        unsigned int address;
+                                        nthp::script::stdVarWidth value;
+                                        try {
+                                                block = std::stoul(args[1], NULL, 0);
+                                                address = std::stoul(args[2], NULL, 0);
+                                                value = nthp::doubleToFixed(std::stod(args[3]));
+                                        }
+                                        catch(std::invalid_argument) {
+                                                PM_PRINT_ERROR("Please specify blockID and address.\n\"sb [blockID] [address] [newValue]\" \n");
+                                                continue;
+                                        }
                                         g_access.lock();
 
                                         if(block < mainRuntime.data.blockDataSize) {

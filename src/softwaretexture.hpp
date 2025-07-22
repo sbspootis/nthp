@@ -28,9 +28,16 @@ namespace nthp {
                                 uint32_t y;
                         };
 
-                        #define NTHPST_COLORMASK        0b1111111111110000
-                        #define NTHPST_ALPHAMASK        0b0000000000001111
-                        
+                        struct STdata {
+                                software_texture_header header;
+                                NTHPST_COLOR_WIDTH* pixelData;
+                        };
+
+                        // Set the bits here for the color mask; the alpha mask is just the inverse.
+                        static constexpr NTHPST_COLOR_WIDTH NTHPST_COLORMASK = 0b1111111111110000;
+
+
+                        static constexpr NTHPST_COLOR_WIDTH NTHPST_ALPHAMASK = (~NTHPST_COLORMASK);
                         static constexpr NTHPST_COLOR_WIDTH alphaLevelSize = UINT8_MAX / NTHPST_ALPHAMASK; 
 
                         NTHPST_COLOR_WIDTH* getPixelData() { return pixelData; }
@@ -40,6 +47,8 @@ namespace nthp {
                         void createEmptyTexture(const size_t dataSize);
                         const software_texture_header getMetaData() { return metadata; }
                         inline void manual_metadata_override(const software_texture_header _ovr) { metadata = _ovr; dataSize = metadata.x * metadata.y; }
+
+                        // Cleans up texture data (SDL and rawST) and resets the object to its uninitialized state.
                         inline void purgeTextureData() {
                                 if(dataSize > 0) free(pixelData);
                                 if(texture != nullptr) SDL_DestroyTexture(texture);
@@ -47,6 +56,13 @@ namespace nthp {
                                 dataSize = 0;
                                 metadata.x = 0;
                                 metadata.y = 0;
+                        }
+
+                        // Destroys the texture's raw ST data, leaving the compiled SDL texture; use if memory
+                        // is becomming an issue, or a texture is persistant and will never need to be regenerated.
+                        inline void cleanSTData() {
+                                if(dataSize > 0) free(pixelData);
+                                dataSize = 0;
                         }
 
                         ~SoftwareTexture();
@@ -75,9 +91,14 @@ namespace nthp {
                 
                 constexpr bool JOIN_WIDTH = false;
                 constexpr bool JOIN_HEIGHT = true;
-                extern int joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile);
+                
+                extern nthp::texture::SoftwareTexture::STdata readTextureData(const char* textureFile);
+                extern int writeTextureData(nthp::texture::SoftwareTexture::STdata data, const char* outputFile);
 
+                extern const nthp::texture::SoftwareTexture::STdata joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile);
+                extern const nthp::texture::SoftwareTexture::STdata joinSoftwareTextures(nthp::texture::SoftwareTexture::STdata textureA, nthp::texture::SoftwareTexture::STdata textureB, bool joinMethod);
 
+                extern void destroySTdata(nthp::texture::SoftwareTexture::STdata* data);
                 }
 
                 struct Frame {
