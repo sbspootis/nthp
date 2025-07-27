@@ -464,17 +464,32 @@ L_BEGIN:
                         }
 
                         if(args[0] == "ct") {
-                                if(args.size() < 3) {
-                                        PM_PRINT_ERROR("Invalid command argument. (ct textureFile outputFile)\n");
+                               if(args.size() < 2) {
+                                        PM_PRINT_ERROR("Invalid command argument. (ct textureFileA textureFileB ...)\n");
                                         continue;
                                 }
-                                PM_PRINT("Compressing texture [%s]...\n", args[1].c_str());
-                                if(nthp::texture::compression::compressSoftwareTextureFile(args[1].c_str(), args[2].c_str())) {
-                                        PM_PRINT_ERROR("Failed to compress softwareTexture [%s].\n", args[1].c_str());
-                                        continue;
-                                } 
-                                PM_PRINT("Done.\n");
+
+                                std::string filename;
+                                
+                                for(size_t i = 1; i < args.size(); ++i) {
+                                        {
+                                                filename = args[i];
+                                                auto pos = filename.rfind('.');
+                                                if(pos != std::string::npos) 
+                                                        filename.erase(filename.begin()+pos, filename.end());
+                                                
+                                                filename += ".cst";
+                                        }
+                                        PM_PRINT("Compressing texture [%s]...\n", args[i].c_str());
+                                        if(nthp::texture::compression::compressSoftwareTextureFile(args[i].c_str(), filename.c_str())) {
+                                                PM_PRINT_ERROR("Failed to compress softwareTexture file [%s].\n", args[i]);
+                                                goto L_BEGIN;
+                                        }
+                                        PM_PRINT("done.\n");
+                                        
+                                }
                                 continue;
+
                         }
                         
 
