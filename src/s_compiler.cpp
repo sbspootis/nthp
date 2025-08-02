@@ -131,7 +131,8 @@ int EvaluateConst(std::string& expression, std::vector<nthp::script::CompilerIns
                         if(expression == list[i].constName) {
                                 expression = list[i].value;
                                 PRINT_COMPILER("Substituted main expression to [%s].\n", list[i].value.c_str());
-                                return 0;
+                                
+                                return EvaluateConst(expression, list); // Allows recursive CONST evals.
                         }
                 }
 
@@ -141,7 +142,7 @@ int EvaluateConst(std::string& expression, std::vector<nthp::script::CompilerIns
         return 0;
 }
 
-// Fucking hell. I suck at this.
+
 void destroyArgumentConsts(std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList) {
         std::string search;
         for(size_t i = 0; i < constantList.size(); ++i) {
@@ -2752,6 +2753,11 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 if(newDef.constName == constantList[i].constName) {
                                         PRINT_COMPILER("Redefinition of CONST [%s];", newDef.constName.c_str());
                                         EVAL_SYMBOL(); // Substitution
+                                        
+                                        if(fileRead == newDef.constName) {
+                                                PRINT_COMPILER_ERROR("CONST [%s] cannot substitute itself.\n", newDef.constName.c_str());
+                                                return 1;
+                                        }
 
                                         constantList[i].value = fileRead;
                                         NOVERB_PRINT_COMPILER(" sub.= %s\n", fileRead.c_str());

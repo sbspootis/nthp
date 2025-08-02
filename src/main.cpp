@@ -25,7 +25,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 #endif
         { // The entire engine debug context.
                
-                auto frameStart = SDL_GetTicks();
+                auto frameStart = std::chrono::steady_clock::now();
 
 
                 // Anyone would agree an infinite loop here is acceptable.
@@ -37,7 +37,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
   
                         
                         while(nthp::core.isRunning() && (!mainRuntime.data.changeStage)) {
-                                frameStart = SDL_GetTicks();
+                                frameStart = std::chrono::steady_clock::now();
 
                                 mainRuntime.handleEvents();
 
@@ -45,8 +45,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                                 mainRuntime.execTick();
 
 
-                                nthp::deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
-                        
+                                nthp::deltaTime = nthp::f_fixedQuotient(nthp::intToFixed(std::chrono::duration_cast<std::chrono::microseconds, FIXED_TYPE, std::nano>(frameStart - std::chrono::steady_clock::now()).count()), nthp::intToFixed(1000));                        
                                 if(nthp::deltaTime < nthp::frameDelay) {
                                         SDL_Delay(nthp::fixedToInt(nthp::frameDelay - nthp::deltaTime));
                                         nthp::deltaTime = nthp::frameDelay;
