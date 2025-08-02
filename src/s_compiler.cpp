@@ -2876,52 +2876,133 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 }
 
                 if(fileRead == "DEPEND") {
-                        file >> fileRead;
-                        size_t i = 0;
-                        switch(fileRead.c_str()[0]) {
-                                case '$':
-                                {
-                                        fileRead.erase(fileRead.begin());
-                                        for(; i < globalList.size(); ++i) {
-                                                if(fileRead == globalList[i].varName) break;
+                        EVAL_SYMBOL();
+
+                        do {
+                                if(fileRead == "CONST") {
+                                        EVAL_SYMBOL();
+                                        fileRead = "#" + fileRead;
+
+                                        bool success = false;
+                                        for(size_t i = 0; i < constantList.size(); ++i) {
+                                                if(fileRead == constantList[i].constName) {
+                                                        success = true;
+                                                        break;
+                                                }
                                         }
-                                        if(i == globalList.size()) {
-                                                PRINT_COMPILER_DEPEND_ERROR("GLOBAL Dependency [%s] not declared; Dependency check failed.\n", fileRead.c_str());
+
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("CONST dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
                                                 return 1;
                                         }
 
-                                        }
                                         break;
-                                case '@': 
-                                        {
-                                        for(; i < macroList.size(); ++i) {
-                                                if(fileRead == macroList[i].macroName) break;
+                                }
+
+                                if(fileRead == "MACRO") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+                                        
+                                        for(size_t i = 0; i < macroList.size(); ++i) {
+                                                if(fileRead == macroList[i].macroName) {
+                                                        success = true;
+                                                        break;
+                                                }
                                         }
-                                        if(i == macroList.size()) {
-                                                PRINT_COMPILER_DEPEND_ERROR("MACRO Dependency [%s] not declared; Dependency check failed.\n", fileRead.c_str());
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("MACRO dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
                                                 return 1;
                                         }
-                                        }
+
                                         break;
-                                case '#':
-                                        {
-                                        for(; i < constantList.size(); ++i) {
-                                                if(fileRead == constantList[i].constName) break;
+                                }
+
+                                if(fileRead == "VAR") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < globalList.size(); ++i) {
+                                                if(fileRead == globalList[i].varName) {
+                                                        success = true;
+                                                        break;
+                                                }
                                         }
-                                        if(i == constantList.size()) {
-                                                PRINT_COMPILER_DEPEND_ERROR("CONST Dependency [%s] not declared; Dependency check failed.\n", fileRead.c_str());
+
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("VAR dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
                                                 return 1;
                                         }
-                                        }
+
                                         break;
+                                }
 
+                                if(fileRead == "STRUCT") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
 
-                                default:
-                                        PRINT_COMPILER_DEPEND_ERROR("Dependency [%s] is an invalid compiler type; Dependency check failed.\n", fileRead.c_str());
-                                        return 1;
-                        }
+                                         for(size_t i = 0; i < structList.size(); ++i) {
+                                                if(fileRead == structList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("STRUCT dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
+                                                return 1;
+                                        }
+
+                                        break;
+                                }
+
+                                if(fileRead == "FUNC") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < funcList.size(); ++i) {
+                                                if(fileRead == funcList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("FUNC dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
+                                                return 1;
+                                        }
+
+                                        break;
+                                }
+
+                                if(fileRead == "STRING") {
+
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < strList.size(); ++i) {
+                                                if(fileRead == strList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) break;
+                                        else {
+                                                PRINT_COMPILER_DEPEND_ERROR("STRING dependency [%s] not declared; dependency check failed.\n", fileRead.c_str());
+                                                return 1;
+                                        }
+
+                                        break;
+                                }
+
+                        } while(0);
+
                 }
-
 
 
                 if(ignoreInstructionData) {
@@ -3287,8 +3368,12 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
         std::string fileRead;
         bool operationComplete = false;
+        PRINT_COMPILER("Building Script System [%s]: force=%u ignore=%u\n\n", stageConfigFile, forceBuild, ignoreInstructionData);
 
         while(!operationComplete) {
+
+        BS_BEGIN: // Love, do not hate
+        
                 file >> fileRead;
 
                 if(fileRead == "BUILD_SYSTEM") {
@@ -3371,6 +3456,93 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
 
                 } // if (BUILD_SYSTEM)
+
+                if(fileRead == "CONST") {
+                        file >> fileRead;
+
+                        nthp::script::CompilerInstance::CONST_DEF newConst;
+                        newConst.constName = "#" + fileRead;
+
+                        file >> fileRead;
+                        newConst.value = fileRead;
+
+                        if(fileRead == newConst.constName) {
+                                PRINT_COMPILER_ERROR("CONST [%s] cannot substitute itself.\n", newConst.constName.c_str());
+                                return 1;
+                        }
+
+                        constantList.push_back(newConst);
+                        PRINT_COMPILER("BS CONST defined; n=%s sub=%s\n", newConst.constName.c_str(), newConst.value.c_str());
+
+                        continue;
+                }
+
+                if(fileRead == "MACRO") {
+                         // Define new Macro.
+                        READ_FILE();        // Name
+                        MACRO_DEF newDef;
+
+                        newDef.macroName = '@' + fileRead;
+
+
+                        for(size_t i = 0; i < macroList.size(); ++i) {
+                                if(macroList[i].macroName == newDef.macroName) {
+                                        PRINT_COMPILER_WARNING("Duplicate MACRO [%s] at [~%zu]; Ignoring Definition.\n", macroList[i].macroName.c_str(), nodeList.size());
+                                        do {file >> fileRead; } while(fileRead != "}");
+                                        goto BS_BEGIN;
+                                }
+                        }
+
+                        PRINT_COMPILER("Defining new BS MACRO [%s]...", fileRead.c_str());
+
+                        READ_FILE();     // Gets rid of the '{'
+                        for(size_t i = 0; fileRead != "}"; ++i) {
+                                READ_FILE();
+                                if(fileRead == "/") { do { READ_FILE(); } while(fileRead != "/"); READ_FILE(); }
+                                newDef.macroData.push_back(fileRead);
+                                
+                                if((i % 5) == 0) { NOVERB_PRINT_COMPILER("\n\t"); }
+
+                                NOVERB_PRINT_COMPILER(" [%s]", fileRead.c_str());
+                        }
+                        newDef.macroData.pop_back(); // Remove the '}'
+                        macroList.push_back(newDef);
+
+                        NOVERB_PRINT_COMPILER("\n");
+                        PRINT_COMPILER("Added MACRO [%s] to MACRO list.\n", macroList.back().macroName.c_str());
+                        continue;
+                }
+
+
+                if(fileRead == "STRUCT") {
+                        structList.push_back(STRUCT_DEF());
+                        READ_FILE();
+
+                        PRINT_COMPILER("Defining BS STRUCT [%s]...\n", fileRead.c_str());
+
+                        structList.back().name = fileRead;
+                        
+                        READ_FILE();
+                        if(fileRead == "{") {
+                                READ_FILE();
+
+                                while(fileRead != "}") {
+                                        structList.back().members.push_back(fileRead);
+                                        PRINT_COMPILER("\tAdded entry [%s] at [%02zX],\n", fileRead.c_str(), structList.back().members.size() - 1);
+                                        READ_FILE();
+                                }
+
+                                PRINT_COMPILER("Finished definition of STRUCT [%s].\n", structList.back().name.c_str());
+                        }
+                        else {
+                                PRINT_COMPILER_ERROR("STRUCT cannot be defined; scope required.\n");
+                                structList.pop_back();
+                                continue;
+                        }
+                }
+
+
+
 
                 if(fileRead == "EXIT" || file.eof()) {
                         operationComplete = true;

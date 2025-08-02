@@ -70,7 +70,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         
                                 if(nthp::deltaTime < nthp::frameDelay) {
                                         SDL_Delay(nthp::fixedToInt(nthp::frameDelay - nthp::deltaTime));
-                                        nthp::deltaTime = nthp::frameDelay;
+                                        nthp::deltaTime = nthp::getFixedInteger(nthp::frameDelay);
                                 }
                                 
                                 g_access.lock();
@@ -146,7 +146,7 @@ int main(int argv, char** argc) {
         }
 
 	if(debugOutput != "stdout") {
-		debug_fd = fopen(debugOutput.c_str(), "a+");
+		debug_fd = fopen(debugOutput.c_str(), "w+");
 		if(debug_fd == NULL) {
 			PM_PRINT_ERROR("Unable to access debug output file descriptor. Defaulting to standard output.\n");
 			debug_fd = stdout;

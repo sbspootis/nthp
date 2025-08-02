@@ -3,10 +3,7 @@ STRING windowTitle "test program - dev1.0.2"
 
 
 
-MACRO initFlags {
-/       x       y       tx      ty      cx      cy      fs      sr      title   /
-        960     540     500     500     0       0       0       0       ~windowTitle
-}
+ 
 CORE_INIT @initFlags
 
 CORE_SETMAXFPS 60

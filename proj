@@ -1,3 +1,9 @@
+CONST testConst __DEFINED__
+MACRO initFlags {
+/       x       y       tx      ty      cx      cy      fs      sr      title   /
+        960     540     500     500     0       0       0       0       ~windowTitle
+}
+
 BUILD_SYSTEM
         script/init.thp script/init.thpcs               T_INIT
         script/player.thp script/player.thpcs           T_HIDDEN
