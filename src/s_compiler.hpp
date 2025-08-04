@@ -150,6 +150,7 @@ namespace nthp {
                         return *(uint32_t*)(node.access.data);
                 }
 
+
                 inline void cleanSymbolData() {
                         globalList.clear(); 
                         macroList.clear();

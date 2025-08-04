@@ -152,7 +152,7 @@ int nthp::EngineCore::render(nthp::RenderPacket packet) {
         switch(packet.state) {
                 case nthp::RenderPacket::C_OPERATE::VALID:
                         {
-                                vectGeneric offset = nthp::generatePixelPosition(nthp::worldPosition(p_coreDisplay.cameraWorldPosition.x, p_coreDisplay.cameraWorldPosition.y), &p_coreDisplay);
+                                const vectGeneric offset = nthp::generatePixelPosition(nthp::worldPosition(p_coreDisplay.cameraWorldPosition.x, p_coreDisplay.cameraWorldPosition.y), &p_coreDisplay);
                                 packet.dstRect.x += offset.x;
                                 packet.dstRect.y += offset.y;
                                 return SDL_RenderCopy(renderer, packet.texture, packet.srcRect, &packet.dstRect);
@@ -185,7 +185,7 @@ void nthp::EngineCore::setWindowRenderSize(int x, int y) {
                 mode.h = y;
 
                 if(SDL_SetWindowDisplayMode(window, &mode) < 0) {
-                        PRINT_DEBUG_ERROR("%s", SDL_GetError());
+                        PRINT_DEBUG_ERROR("%s\n", SDL_GetError());
                 }
                 SDL_GetWindowDisplayMode(window, &mode);
 

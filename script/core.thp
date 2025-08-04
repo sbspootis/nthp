@@ -1,4 +1,6 @@
 
+IFDEF CONST testConst
+
 PRIVATE stage
 PRIVATE player
 
@@ -86,5 +88,6 @@ LABEL 1
 SUSPEND
 GOTO 1
 
+IFDEF_END
 
 EXIT

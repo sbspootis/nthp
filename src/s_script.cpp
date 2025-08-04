@@ -441,7 +441,7 @@ DEFINE_EXECUTION_BEHAVIOUR(SET) {
 }
 
 int nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size) {
-                // Linear search for open blocks. If none, reallocate block memory and use
+        // Linear search for open blocks. If none, reallocate block memory and use
         // last entry.
         for(size_t i = 0; i < data->blockDataSize; ++i) {
                 if(data->blockData[i].isFree) {

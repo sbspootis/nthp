@@ -490,6 +490,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 }
 
 
+
 #define ____S_EVAL(...) if(EvaluateSymbol(__VA_ARGS__)) return 1
 
 // Generic conviencence macro to evaluate the next symbol in the stream. Automatically pulls the next
@@ -501,16 +502,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
 // DEFINE COMPILER BEHAVIOUR FOR EACH INSTRUCTION HERE ||
 //                                                     VV
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3002,6 +2993,152 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         } while(0);
 
+                        continue;
+                }
+
+                if(fileRead == "IFDEF") {
+                        EVAL_SYMBOL();
+
+                        do {
+                                if(fileRead == "CONST") {
+                                        EVAL_SYMBOL();
+                                        fileRead = "#" + fileRead;
+
+                                        bool success = false;
+                                        for(size_t i = 0; i < constantList.size(); ++i) {
+                                                if(fileRead == constantList[i].constName) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+
+                                        break;
+                                }
+
+                                if(fileRead == "MACRO") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+                                        
+                                        for(size_t i = 0; i < macroList.size(); ++i) {
+                                                if(fileRead == macroList[i].macroName) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+                                        if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+
+                                        break;
+                                }
+
+                                if(fileRead == "VAR") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < globalList.size(); ++i) {
+                                                if(fileRead == globalList[i].varName) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                       if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+                                }
+
+                                if(fileRead == "STRUCT") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < structList.size(); ++i) {
+                                                if(fileRead == structList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+                                }
+
+                                if(fileRead == "FUNC") {
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < funcList.size(); ++i) {
+                                                if(fileRead == funcList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+                                }
+
+                                if(fileRead == "STRING") {
+
+                                        EVAL_SYMBOL();
+                                        bool success = false;
+
+                                         for(size_t i = 0; i < strList.size(); ++i) {
+                                                if(fileRead == strList[i].name) {
+                                                        success = true;
+                                                        break;
+                                                }
+                                        }
+
+                                        if(success) {
+                                                PRINT_COMPILER("CD IFDEF check passed; [%s] defined.\n", fileRead);
+                                                break;
+                                        }
+                                        else {
+                                                do { READ_FILE(); } while(fileRead != "IFDEF_END");
+                                                break;
+                                        }
+
+                                        break;
+                                }
+
+                                PRINT_COMPILER_ERROR("Invalid definition for IFDEF check.\n");
+                                return 1;
+
+                        } while(0);
+
+                        continue;
                 }
 
 
