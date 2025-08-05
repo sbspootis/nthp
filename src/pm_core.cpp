@@ -213,6 +213,8 @@ int headless_runtime() {
 	bool isRunning = true;
 
         int displayFormat = MEM_DISPLAY_FORMAT::STD;
+        bool executingPMScript = false;
+        std::fstream scriptFile;
 
 
 
@@ -222,17 +224,66 @@ L_BEGIN:
 		args.clear();
 		std::cin.clear();
 
-                if(debuggingActiveProcess) std::cout << "debug> ";
-		else std::cout << "> ";
+                if(!executingPMScript) {
+                        if(debuggingActiveProcess) std::cout << "debug> ";
+                        else std::cout << "> ";
 
-		std::getline(std::cin, input);
+                        std::getline(std::cin, input);
+                }
+                else {
+                        if(!scriptFile.eof()) {
+                                std::getline(scriptFile, input);
+                        }
+                        else {
+                                executingPMScript = false;
+                                scriptFile.close();
+
+                                PM_PRINT("Script complete.\n");
+                                continue;
+                        }
+                }
 
 		if(input != "") {
 			{ // Separates all input symbols into the args vector.
+                                
 				std::istringstream inputStream(input);
 				while(std::getline(inputStream, arg, ' '))
 					args.push_back(arg);
+
 			}
+
+
+                        if(executingPMScript) { 
+                                if(!(args[0] == "rem"))
+                                        PM_PRINT("\texec. %s\n", input.c_str());
+                                else
+                                        continue;
+                        }
+
+                        if(args[0] == "load") {
+                                if(args.size() < 2) {
+                                        PM_PRINT_ERROR("Need target script file to execute. (load scriptFile)\n");
+                                        continue;
+                                }
+
+                                scriptFile.open(args[1], std::ios::in);
+                                if(scriptFile.fail()) {
+                                        PM_PRINT_ERROR("Unable to open script file [%s].\n", args[1].c_str());
+                                        scriptFile.clear();
+
+                                        continue;
+                                }
+
+                                executingPMScript = true;
+                                PM_PRINT("Executing script [%s]...\n", args[1].c_str());
+                                continue;
+                        }
+
+                        if(args[0] == "rem") {
+                                continue;
+                        }
+
+
 
 			if(args[0] == "exit") {
                                 g_access.lock();
@@ -511,8 +562,10 @@ L_BEGIN:
                                         }
 
                                         auto data =  nthp::texture::tools::joinSoftwareTextures(textureA, textureB, nthp::texture::tools::JOIN_WIDTH);
+                                        
                                         nthp::texture::tools::destroySTdata(&textureA);
                                         nthp::texture::tools::destroySTdata(&textureB);
+                                        
                                       
                                         if(data.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
                                                 PM_PRINT_ERROR("Failed to join textures.\n");
@@ -526,7 +579,7 @@ L_BEGIN:
                                                 continue; 
                                         }
 
-                                        nthp::texture::tools::destroySTdata(&data);
+                                
                                 }
                                 else {
                                         PM_PRINT("Attempting to join textures [%s] & [%s] by height...\n", args[2].c_str(), args[3].c_str());

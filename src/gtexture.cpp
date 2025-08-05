@@ -21,7 +21,7 @@ int nthp::texture::gTexture::autoLoadTextureFile(const char* filename, nthp::tex
 
         if(file.fail()) {
                 PRINT_DEBUG_ERROR("Unable to generate texture [%s]; File not accessible.\n", filename);
-                return 0;
+                return 1;
         }
 
         nthp::texture::SoftwareTexture::software_texture_header header;

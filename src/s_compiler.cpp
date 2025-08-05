@@ -75,11 +75,6 @@ void PRINT_COMPILER_ERROR(const char* format, ...) {
 	fprintf(NTHP_debug_output, "[t %u] ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
-        if(NTHP_debug_output != stdout) {
-                printf("[t %u] ERROR: ", SDL_GetTicks());
-                printf(format, ap);
-        }
-
 	va_end(ap);
 }
 
@@ -90,11 +85,6 @@ void PRINT_COMPILER_WARNING(const char* format, ...) {
 
 	fprintf(NTHP_debug_output, "[t %u] WARNING: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
-
-        if(NTHP_debug_output != stdout) {
-                printf("[t %u] WARNING: ", SDL_GetTicks());
-                printf(format, ap);
-        }
 
 
 	va_end(ap);
@@ -107,11 +97,6 @@ void PRINT_COMPILER_DEPEND_ERROR(const char* format, ...) {
 
 	fprintf(NTHP_debug_output, "[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
-
-        if(NTHP_debug_output != stdout) {
-                printf("[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());
-                printf(format, ap);
-        }
 
 
 	va_end(ap);
@@ -2762,11 +2747,13 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         constantList.push_back(newDef);
                         PRINT_COMPILER("New CONST Definition; n=%s sub=%s\n", newDef.constName.c_str(), newDef.value.c_str());
+                        continue;
                 }
 
                 if(fileRead == "UNDEF") {
                         EVAL_SYMBOL();
                         undefConstant(fileRead.c_str(), constantList);
+                        continue;
                 }
 
                 if(fileRead == "MACRO") {
@@ -3280,6 +3267,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_SET_TARGET);
                 CHECK_COMP(IB_WRITE_STRING);
                 CHECK_COMP(IB_STOP);
+
+                PRINT_COMPILER_WARNING("Unknown symbol [%s];\n", fileRead.c_str());
 
         } // Main loop
 

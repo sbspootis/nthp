@@ -1,9 +1,6 @@
 IMPORT script/globals.b
 STRING windowTitle "test program - dev1.0.2"
 
-
-
- 
 CORE_INIT @initFlags
 
 CORE_SETMAXFPS 60

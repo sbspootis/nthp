@@ -607,7 +607,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
 		return 1;
 	}
 	
-	data->textureBlock[nthp::fixedToInt(output.value)].autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer());
+	if(data->textureBlock[nthp::fixedToInt(output.value)].autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer()));
 
 	return 0;
 }
@@ -880,7 +880,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_QRENDER) {
 
         EVAL_STDREF(entity);
 
-        nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].getUpdateRenderPacket(&nthp::core.p_coreDisplay));
+        if(nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].getUpdateRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
+                PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
+        }
         return 0;
 }
 
@@ -890,7 +892,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_QRENDER) {
 
         EVAL_STDREF(entity);
 
-        nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].abs_getRenderPacket(&nthp::core.p_coreDisplay));
+        if(nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].abs_getRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
+                PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
+        }
         return 0;
 }
 

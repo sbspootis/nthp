@@ -190,7 +190,7 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
                 }
 
                 // By this point, the smallest score is stored at index colorset[smallestElement].
-                pixelData[i] = (smallestElement << 4) | (baseImage.getPixel(i).A / nthp::texture::SoftwareTexture::alphaLevelSize);
+                pixelData[i] = (smallestElement << nthp::texture::SoftwareTexture::alphaBitCount) | (baseImage.getPixel(i).A / nthp::texture::SoftwareTexture::alphaLevelSize);
                 smallestElement = 0;
                 progress = ((double)i / (double)surfaceSize) * (double)100;
         }
@@ -213,6 +213,12 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
 
 #endif
 
+
+constexpr NTHPST_COLOR_WIDTH nthp::texture::tools::encodePixel(const NTHPST_COLOR_WIDTH colorIndex, const NTHPST_COLOR_WIDTH alphaLevel) {
+        return ((colorIndex << nthp::texture::SoftwareTexture::alphaBitCount) | (alphaLevel & nthp::texture::SoftwareTexture::NTHPST_ALPHAMASK));
+}
+
+
 nthp::texture::SoftwareTexture::STdata nthp::texture::tools::readTextureData(const char* textureFile) {
         PRINT_DEBUG("Importing raw ST file [%s]...", textureFile);
         nthp::texture::SoftwareTexture::STdata ret;
@@ -226,8 +232,8 @@ nthp::texture::SoftwareTexture::STdata nthp::texture::tools::readTextureData(con
 
         file.read((char*)&ret.header, sizeof(ret.header));
 
-        const size_t dataSize = ret.header.x * ret.header.y;
-        ret.pixelData = new NTHPST_COLOR_WIDTH[dataSize];
+        const size_t dataSize = (ret.header.x * ret.header.y);
+        ret.pixelData = (NTHPST_COLOR_WIDTH*)malloc(dataSize * sizeof(NTHPST_COLOR_WIDTH));
 
         file.read((char*)ret.pixelData, (dataSize * sizeof(NTHPST_COLOR_WIDTH)));
         file.close();
@@ -254,100 +260,6 @@ int nthp::texture::tools::writeTextureData(nthp::texture::SoftwareTexture::STdat
 }
 
 
-
-// Joins two textures into a single ST file; pass the constexpr tools::JOIN_WIDTH and tools::JOIN_HEIGHT for the ordering.
-const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile) {
-        PRINT_DEBUG("Joining texture file [%s] with [%s]; output @ [%s]...\n", textureFileA, textureFileB, outputFile);
-        nthp::texture::SoftwareTexture a;
-        nthp::texture::SoftwareTexture b;
-        nthp::texture::SoftwareTexture::STdata ret;
-        ret.pixelData = NULL;
-        ret.header.signature = 0;
-
-        if(a.generateTexture(textureFileA, NULL, NULL) || b.generateTexture(textureFileB, NULL, NULL)) {
-                PRINT_DEBUG("Failed to join textures.\n");
-                return ret;
-        }
-
-        nthp::texture::SoftwareTexture::software_texture_header header;
-        const size_t dataSize = (a.dataSize + b.dataSize) * sizeof(NTHPST_COLOR_WIDTH);
-
-        ret.pixelData = new NTHPST_COLOR_WIDTH[dataSize];
-        header.signature = nthp::texture::SoftwareTexture::STheaderSignature;
-        
-
-        switch(joinMethod) {
-        case JOIN_WIDTH:
-                {
-                        header.x = a.metadata.x + b.metadata.x;
-                        if(a.metadata.y > b.metadata.y)
-                                header.y = a.metadata.y;
-                        else
-                                header.y = b.metadata.y;
-                        
-                        
-                        uint32_t aPosition = 0;
-                        uint32_t bPosition = 0;
-                        size_t outputPosition = 0;
-                        bool operationComplete = false;
-                        
-                        do {
-                                memcpy(ret.pixelData + outputPosition, a.pixelData + aPosition, a.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
-                                outputPosition += a.metadata.x;
-                                aPosition += a.metadata.x;
-
-                                memcpy(ret.pixelData + outputPosition, b.pixelData + bPosition, b.metadata.x * sizeof(NTHPST_COLOR_WIDTH));
-                                outputPosition += b.metadata.x;
-                                bPosition += b.metadata.x;
-
-                        } while(outputPosition < dataSize);
-
-                }
-                break;
-        case JOIN_HEIGHT:
-                {
-                        header.y = a.metadata.y + b.metadata.y;
-                        if(a.metadata.x > b.metadata.x)
-                                header.x = a.metadata.x;
-                        else
-                                header.x = b.metadata.x;
-                
-                        memcpy(ret.pixelData, a.pixelData, a.dataSize * sizeof(NTHPST_COLOR_WIDTH));
-                        memcpy(ret.pixelData + a.dataSize, b.pixelData, b.dataSize * sizeof(NTHPST_COLOR_WIDTH));
-                        
-                }
-                break;
-
-        }
-
-
-        if(outputFile == NULL) {
-                ret.header = header;
-
-                PRINT_DEBUG("Joined textures successfully.\n");
-                return ret;
-        }
-        else {
-                std::fstream file(outputFile, std::ios::out | std::ios::binary);
-                if(file.fail()) {
-                        PRINT_DEBUG("Unable to output joined texture; File not accessible.\n");
-                        return ret;
-                }
-
-                file.write((char*)&header, sizeof(header));
-                file.write((char*)ret.pixelData, dataSize);
-
-                file.close();
-
-                PRINT_DEBUG("Joined textures successfully.\n");
-
-                ret.header = header;
-                delete[] ret.pixelData;
-
-                return ret;
-        }
-}
-
 const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareTextures(nthp::texture::SoftwareTexture::STdata a, nthp::texture::SoftwareTexture::STdata b, bool joinMethod) {
         using namespace nthp::texture;
         
@@ -362,14 +274,11 @@ const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareT
         const size_t a_dataSize = a.header.x * a.header.y;
         const size_t b_dataSize = b.header.x * b.header.y;
 
-
-        const size_t o_dataSize = (a_dataSize + b_dataSize);
-        const size_t oBinary_dataSize = o_dataSize * sizeof(NTHPST_COLOR_WIDTH);
+        
 
         PRINT_DEBUG("TextureDimensions ; ax=%zu ay=%zu; bx=%zu by=%zu\n", a.header.x, a.header.y, b.header.x, b.header.y);
-
-        ret.pixelData = new NTHPST_COLOR_WIDTH[o_dataSize];
-
+        const auto emtpyPixel = nthp::texture::tools::encodePixel(0, 0);
+        
         switch(joinMethod) {
                 case JOIN_WIDTH:
                         {
@@ -378,6 +287,12 @@ const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareT
                                         ret.header.y = a.header.y;
                                 else
                                         ret.header.y = b.header.y;
+
+                                const size_t o_dataSize = ret.header.x * ret.header.y;
+                                const size_t oBinary_dataSize = o_dataSize * sizeof(NTHPST_COLOR_WIDTH);
+                                ret.pixelData = (NTHPST_COLOR_WIDTH*)malloc(oBinary_dataSize + 1);
+                                PRINT_DEBUG("Allocated %zu bytes for texture join.\n", oBinary_dataSize);
+
                                 
                                 
                                 uint32_t aPosition = 0;
@@ -385,16 +300,41 @@ const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareT
                                 size_t outputPosition = 0;
                                 bool operationComplete = false;
                                 
-                                do {
-                                        memcpy(ret.pixelData + outputPosition, a.pixelData + aPosition, a.header.x * sizeof(NTHPST_COLOR_WIDTH));
-                                        outputPosition += a.header.x;
-                                        aPosition += a.header.x;
 
-                                        memcpy(ret.pixelData + outputPosition, b.pixelData + bPosition, b.header.x * sizeof(NTHPST_COLOR_WIDTH));
-                                        outputPosition += b.header.x;
-                                        bPosition += b.header.x;
+                                size_t aPasses = 0;
+                                size_t bPasses = 0;
+                                
+                                do {
+                                        // Check to ensure there is still texture data to write.
+                                        if(aPosition < a_dataSize) {
+                                                memcpy(ret.pixelData + outputPosition, a.pixelData + aPosition, a.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                outputPosition += a.header.x;
+                                                aPosition += a.header.x;
+                                                ++aPasses;
+                                        }
+                                        else {
+                                                // Writes an empty, invisible pixel when the output texture is incomplete, and all the pixel data
+                                                // has been copied.
+                                                memset(ret.pixelData + outputPosition, emtpyPixel, a.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                outputPosition += a.header.x;
+                                        }
+
+                                        if(bPosition < b_dataSize) {
+                                                memcpy(ret.pixelData + outputPosition, b.pixelData + bPosition, b.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                outputPosition += b.header.x;
+                                                bPosition += b.header.x;
+                                                ++bPasses;
+                                        }
+                                        else {
+                                                // Writes an empty, invisible pixel when the output texture is incomplete, and all the pixel data
+                                                // has been copied.
+                                                memset(ret.pixelData + outputPosition, emtpyPixel, b.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                outputPosition += b.header.x;
+                                        }
 
                                 } while(outputPosition < o_dataSize);
+
+                                PRINT_DEBUG("Wrote total %zu bytes.\n%zu out of textureA\n%zu out of textureB\n", outputPosition * sizeof(NTHPST_COLOR_WIDTH), aPosition * sizeof(NTHPST_COLOR_WIDTH), bPosition * sizeof(NTHPST_COLOR_WIDTH));
 
                         }
                         break;
@@ -405,15 +345,61 @@ const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareT
                                         ret.header.x = a.header.x;
                                 else
                                         ret.header.x = b.header.x;
-                        
-                                memcpy(ret.pixelData, a.pixelData, a_dataSize * sizeof(NTHPST_COLOR_WIDTH));
-                                memcpy(ret.pixelData + a_dataSize, b.pixelData, b_dataSize * sizeof(NTHPST_COLOR_WIDTH));
+
+                                const size_t o_dataSize = ret.header.x * ret.header.y;
+                                const size_t oBinary_dataSize = o_dataSize * sizeof(NTHPST_COLOR_WIDTH);
+                                ret.pixelData = (NTHPST_COLOR_WIDTH*)malloc(oBinary_dataSize + 1);
+                                PRINT_DEBUG("Allocated %zu bytes for texture join.\n", oBinary_dataSize);
+
+                                size_t bEntryPoint = 0;
                                 
+                                if(a.header.x < ret.header.x) {
+                                        const auto line_difference = ret.header.x - a.header.x;
+                                        size_t aPosition = 0;
+                                        size_t oPosition = 0;
+                                        do {
+                                                memcpy(ret.pixelData + oPosition, a.pixelData + aPosition, a.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                aPosition += a.header.x;
+                                                oPosition += a.header.x;
+                                                
+                                                memset(ret.pixelData + oPosition, 0, line_difference);
+                                                oPosition += line_difference;
+
+                                        } while(aPosition < a_dataSize);
+
+                                        bEntryPoint = oPosition;
+                                }
+                                else {
+                                        memcpy(ret.pixelData + bEntryPoint, a.pixelData, a_dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                                        bEntryPoint = a_dataSize;
+                                }
+
+                                if(b.header.x < ret.header.x) {
+                                        const auto line_difference = ret.header.x - b.header.x;
+                                        size_t bPosition = 0;
+                                        size_t oPosition = 0;
+                                        do {
+                                                memcpy(ret.pixelData + oPosition, b.pixelData + bPosition, b.header.x * sizeof(NTHPST_COLOR_WIDTH));
+                                                bPosition += b.header.x;
+                                                oPosition += b.header.x;
+                                                
+                                                memset(ret.pixelData + oPosition, 0, line_difference);
+                                                oPosition += line_difference;
+
+                                        } while(bPosition < b_dataSize);
+
+                                        bEntryPoint = oPosition;
+                                }
+                                else {
+                                        memcpy(ret.pixelData + bEntryPoint, b.pixelData, b_dataSize * sizeof(NTHPST_COLOR_WIDTH));
+                                }
+                                                                
                         }
                         break;
 
         }
         PRINT_DEBUG("Copied binary successfully.\n");
+
 
         ret.header.signature = SoftwareTexture::STheaderSignature;
         return ret;
@@ -423,7 +409,7 @@ const nthp::texture::SoftwareTexture::STdata nthp::texture::tools::joinSoftwareT
 void nthp::texture::tools::destroySTdata(nthp::texture::SoftwareTexture::STdata* data) {
         using namespace nthp::texture;
         if((data->header.signature == SoftwareTexture::STheaderSignature) && (data->header.x > 0) && (data->header.y > 0)) {
-                delete[] data->pixelData;
+                free(data->pixelData);
                 data->header.x = 0;
                 data->header.y = 0;
                 data->header.signature = 0;

@@ -38,7 +38,8 @@ namespace nthp {
 
 
                         static constexpr NTHPST_COLOR_WIDTH NTHPST_ALPHAMASK = (~NTHPST_COLORMASK);
-                        static constexpr NTHPST_COLOR_WIDTH alphaLevelSize = UINT8_MAX / NTHPST_ALPHAMASK; 
+                        static constexpr NTHPST_COLOR_WIDTH alphaLevelSize = UINT8_MAX / NTHPST_ALPHAMASK;
+                        static constexpr NTHPST_COLOR_WIDTH alphaBitCount = 4;
 
                         NTHPST_COLOR_WIDTH* getPixelData() { return pixelData; }
                         const size_t getPixelDataSize() { return dataSize; }
@@ -76,7 +77,7 @@ namespace nthp {
                         
                 protected:
 
-                        constexpr NTHPST_COLOR_WIDTH getPixelColor(NTHPST_COLOR_WIDTH pixel)        { return ((pixel & NTHPST_COLORMASK) >> 4); }
+                        constexpr NTHPST_COLOR_WIDTH getPixelColor(NTHPST_COLOR_WIDTH pixel)        { return ((pixel & NTHPST_COLORMASK) >> alphaBitCount); }
                         constexpr NTHPST_COLOR_WIDTH getPixelAlphaLevel(NTHPST_COLOR_WIDTH pixel)        { return (pixel & NTHPST_ALPHAMASK); }
                         constexpr NTHPST_COLOR_WIDTH getTrueAlpha(NTHPST_COLOR_WIDTH alphaLevel)    { return (alphaLevel * alphaLevelSize); }
 
@@ -95,10 +96,10 @@ namespace nthp {
                 extern nthp::texture::SoftwareTexture::STdata readTextureData(const char* textureFile);
                 extern int writeTextureData(nthp::texture::SoftwareTexture::STdata data, const char* outputFile);
 
-                extern const nthp::texture::SoftwareTexture::STdata joinSoftwareTextures(const char* textureFileA, const char* textureFileB, const bool joinMethod, const char* outputFile);
                 extern const nthp::texture::SoftwareTexture::STdata joinSoftwareTextures(nthp::texture::SoftwareTexture::STdata textureA, nthp::texture::SoftwareTexture::STdata textureB, bool joinMethod);
 
                 extern void destroySTdata(nthp::texture::SoftwareTexture::STdata* data);
+                extern constexpr NTHPST_COLOR_WIDTH encodePixel(const NTHPST_COLOR_WIDTH colorIndex, const NTHPST_COLOR_WIDTH alphaLevel);
                 }
 
                 struct Frame {
