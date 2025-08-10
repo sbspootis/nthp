@@ -591,7 +591,6 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
 	const auto bytes = (sizeof(nthp::texture::gTexture) * textures);
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        printf("t# %zu\nb# %zu\ne# %zu\n", (size_t)textures, bytes, entries);
 
         nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp_internal_alloc(data, target_dsc, entries);
         if(b_texture == NULL) { return 1; }
@@ -636,7 +635,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_TARGET) {
         EVAL_PTRREF(targetBlock);
         const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
         if(ptr.block) {
-                data->textureBlock = (nthp::texture::gTexture*)data->blockData[ptr.block - 1].data;
+                data->textureBlock = (nthp::texture::gTexture*)(data->blockData[ptr.block - 1].data);
                 data->textureBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
 
                 return 0;
@@ -674,24 +673,59 @@ DEFINE_EXECUTION_BEHAVIOUR(SET_ACTIVE_PALETTE) {
 }
 
 
-DEFINE_EXECUTION_BEHAVIOUR(FRAME_DEFINE) {
+DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         
         EVAL_STDREF(size);
-        data->frameBlock = new nthp::texture::Frame[nthp::fixedToInt(size.value)];
-        data->frameBlockSize = nthp::fixedToInt(size.value);
+        EVAL_PTRREF(output);
+        
+        const auto frames = nthp::fixedToInt(size.value);
+        const auto bytes = frames * sizeof(nthp::texture::Frame);
+        const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
+        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp_internal_alloc(data, target_dsc, entries);
+        if(newBlock == NULL) { return 1; }
+
+        // Automatically set as target.
+        data->frameBlock = newBlock;
+        data->frameBlockSize = frames;
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_CLEAR) {
-        if(data->frameBlockSize > 0) {
-                delete[] data->frameBlock;
-                data->frameBlockSize = 0;
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(target);
+        auto ptr = nthp::script::parsePtrDescriptor(target.value);
+
+        if(ptr.block) {
+                free(data->blockData[ptr.block - 1].data);
+                data->blockData[ptr.block - 1].isFree = true;
+                data->blockData[ptr.block - 1].size = 0;
+
+                return 0;
         }
 
-        return 0;
+        PRINT_DEBUG_ERROR("FRAME_CLEAR at [%zu] Attempted to free global list.\n", data->currentNode);
+        return 1;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(FRAME_TARGET) {
+        ptrRef targetBlock = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(targetBlock);
+        const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
+        if(ptr.block) {
+                data->frameBlock = (nthp::texture::Frame*)(data->blockData[ptr.block - 1].data);
+                data->frameBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::Frame);
+
+                return 0;
+        }
+
+        PRINT_DEBUG_ERROR("TEXTURE_TARGET cannot target global list.\n");
+        return 1;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {

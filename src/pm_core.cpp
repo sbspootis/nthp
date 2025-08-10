@@ -171,9 +171,11 @@ int main(int argv, char** argc) {
                         int ret = nthp::debuggerBehaviour(testTarget, debug_fd);
                         if(ret) {
                                 PM_PRINT_ERROR("\nCritical failure in debugger; return code %d\n", ret);
+                                debuggingActiveProcess = false;
                         }
                         else {
                                 PM_PRINT("\nCompleted debugging session without critical errors.\n");
+                                debuggingActiveProcess = false;
                         }
                         
        

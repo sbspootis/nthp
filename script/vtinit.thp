@@ -10,15 +10,22 @@ STRING palette "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~palette
 
 VAR txp_textures
-VAR testBlock
-ALLOC 25 &testBlock
+VAR frp_frames
+VAR cpy_frames
 
 
 TEXTURE_ALLOC 1 &txp_textures
+TEXTURE_TARGET $txp_textures
 TEXTURE_LOAD 0 ~targetTexture
 
-FRAME_DEFINE 1
+FRAME_ALLOC 1 &frp_frames
 FRAME_SET 0 0 0 #t_w #t_h 0
+
+ALLOC 13 &cpy_frames
+COPY $frp_frames 13 $cpy_frames
+FRAME_TARGET $cpy_frames
+
+
 
 ENT_DEFINE 1
 ENT_SETFRAMERANGE 0 0 1

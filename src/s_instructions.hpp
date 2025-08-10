@@ -79,8 +79,9 @@ namespace ID {
                 TEXTURE_TARGET,\
 		TEXTURE_LOAD,\
 		SET_ACTIVE_PALETTE,\
-                FRAME_DEFINE,\
+                FRAME_ALLOC,\
                 FRAME_CLEAR,\
+                FRAME_TARGET,\
                 FRAME_SET,\
                 SM_READ,\
                 SM_WRITE,\
@@ -204,8 +205,9 @@ namespace Size {
 		SET_ACTIVE_PALETTE = sizeof(strRef), 
 
 
-                FRAME_DEFINE = sizeof(stdRef),
-                FRAME_CLEAR = 0,
+                FRAME_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+                FRAME_CLEAR = sizeof(ptrRef),
+                FRAME_TARGET = sizeof(ptrRef),
                 FRAME_SET = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
                 SM_WRITE = sizeof(stdRef) + sizeof(stdRef),
                 SM_READ = sizeof(stdRef) + sizeof(ptrRef),
