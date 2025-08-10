@@ -74,8 +74,9 @@ namespace ID {
                 NEXT,\
                 PREV,\
                 INDEX,\
-		TEXTURE_DEFINE,\
+		TEXTURE_ALLOC,\
 		TEXTURE_CLEAR,\
+                TEXTURE_TARGET,\
 		TEXTURE_LOAD,\
 		SET_ACTIVE_PALETTE,\
                 FRAME_DEFINE,\
@@ -196,8 +197,9 @@ namespace Size {
                 PREV = sizeof(ptrRef) + sizeof(uint8_t),
                 INDEX = sizeof(ptrRef) + sizeof(stdRef),
 
-		TEXTURE_DEFINE = sizeof(stdRef),
-		TEXTURE_CLEAR = 0,
+		TEXTURE_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+		TEXTURE_CLEAR = sizeof(ptrRef),
+                TEXTURE_TARGET = sizeof(ptrRef),
 		TEXTURE_LOAD = sizeof(stdRef) + sizeof(strRef), 
 		SET_ACTIVE_PALETTE = sizeof(strRef), 
 

@@ -15,7 +15,7 @@ namespace nthp {
                         // Must use 'regenerateTexture()' with a palette to generate.
                         SoftwareTexture(const char* filename);
 
-
+                        void init();
                         virtual int generateTexture(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer);
                         inline SDL_Texture* getTexture() { return texture; }
 
@@ -49,14 +49,17 @@ namespace nthp {
                         const software_texture_header getMetaData() { return metadata; }
                         inline void manual_metadata_override(const software_texture_header _ovr) { metadata = _ovr; dataSize = metadata.x * metadata.y; }
 
-                        // Cleans up texture data (SDL and rawST) and resets the object to its uninitialized state.
+                        // Cleans up texture data (SDL and rawST) and resets the object to its initialized state.
                         inline void purgeTextureData() {
+                                PRINT_DEBUG("Purging texture @ [%p]...\t", this);
                                 if(dataSize > 0) free(pixelData);
                                 if(texture != nullptr) SDL_DestroyTexture(texture);
 
                                 dataSize = 0;
                                 metadata.x = 0;
                                 metadata.y = 0;
+
+                                NOVERB_PRINT_DEBUG("done.\n");
                         }
 
                         // Destroys the texture's raw ST data, leaving the compiled SDL texture; use if memory

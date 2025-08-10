@@ -1,19 +1,21 @@
 #include "softwaretexture.hpp"
 
-
-nthp::texture::SoftwareTexture::SoftwareTexture() {
+void nthp::texture::SoftwareTexture::init() {
         pixelData = nullptr;
         texture = nullptr;
         dataSize = 0;
 }
 
 
+nthp::texture::SoftwareTexture::SoftwareTexture() {
+        init();
+}
+
+
 
 
 nthp::texture::SoftwareTexture::SoftwareTexture(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer) {
-        pixelData = nullptr;
-        texture = nullptr;
-        dataSize = 0;
+        init();
         
         if(this->generateTexture(filename, palette, coreRenderer)) {
                 PRINT_DEBUG_ERROR("Failed to generate SoftwareTexture.\n");
@@ -22,9 +24,7 @@ nthp::texture::SoftwareTexture::SoftwareTexture(const char* filename, nthp::text
 }
 
 nthp::texture::SoftwareTexture::SoftwareTexture(const char* filename) {
-        pixelData = nullptr;
-        texture = nullptr;
-        dataSize = 0;
+        init();
         
         if(generateTexture(filename, NULL, NULL)) {
                 PRINT_DEBUG_ERROR("Failed to generate SoftwareTexture.\n");
@@ -118,7 +118,6 @@ void nthp::texture::SoftwareTexture::createEmptyTexture(const size_t dataSize) {
 }
 
 nthp::texture::SoftwareTexture::~SoftwareTexture() {
-        PRINT_DEBUG("Destroying SoftwareTexture [%p]...\t", this);
 
         purgeTextureData();
 }

@@ -1,0 +1,9 @@
+rem This is a script to generate player.png, spike.png, and wall.png, and then join them together
+rem and compress the output.
+
+gt resource/genericPalette.pal resource/wall.png
+jt h resource/wall.st resource/wall.st resource/a1.st
+jt h resource/a1.st resource/wall.st resource/a2.st
+jt w resource/a2.st resource/a2.st resource/a3.st
+jt w resource/a3.st resource/a2.st resource/outputTexture.st
+ct resource/outputTexture.st

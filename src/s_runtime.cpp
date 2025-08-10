@@ -80,9 +80,9 @@ int nthp::script::Runtime::importExecutable(const char* filename) {
                                 data.globalMemBudget += globalMemoryNeeded;
 
                                 flags = nthp::script::CompilerInstance::getScriptTriggerFlags(data.nodeSet[i]);
-                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_INIT)) { initList.push_back(allHeaderLocations.size() - 1); }
-                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_TICK)) { tickList.push_back(allHeaderLocations.size() - 1); }
-                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_EXIT)) { exitList.push_back(allHeaderLocations.size() - 1); }
+                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_INIT)) { initList.push_back(allHeaderLocations.size() - 1); PRINT_DEBUG("Pushed INITLIST...\n"); }
+                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_TICK)) { tickList.push_back(allHeaderLocations.size() - 1); PRINT_DEBUG("Pushed TICKLIST...\n"); }
+                                if(flags & (1 << nthp::script::CompilerInstance::TriggerBits::T_EXIT)) { exitList.push_back(allHeaderLocations.size() - 1); PRINT_DEBUG("Pushed EXITLIST...\n"); }
 
                                 scriptData.push_back(nthp::script::Script(&data, i));
                         }

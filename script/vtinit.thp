@@ -1,0 +1,30 @@
+
+CONST t_w       300       
+CONST t_h       228
+STRING targetTexture "resource/outputTexture.cst"
+
+CORE_INIT #t_w #t_h #t_w #t_h 0 0 0 0 ~targetTexture
+CORE_SETMAXFPS 30
+
+STRING palette "resource/genericPalette.pal"
+SET_ACTIVE_PALETTE ~palette
+
+VAR txp_textures
+VAR testBlock
+ALLOC 25 &testBlock
+
+
+TEXTURE_ALLOC 1 &txp_textures
+TEXTURE_LOAD 0 ~targetTexture
+
+FRAME_DEFINE 1
+FRAME_SET 0 0 0 #t_w #t_h 0
+
+ENT_DEFINE 1
+ENT_SETFRAMERANGE 0 0 1
+ENT_SETRENDERSIZE 0 #t_w #t_h
+ENT_SETPOS 0 0 0
+
+
+
+EXIT

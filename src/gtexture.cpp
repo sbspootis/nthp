@@ -4,12 +4,18 @@
 #include "core.hpp"
 
 
-nthp::texture::gTexture::gTexture() {
-
+void nthp::texture::gTexture::init() {
+        texture.init();
 }
 
-nthp::texture::gTexture::gTexture(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer) {
+nthp::texture::gTexture::gTexture() {
+        init();
+}
 
+
+
+nthp::texture::gTexture::gTexture(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer) {
+        init();
         if(autoLoadTextureFile(filename, palette, coreRenderer)) {
 
         }
@@ -95,4 +101,9 @@ int nthp::texture::gTexture::decompressFile(const char* filename) {
 
         PRINT_DEBUG("Successfully decompressed softwareTexture; Output at [%p].\nTotal iterations: %llu.\n", texture, currentAbsolutePosition);
         return 0;
+}
+
+
+void nthp::texture::gTexture::clean() {
+        texture.purgeTextureData();
 }

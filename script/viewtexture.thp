@@ -1,0 +1,13 @@
+
+
+LABEL 1
+
+
+        CORE_CLEAR
+        CORE_QRENDER 0
+        CORE_DISPLAY
+
+        SUSPEND
+        GOTO 1
+
+EXIT

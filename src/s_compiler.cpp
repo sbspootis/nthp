@@ -1284,18 +1284,23 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
 }
 
 
-DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_DEFINE) {
-	ADD_NODE(TEXTURE_DEFINE);
+DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_ALLOC) {
+	ADD_NODE(TEXTURE_ALLOC);
 
-	stdRef* size = (decltype(size))(nodeList[currentNode].access.data);
+	
 	EVAL_SYMBOL(); // file
-
 	auto ref = EVAL_PREF();
 	CHECK_REF(ref);
 
-	// Remove decimal, As it is defining a memory block. Redundant if it's a reference, but cheap so who cares.
-	ref.value = nthp::getFixedInteger(ref.value);
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* size = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* target = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
 	*size = ref;
+        *target = output;
 	
         PRINT_NODEDATA();
 	return 0;	
@@ -1304,11 +1309,31 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_DEFINE) {
 DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_CLEAR) {
 	ADD_NODE(TEXTURE_CLEAR);
 
+        EVAL_SYMBOL();
+        auto block = EVAL_PREF();
+        CHECK_REF(block);
+
+        ptrRef* target = (ptrRef*)(nodeList[currentNode].access.data);
+        *target = block;
 
         PRINT_NODEDATA();
 	return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_TARGET) {
+        ADD_NODE(TEXTURE_TARGET);
+
+        EVAL_SYMBOL();
+        auto ptr = EVAL_PREF();
+        CHECK_REF(ptr);
+
+        ptrRef* target = (ptrRef*)(nodeList[currentNode].access.data);
+        *target = ptr;
+
+
+        PRINT_NODEDATA();
+        return 0;
+}
 
 
 DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_LOAD) {
@@ -3196,7 +3221,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(PREV);
                 CHECK_COMP(INDEX);
 
-		CHECK_COMP(TEXTURE_DEFINE);
+		CHECK_COMP(TEXTURE_ALLOC);
+                CHECK_COMP(TEXTURE_TARGET);
 		CHECK_COMP(TEXTURE_CLEAR);
 		CHECK_COMP(TEXTURE_LOAD);
                 CHECK_COMP(SET_ACTIVE_PALETTE);

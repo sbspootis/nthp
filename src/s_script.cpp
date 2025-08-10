@@ -440,7 +440,10 @@ DEFINE_EXECUTION_BEHAVIOUR(SET) {
         return 0;
 }
 
-int nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size) {
+
+// Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
+// Returns NULL on failure, or a pointer to the newly allocated block on success.
+nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size) {
         // Linear search for open blocks. If none, reallocate block memory and use
         // last entry.
         for(size_t i = 0; i < data->blockDataSize; ++i) {
@@ -450,14 +453,14 @@ int nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script:
               
                         if(data->blockData[i].data == NULL) {
                                 PRINT_DEBUG_ERROR("Unable to allocate data block at [%p] (%zu).\n",data->blockData + i, i);
-                                return 1;
+                                return NULL;
                         }
         
         
                         data->blockData[i].size = nthp::fixedToInt(size);
                         data->blockData[i].isFree = false;
                         *target_dsc = nthp::script::constructPtrDescriptor(i + 1, 0); // Initalize the ptr to the first element in the allocated block.
-                        return 0;
+                        return data->blockData[i].data;
                 }
         }
 
@@ -468,7 +471,7 @@ int nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script:
 
         if(temp == NULL) {
                 PRINT_DEBUG_ERROR("Unable to resize data block at [%p].\n", data->blockData);
-                return 1;
+                return NULL;
         }
         data->blockData = temp;
         
@@ -478,7 +481,7 @@ int nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script:
 
         *target_dsc = nthp::script::constructPtrDescriptor(data->blockDataSize, 0); // Initalize the ptr to the first element in the allocated block.
 
-        return 0;
+        return data->blockData[data->blockDataSize - 1].data;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
@@ -488,7 +491,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        nthp_internal_alloc(data, target_dsc, size.value);
+        if(nthp_internal_alloc(data, target_dsc, size.value) == NULL) { return 1; }
         
         return 0;
 }
@@ -501,7 +504,7 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize));
+        if(nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize)) == NULL) { return 1; }
 
         return 0;
 }
@@ -577,22 +580,70 @@ DEFINE_EXECUTION_BEHAVIOUR(INDEX) {
 }
 
 
-DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_DEFINE) {
+DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
 	stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 	
 	EVAL_STDREF(size);
-	
-	data->textureBlock = new nthp::texture::gTexture[nthp::fixedToInt(size.value)];
-	data->textureBlockSize = nthp::fixedToInt(size.value);
+        EVAL_PTRREF(target);    // where to write the pointer descriptor to!
+
+        const auto textures = nthp::fixedToInt(size.value);
+	const auto bytes = (sizeof(nthp::texture::gTexture) * textures);
+        const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
+
+        printf("t# %zu\nb# %zu\ne# %zu\n", (size_t)textures, bytes, entries);
+
+        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp_internal_alloc(data, target_dsc, entries);
+        if(b_texture == NULL) { return 1; }
+
+        for(size_t i = 0; i < textures; ++i) { b_texture[i].init(); }
+
+
+        // Automatically sets as target block.
+        const auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
+        data->textureBlock = b_texture;
+        data->textureBlockSize = textures;
 
 	return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAR) {
-	if(data->textureBlockSize > 0) 
-		delete[] data->textureBlock;	
+        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
-	return 0;
+        EVAL_PTRREF(ptr);
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
+        
+        if(ptr_dsc.block) {
+                const auto textureCount = (data->blockData[ptr_dsc.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
+                nthp::texture::gTexture* textures = (nthp::texture::gTexture*)(data->blockData[ptr_dsc.block - 1].data);
+
+                for(size_t i = 0; i < textureCount; ++i) { textures[i].clean(); }
+
+                free(data->blockData[ptr_dsc.block - 1].data);
+                data->blockData[ptr_dsc.block - 1].isFree = true;
+                data->blockData[ptr_dsc.block - 1].size = 0;
+
+                return 0;
+        }
+
+        PRINT_DEBUG_ERROR("TEXTURE_CLEAR at [%zu] Attempted to free global list.\n", data->currentNode);
+	return 1;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_TARGET) {
+        ptrRef targetBlock = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(targetBlock);
+        const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
+        if(ptr.block) {
+                data->textureBlock = (nthp::texture::gTexture*)data->blockData[ptr.block - 1].data;
+                data->textureBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
+
+                return 0;
+        }
+
+        PRINT_DEBUG_ERROR("TEXTURE_TARGET cannot target global list.\n");
+        return 1;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {

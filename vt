@@ -1,0 +1,8 @@
+
+BUILD_SYSTEM
+        script/vtinit.thp script/vtinit.thpcs                   T_INIT
+        script/viewtexture.thp script/viewtexture.thpcs         T_TICK
+        script/vexit.thp script/vexit.thpcs                     T_EXIT
+END
+
+EXIT

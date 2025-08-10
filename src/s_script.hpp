@@ -116,12 +116,11 @@ namespace script {
 
         };
                 static inline void cleanDataSet(ScriptDataSet* data) {
-                        if(data->textureBlockSize > 0) delete[] data->textureBlock;
                         if(data->entityBlockSize > 0) {
                                 for(auto i = 0; i < data->entityBlockSize; ++i) data->entityBlock[i].clean();
                                 free(data->entityBlock);
                         }
-                                if(data->frameBlockSize > 0) delete[] data->frameBlock;
+                        if(data->frameBlockSize > 0) delete[] data->frameBlock;
                         if(data->globalMemBudget > 0) delete[] data->globalVarSet;
                         if(data->actionListSize > 0) delete[] data->actionList;
                         if(data->blockDataSize > 0) {
