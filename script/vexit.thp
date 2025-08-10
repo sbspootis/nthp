@@ -1,7 +1,7 @@
 
 TEXTURE_CLEAR $txp_textures
 FRAME_CLEAR $frp_frames
-FREE $cpy_frames
+ENT_CLEAR $entp_entities
 
 
 EXIT

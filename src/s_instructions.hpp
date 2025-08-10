@@ -85,8 +85,9 @@ namespace ID {
                 FRAME_SET,\
                 SM_READ,\
                 SM_WRITE,\
-                ENT_DEFINE,\
+                ENT_ALLOC,\
                 ENT_CLEAR,\
+                ENT_TARGET,\
                 ENT_SETCURRENTFRAME,\
                 ENT_SETPOS,\
                 ENT_MOVE,\
@@ -212,8 +213,10 @@ namespace Size {
                 SM_WRITE = sizeof(stdRef) + sizeof(stdRef),
                 SM_READ = sizeof(stdRef) + sizeof(ptrRef),
 
-                ENT_DEFINE = sizeof(stdRef),
-                ENT_CLEAR = 0,
+                ENT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+                ENT_CLEAR = sizeof(ptrRef),
+                ENT_TARGET = sizeof(ptrRef),
+
                 ENT_SETCURRENTFRAME = sizeof(stdRef) + sizeof(stdRef),
                 ENT_SETPOS = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
                 ENT_MOVE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),

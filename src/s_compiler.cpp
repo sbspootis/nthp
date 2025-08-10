@@ -1518,16 +1518,22 @@ DEFINE_COMPILATION_BEHAVIOUR(SM_READ) {
 }
 
 
-DEFINE_COMPILATION_BEHAVIOUR(ENT_DEFINE) {
-        ADD_NODE(ENT_DEFINE);
+DEFINE_COMPILATION_BEHAVIOUR(ENT_ALLOC) {
+        ADD_NODE(ENT_ALLOC);
 
         EVAL_SYMBOL();
         auto size = EVAL_PREF();
         CHECK_REF(size);
 
-        stdRef* wsize = (stdRef*)(nodeList[currentNode].access.data);
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
 
-        *wsize = size;
+        stdRef* dsize = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *dsize = size;
+        *dtarget = target;
 
         PRINT_NODEDATA();
         return 0;
@@ -1537,8 +1543,29 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_DEFINE) {
 DEFINE_COMPILATION_BEHAVIOUR(ENT_CLEAR) {
         ADD_NODE(ENT_CLEAR);
 
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+        
+        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        *dtarget = target;
+
         PRINT_NODEDATA();
         return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(ENT_TARGET) {
+        ADD_NODE(ENT_TARGET);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+        
+        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        *dtarget = target;
+
+        PRINT_NODEDATA();
+        return 0;   
 }
 
 
@@ -3264,8 +3291,10 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(SM_WRITE);
                 CHECK_COMP(SM_READ);
 
-                CHECK_COMP(ENT_DEFINE);
+                CHECK_COMP(ENT_ALLOC);
                 CHECK_COMP(ENT_CLEAR);
+                CHECK_COMP(ENT_TARGET);
+                
                 CHECK_COMP(ENT_SETCURRENTFRAME);
                 CHECK_COMP(ENT_SETPOS);
                 CHECK_COMP(ENT_MOVE);
