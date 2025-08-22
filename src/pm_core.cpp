@@ -700,10 +700,10 @@ L_BEGIN:
                                 }
 
                                 nthp::texture::SoftwareTexture::software_texture_header target;
-                                std::fstream file(args[1].c_str(), std::ios::in | std::ios::binary);
+                                std::fstream file(args[1], std::ios::in | std::ios::binary);
 
                                 if(file.fail()) {
-                                        PM_PRINT_ERROR("Unable to check texture file [%s]; file not found.\n");
+                                        PM_PRINT_ERROR("Unable to check texture file [%s]; file not found.\n", args[1].c_str());
                                         continue;
                                 }
 

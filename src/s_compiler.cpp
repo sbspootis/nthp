@@ -270,22 +270,11 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
         bool ptr_reference = false;
         bool deref_ptr = false;
-
+        bool get_size = false;
 
         if(expression[0] == '>') {
+                get_size = true;
                 expression.erase(expression.begin());
-
-                for(size_t i = 0; i < structList.size(); ++i) {
-                        if(expression == structList[i].name) {
-                                ref.value = nthp::intToFixed(((nthp::script::stdVarWidth)structList[i].members.size()));
-                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
-
-                                return ref;
-                        }
-                }
-
-                PRINT_COMPILER_ERROR("STRUCT size request invalid; STRUCT [%s] does not exist.\n", expression.c_str());
-                return ref;
         }
 
 
@@ -299,6 +288,16 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         // assume it is a ptr_descriptor reference to allocated memory storing a string.
                         for(size_t i = 0; i < strList.size(); ++i) {
                                 if(expression == strList[i].name) {
+
+                                        if(get_size) {  // Allows the use of the size character '>', followed by a static string to substitute the length
+                                                        // of that string as a constant ref.
+                                                ref.value = nthp::intToFixed(strList[i].length);
+                                                ref.metadata = 0;
+                                                ref.offset = 0;
+
+                                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+                                                return ref;
+                                        }
 
                                         ref.value = nthp::intToFixed(strList[i].objectPosition);
                                         ref.metadata = 0;                       // Reset flags to ensure only STRING_PTR is set.
@@ -365,6 +364,20 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 }
 
         } while(0);
+
+        if(get_size) {
+                for(size_t i = 0; i < structList.size(); ++i) {
+                        if(expression == structList[i].name) {
+                                ref.value = nthp::intToFixed(((nthp::script::stdVarWidth)structList[i].members.size()));
+                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+
+                                return ref;
+                        }
+                }
+
+                PRINT_COMPILER_ERROR("STRUCT size request invalid; STRUCT [%s] does not exist.\n", expression.c_str());
+                return ref;
+        }
 
 
         std::string structAccess;
@@ -1306,8 +1319,8 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_ALLOC) {
 	return 0;	
 }
 
-DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_CLEAR) {
-	ADD_NODE(TEXTURE_CLEAR);
+DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_FREE) {
+	ADD_NODE(TEXTURE_FREE);
 
         EVAL_SYMBOL();
         auto block = EVAL_PREF();
@@ -1399,8 +1412,8 @@ DEFINE_COMPILATION_BEHAVIOUR(FRAME_ALLOC) {
         return 0;
 }
 
-DEFINE_COMPILATION_BEHAVIOUR(FRAME_CLEAR) {
-        ADD_NODE(FRAME_CLEAR);
+DEFINE_COMPILATION_BEHAVIOUR(FRAME_FREE) {
+        ADD_NODE(FRAME_FREE);
 
         EVAL_SYMBOL();
         auto target = EVAL_PREF();
@@ -1540,14 +1553,14 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_ALLOC) {
 }
 
 
-DEFINE_COMPILATION_BEHAVIOUR(ENT_CLEAR) {
-        ADD_NODE(ENT_CLEAR);
+DEFINE_COMPILATION_BEHAVIOUR(ENT_FREE) {
+        ADD_NODE(ENT_FREE);
 
         EVAL_SYMBOL();
         auto target = EVAL_PREF();
         CHECK_REF(target);
         
-        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data);
         *dtarget = target;
 
         PRINT_NODEDATA();
@@ -1561,7 +1574,7 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_TARGET) {
         auto target = EVAL_PREF();
         CHECK_REF(target);
         
-        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data);
         *dtarget = target;
 
         PRINT_NODEDATA();
@@ -3278,13 +3291,13 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
 		CHECK_COMP(TEXTURE_ALLOC);
                 CHECK_COMP(TEXTURE_TARGET);
-		CHECK_COMP(TEXTURE_CLEAR);
+		CHECK_COMP(TEXTURE_FREE);
 		CHECK_COMP(TEXTURE_LOAD);
                 CHECK_COMP(SET_ACTIVE_PALETTE);
 
 
                 CHECK_COMP(FRAME_ALLOC);
-                CHECK_COMP(FRAME_CLEAR);
+                CHECK_COMP(FRAME_FREE);
                 CHECK_COMP(FRAME_TARGET);
                 CHECK_COMP(FRAME_SET);
 
@@ -3292,7 +3305,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(SM_READ);
 
                 CHECK_COMP(ENT_ALLOC);
-                CHECK_COMP(ENT_CLEAR);
+                CHECK_COMP(ENT_FREE);
                 CHECK_COMP(ENT_TARGET);
                 
                 CHECK_COMP(ENT_SETCURRENTFRAME);
@@ -3593,6 +3606,7 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                         
 
                         // Add constant runtime globals.
+                        addGlobalDef("null",            "predefined");
                         addGlobalDef("mousepos_x",      "predefined");
                         addGlobalDef("mousepos_y",      "predefined");
                         addGlobalDef("deltaTime",       "predefined");

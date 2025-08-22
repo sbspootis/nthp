@@ -11,7 +11,7 @@ namespace nthp {
                         
 
                         int autoLoadTextureFile(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer);
-                        const nthp::texture::SoftwareTexture& getTextureData() { return texture; }
+                        nthp::texture::SoftwareTexture& getTextureData() { return texture; }
                         
                         void clean();
                 private:

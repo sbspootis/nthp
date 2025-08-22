@@ -443,7 +443,7 @@ DEFINE_EXECUTION_BEHAVIOUR(SET) {
 
 // Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
 // Returns NULL on failure, or a pointer to the newly allocated block on success.
-nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size) {
+nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type) {
         // Linear search for open blocks. If none, reallocate block memory and use
         // last entry.
         for(size_t i = 0; i < data->blockDataSize; ++i) {
@@ -460,6 +460,7 @@ nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataS
                         data->blockData[i].size = nthp::fixedToInt(size);
                         data->blockData[i].isFree = false;
                         *target_dsc = nthp::script::constructPtrDescriptor(i + 1, 0); // Initalize the ptr to the first element in the allocated block.
+                        data->blockData[i].type = type;
                         return data->blockData[i].data;
                 }
         }
@@ -478,6 +479,7 @@ nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataS
         data->blockData[data->blockDataSize - 1].data = (nthp::script::stdVarWidth*)malloc(sizeof(nthp::script::stdVarWidth) * nthp::fixedToInt(size));
         data->blockData[data->blockDataSize - 1].size = nthp::fixedToInt(size);
         data->blockData[data->blockDataSize - 1].isFree = false;
+        data->blockData[data->blockDataSize - 1].type = type;
 
         *target_dsc = nthp::script::constructPtrDescriptor(data->blockDataSize, 0); // Initalize the ptr to the first element in the allocated block.
 
@@ -491,7 +493,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp_internal_alloc(data, target_dsc, size.value) == NULL) { return 1; }
+        if(nthp_internal_alloc(data, target_dsc, size.value, nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
         
         return 0;
 }
@@ -504,7 +506,7 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize)) == NULL) { return 1; }
+        if(nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
 
         return 0;
 }
@@ -592,7 +594,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
 
-        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp_internal_alloc(data, target_dsc, entries);
+        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::TEXTURE);
         if(b_texture == NULL) { return 1; }
 
         for(size_t i = 0; i < textures; ++i) { b_texture[i].init(); }
@@ -605,7 +607,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
 	return 0;
 }
 
-DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAR) {
+DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
         EVAL_PTRREF(ptr);
@@ -642,6 +644,15 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_TARGET) {
 
         PRINT_DEBUG_ERROR("TEXTURE_TARGET cannot target global list.\n");
         return 1;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAN) {
+        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(target);
+
+        data->textureBlock[target.value].getTextureData().cleanSTData();
+        return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
@@ -683,7 +694,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         const auto bytes = frames * sizeof(nthp::texture::Frame);
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp_internal_alloc(data, target_dsc, entries);
+        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::FRAME);
         if(newBlock == NULL) { return 1; }
 
         // Automatically set as target.
@@ -693,7 +704,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         return 0;
 }
 
-DEFINE_EXECUTION_BEHAVIOUR(FRAME_CLEAR) {
+DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
         ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
         EVAL_PTRREF(target);
@@ -792,7 +803,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
 	const auto bytes = (sizeof(nthp::entity::gEntity) * entities);
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        nthp::entity::gEntity* entityBlock = (nthp::entity::gEntity*)nthp_internal_alloc(data, target_dsc, entries);
+        nthp::entity::gEntity* entityBlock = (nthp::entity::gEntity*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::ENTITY);
         if(entityBlock == NULL) { return 1; }
 
         for(size_t i = 0; i < entities; ++i) { entityBlock[i].init(); }
@@ -804,7 +815,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
         return 0;
 }
 
-DEFINE_EXECUTION_BEHAVIOUR(ENT_CLEAR) {
+DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
         EVAL_PTRREF(ptr);
@@ -1355,7 +1366,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
 
         size_t byteSize = nthp::fixedToInt(fileSize) * sizeof(nthp::script::stdVarWidth);
 
-        nthp_internal_alloc(data, target_dsc, fileSize);
+        nthp_internal_alloc(data, target_dsc, fileSize, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
         if(ptr.block) {
                 file.read((char*)data->blockData[ptr.block - 1].data, fileSize);

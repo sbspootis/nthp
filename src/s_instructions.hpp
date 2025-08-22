@@ -6,6 +6,7 @@
 namespace nthp { namespace script { 
         
         typedef enum {
+                NTHP_NULL,
                 MOUSEPOS_X_GLOBAL_INDEX,
                 MOUSEPOS_Y_GLOBAL_INDEX,
                 DELTATIME_GLOBAL_INDEX,
@@ -75,18 +76,19 @@ namespace ID {
                 PREV,\
                 INDEX,\
 		TEXTURE_ALLOC,\
-		TEXTURE_CLEAR,\
+		TEXTURE_FREE,\
                 TEXTURE_TARGET,\
+                TEXTURE_CLEAN,\
 		TEXTURE_LOAD,\
 		SET_ACTIVE_PALETTE,\
                 FRAME_ALLOC,\
-                FRAME_CLEAR,\
+                FRAME_FREE,\
                 FRAME_TARGET,\
                 FRAME_SET,\
                 SM_READ,\
                 SM_WRITE,\
                 ENT_ALLOC,\
-                ENT_CLEAR,\
+                ENT_FREE,\
                 ENT_TARGET,\
                 ENT_SETCURRENTFRAME,\
                 ENT_SETPOS,\
@@ -200,21 +202,22 @@ namespace Size {
                 INDEX = sizeof(ptrRef) + sizeof(stdRef),
 
 		TEXTURE_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
-		TEXTURE_CLEAR = sizeof(ptrRef),
+		TEXTURE_FREE = sizeof(ptrRef),
                 TEXTURE_TARGET = sizeof(ptrRef),
+                TEXTURE_CLEAN = sizeof(stdRef),
 		TEXTURE_LOAD = sizeof(stdRef) + sizeof(strRef), 
 		SET_ACTIVE_PALETTE = sizeof(strRef), 
 
 
                 FRAME_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
-                FRAME_CLEAR = sizeof(ptrRef),
+                FRAME_FREE = sizeof(ptrRef),
                 FRAME_TARGET = sizeof(ptrRef),
                 FRAME_SET = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
                 SM_WRITE = sizeof(stdRef) + sizeof(stdRef),
                 SM_READ = sizeof(stdRef) + sizeof(ptrRef),
 
                 ENT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
-                ENT_CLEAR = sizeof(ptrRef),
+                ENT_FREE = sizeof(ptrRef),
                 ENT_TARGET = sizeof(ptrRef),
 
                 ENT_SETCURRENTFRAME = sizeof(stdRef) + sizeof(stdRef),
