@@ -471,11 +471,13 @@ L_BEGIN:
                                                 nthp::core.stop();
                                                 debuggingActiveProcess = false;
                                                 suspendExecution = false;
+                                                nthp::script::debug::debugInstructionCall.x = -1;
+                                                nthp::script::debug::suspendExecution = false;
 
                                         g_access.unlock();
                                 }
                                 else {
-                                        PM_PRINT("Not in an active debug session.\n");
+                                        PM_PRINT("Not in active debug session.\n");
                                 }
                                 continue;
 
@@ -545,81 +547,10 @@ L_BEGIN:
 
                         }
                         
-
-                        // Joins two target ST files into a single file; aligns dimensions and outputs a valid texture. Can
-                        // be ordered widthwise with 'w' or lengthwise with 'h'.
-                        if(args[0] == "jt") {
-                                if(args.size() < 5) {
-                                        PM_PRINT_ERROR("Invalid command argument. (jt w/h textureA textureB outputTexture)\n");
-                                        continue;
-                                }
-                                if(args[1] == "w") {
-                                        PM_PRINT("Attempting to join textures [%s] & [%s] by width...\n", args[2].c_str(), args[3].c_str());
-                                        auto textureA = nthp::texture::tools::readTextureData(args[2].c_str());
-                                        auto textureB = nthp::texture::tools::readTextureData(args[3].c_str());
-
-                                        if((textureA.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) || (textureB.header.signature != nthp::texture::SoftwareTexture::STheaderSignature)) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                continue; 
-                                        }
-
-                                        auto data =  nthp::texture::tools::joinSoftwareTextures(textureA, textureB, nthp::texture::tools::JOIN_WIDTH);
-                                        
-                                        nthp::texture::tools::destroySTdata(&textureA);
-                                        nthp::texture::tools::destroySTdata(&textureB);
-                                        
-                                      
-                                        if(data.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                continue; 
-                                        }
-
-
-                                        if(nthp::texture::tools::writeTextureData(data, args[4].c_str())) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                nthp::texture::tools::destroySTdata(&data);
-                                                continue; 
-                                        }
-
-                                
-                                }
-                                else {
-                                        PM_PRINT("Attempting to join textures [%s] & [%s] by height...\n", args[2].c_str(), args[3].c_str());
-                                        auto textureA = nthp::texture::tools::readTextureData(args[2].c_str());
-                                        auto textureB = nthp::texture::tools::readTextureData(args[3].c_str());
-
-                                        if((textureA.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) || (textureB.header.signature != nthp::texture::SoftwareTexture::STheaderSignature)) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                continue; 
-                                        }
-
-                                        auto data =  nthp::texture::tools::joinSoftwareTextures(textureA, textureB, nthp::texture::tools::JOIN_HEIGHT);
-                                        nthp::texture::tools::destroySTdata(&textureA);
-                                        nthp::texture::tools::destroySTdata(&textureB);
-                                      
-                                        if(data.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                continue; 
-                                        }
-
-
-                                        if(nthp::texture::tools::writeTextureData(data, args[4].c_str())) {
-                                                PM_PRINT_ERROR("Failed to join textures.\n");
-                                                nthp::texture::tools::destroySTdata(&data);
-                                                continue; 
-                                        }
-
-                                        nthp::texture::tools::destroySTdata(&data);
-                                }
-
-                                PM_PRINT("Successfully joined textures; output @ [%s].\n", args[4].c_str());
-                                continue;
-                        }
-                        
                    
                         // Joins an indefinite series of ST files into a single file; joins the output of the last operation with the next target
                         // until every target is ordered into a sheet.
-                        if(args[0] == "js") {
+                        if(args[0] == "jt") {
                                 if(args.size() < 5) {
                                         PM_PRINT_ERROR("Invalid command argument. (js w/h textureA textureB textureC ... outputTexture)\n");
                                         continue;
@@ -1042,6 +973,8 @@ L_BEGIN:
 
                         }
 
+                        PM_PRINT_ERROR("\"%s\", Unknown command.\n", args[0].c_str());
+                        continue;
 		} // if(input != "")
 
 

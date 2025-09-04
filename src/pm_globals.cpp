@@ -13,8 +13,8 @@ void PM_PRINT_ERROR(const char* format, ...) {
 	
 	va_start(ap, format);
 
-	printf("[%u] ERROR: ", SDL_GetTicks());	
-	printf(format, ap);
+	fprintf(stdout ,"[%u] ERROR: ", SDL_GetTicks());	
+	fprintf(stdout, format, ap);
 
 
 	va_end(ap);

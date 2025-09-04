@@ -272,6 +272,23 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         bool deref_ptr = false;
         bool get_size = false;
 
+        // Binary write; constant value, not converted to fixed point.
+        if(expression[0] == '?') {
+                expression.erase(expression.begin());
+                try {
+                        ref.value = std::stol(expression, nullptr, 0);
+                }
+                catch(std::invalid_argument) {
+                        PRINT_COMPILER_ERROR("Binary value invalid. (%s) invalid binary expression.\n", expression.c_str());
+                        return ref;
+                }
+
+                PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+                return ref;
+        }
+
+
+
         if(expression[0] == '>') {
                 get_size = true;
                 expression.erase(expression.begin());
@@ -2846,6 +2863,32 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 if(fileRead == "UNDEF") {
                         EVAL_SYMBOL();
                         undefConstant(fileRead.c_str(), constantList);
+                        continue;
+                }
+
+                if(fileRead == "ENUM") {
+                       
+                        EVAL_SYMBOL();
+                        if(fileRead != "{") {
+                                PRINT_COMPILER_ERROR("ENUM must be scoped; scope missing at ENUM [~%zu].\n", currentNode);
+                                return 1;
+                        }
+                        PRINT_COMPILER("Starting new AUTOENUM...\n");
+
+                        CONST_DEF tempConst;
+                        for(size_t size = 0; fileRead != "}"; ++size) {
+                                EVAL_SYMBOL();
+                                
+                                tempConst.constName = "#" + fileRead;
+                                tempConst.value = std::to_string(size);
+
+                                if(fileRead != "}") { constantList.push_back(tempConst); }
+                                else { break; }
+
+                                NOVERB_PRINT_COMPILER("\t%s / %zu,\n", fileRead.c_str(), size);
+                        }
+
+                        PRINT_COMPILER("done.\n");
                         continue;
                 }
 

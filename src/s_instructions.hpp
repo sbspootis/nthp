@@ -151,7 +151,6 @@ typedef P_Reference<nthp::script::stdVarWidth> stdRef;  // The standard value ty
 typedef stdRef ptrRef;                                  // ptrRef endpoints are evaluated as ptr_descriptors; otherwise identical to stdRefs
 typedef stdRef strRef;                                  // strRef endpoints are the same as stdRef, but instead point to a STRING node or assumed block data (ptr_descriptor) string.
 
-
 // Sizes must have the same name as the ENUM entry in 'ID'.
 namespace Size {
 
