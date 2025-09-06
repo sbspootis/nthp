@@ -76,9 +76,6 @@ namespace script {
                         size_t currentNode;
                         size_t nodeSetSize;
 
-
-                        nthp::script::stdVarWidth* globalVarSet;
-                        size_t varSetSize;
                         /////////////////////////
 
 
@@ -116,7 +113,6 @@ namespace script {
 
         };
                 static inline void cleanDataSet(ScriptDataSet* data) {
-                        if(data->globalMemBudget > 0) delete[] data->globalVarSet;
                         if(data->actionListSize > 0) delete[] data->actionList;
                         if(data->blockDataSize > 0) {
                                 for(size_t i = 0; i < data->blockDataSize; ++i) {
@@ -174,6 +170,11 @@ namespace script {
 
                 bool inStageContext;
         };
+
+
+        // Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
+        // Returns NULL on failure, or a pointer to the newly allocated block on success.
+        extern nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type);
 
 
 }

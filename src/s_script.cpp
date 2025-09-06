@@ -9,33 +9,16 @@ nthp::texture::Palette nthp::script::activePalette;
 
 static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) {
-                ref.value = data->globalVarSet[nthp::fixedToInt(ref.value)];
-
+                {
+                        const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+                        ref.value = data->blockData[ptr.block].data[ptr.address + ref.offset];
+                }
                 // This is okay because the compiler simplifies ptr_descriptor call dereferences.
                 // Technically *&var is syntaxically correct and will evaluate correctly, but will take much longer.
                 // The compiler therefore simplifies constant ptr_descriptor dereferences to a simple reference '$'.
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_PTR)) {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
-                        if(ptr.block) {
-                #ifdef DEBUG
-                                if(ptr.block > data->blockDataSize) {
-                                        PRINT_DEBUG_ERROR("Invalid block data request; Attempted read to [b%da%d]; invalid block.\n", ptr.block, ptr.address);
-                                        NTHP_GEN_DEBUG_CLOSE();
-
-                                        std::terminate();
-                                }
-                                if(ptr.address > data->blockData[ptr.block].size) {
-                                        PRINT_DEBUG_ERROR("Invalid block data request; Attempted read to [b%da%d]; invalid address.\n", ptr.block, ptr.address);
-                                        NTHP_GEN_DEBUG_CLOSE();
-
-                                        std::terminate();
-                                }
-                #endif
-                                ref.value = data->blockData[ptr.block - 1].data[ptr.address + ref.offset];
-                                if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) ref.value = -(ref.value);
-                                return;
-                        }
-                        ref.value = data->globalVarSet[ptr.address];
+                        ref.value = data->blockData[ptr.block].data[ptr.address + ref.offset];
                 }
                         
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) ref.value = -(ref.value);
@@ -51,8 +34,7 @@ static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet
         do {\
                 EVAL_STDREF(ref);\
                 const auto ptr_dsc = nthp::script::parsePtrDescriptor(ref.value);\
-                if(ptr_dsc.block) { target_dsc = (data->blockData[ptr_dsc.block - 1].data + ptr_dsc.address + ref.offset); break; }\
-                target_dsc = (data->globalVarSet + ptr_dsc.address);\
+                target_dsc = (data->blockData[ptr_dsc.block].data + ptr_dsc.address + ref.offset); break;\
         }\
         while(0)
 
@@ -63,9 +45,7 @@ inline char* ____eval_str(ptrRef& ref, nthp::script::Script::ScriptDataSet* data
         EVAL_STDREF(ref);
 
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ref.value);
-        if(ptr_dsc.block) { return (char*)(data->blockData[ptr_dsc.block - 1].data + ptr_dsc.address); }
-        
-        return (char*)(data->globalVarSet + ptr_dsc.address);
+        return (char*)(data->blockData[ptr_dsc.block].data + ptr_dsc.address);
 }
 
 
@@ -443,7 +423,7 @@ DEFINE_EXECUTION_BEHAVIOUR(SET) {
 
 // Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
 // Returns NULL on failure, or a pointer to the newly allocated block on success.
-nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type) {
+nthp::script::stdVarWidth* nthp::script::nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type) {
         // Linear search for open blocks. If none, reallocate block memory and use
         // last entry.
         for(size_t i = 0; i < data->blockDataSize; ++i) {
@@ -481,7 +461,7 @@ nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataS
         data->blockData[data->blockDataSize - 1].isFree = false;
         data->blockData[data->blockDataSize - 1].type = type;
 
-        *target_dsc = nthp::script::constructPtrDescriptor(data->blockDataSize, 0); // Initalize the ptr to the first element in the allocated block.
+        if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(data->blockDataSize - 1, 0); // Initalize the ptr to the first element in the allocated block.
 
         return data->blockData[data->blockDataSize - 1].data;
 }
@@ -493,7 +473,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp_internal_alloc(data, target_dsc, size.value, nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
+        if(nthp::script::nthp_internal_alloc(data, target_dsc, size.value, nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
         
         return 0;
 }
@@ -506,7 +486,7 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
+        if(nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), nthp::script::BlockMemoryEntry::bmType::TYPELESS) == NULL) { return 1; }
 
         return 0;
 }
@@ -519,9 +499,9 @@ DEFINE_EXECUTION_BEHAVIOUR(FREE) {
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
         if(ptr_dsc.block) {
-                free(data->blockData[ptr_dsc.block - 1].data);
-                data->blockData[ptr_dsc.block - 1].isFree = true;
-                data->blockData[ptr_dsc.block - 1].size = 0;
+                free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].isFree = true;
+                data->blockData[ptr_dsc.block].size = 0;
 
                 return 0;
         }
@@ -594,7 +574,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
 
-        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::TEXTURE);
+        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::TEXTURE);
         if(b_texture == NULL) { return 1; }
 
         for(size_t i = 0; i < textures; ++i) { b_texture[i].init(); }
@@ -614,14 +594,14 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
         if(ptr_dsc.block) {
-                const auto textureCount = (data->blockData[ptr_dsc.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
-                nthp::texture::gTexture* textures = (nthp::texture::gTexture*)(data->blockData[ptr_dsc.block - 1].data);
+                const auto textureCount = (data->blockData[ptr_dsc.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
+                nthp::texture::gTexture* textures = (nthp::texture::gTexture*)(data->blockData[ptr_dsc.block].data);
 
                 for(size_t i = 0; i < textureCount; ++i) { textures[i].clean(); }
 
-                free(data->blockData[ptr_dsc.block - 1].data);
-                data->blockData[ptr_dsc.block - 1].isFree = true;
-                data->blockData[ptr_dsc.block - 1].size = 0;
+                free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].isFree = true;
+                data->blockData[ptr_dsc.block].size = 0;
 
                 return 0;
         }
@@ -636,8 +616,8 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_TARGET) {
         EVAL_PTRREF(targetBlock);
         const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
         if(ptr.block) {
-                data->textureBlock = (nthp::texture::gTexture*)(data->blockData[ptr.block - 1].data);
-                data->textureBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
+                data->textureBlock = (nthp::texture::gTexture*)(data->blockData[ptr.block].data);
+                data->textureBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
 
                 return 0;
         }
@@ -651,7 +631,7 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAN) {
 
         EVAL_STDREF(target);
 
-        data->textureBlock[target.value].getTextureData().cleanSTData();
+        data->textureBlock[nthp::fixedToInt(target.value)].getTextureData().cleanSTData();
         return 0;
 }
 
@@ -694,7 +674,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         const auto bytes = frames * sizeof(nthp::texture::Frame);
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::FRAME);
+        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::FRAME);
         if(newBlock == NULL) { return 1; }
 
         // Automatically set as target.
@@ -711,9 +691,9 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
         auto ptr = nthp::script::parsePtrDescriptor(target.value);
 
         if(ptr.block) {
-                free(data->blockData[ptr.block - 1].data);
-                data->blockData[ptr.block - 1].isFree = true;
-                data->blockData[ptr.block - 1].size = 0;
+                free(data->blockData[ptr.block].data);
+                data->blockData[ptr.block].isFree = true;
+                data->blockData[ptr.block].size = 0;
 
                 return 0;
         }
@@ -728,8 +708,8 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_TARGET) {
         EVAL_PTRREF(targetBlock);
         const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
         if(ptr.block) {
-                data->frameBlock = (nthp::texture::Frame*)(data->blockData[ptr.block - 1].data);
-                data->frameBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::Frame);
+                data->frameBlock = (nthp::texture::Frame*)(data->blockData[ptr.block].data);
+                data->frameBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::Frame);
 
                 return 0;
         }
@@ -803,7 +783,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
 	const auto bytes = (sizeof(nthp::entity::gEntity) * entities);
         const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        nthp::entity::gEntity* entityBlock = (nthp::entity::gEntity*)nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::ENTITY);
+        nthp::entity::gEntity* entityBlock = (nthp::entity::gEntity*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::ENTITY);
         if(entityBlock == NULL) { return 1; }
 
         for(size_t i = 0; i < entities; ++i) { entityBlock[i].init(); }
@@ -822,14 +802,14 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
         if(ptr_dsc.block) {
-                const auto entityCount = (data->blockData[ptr_dsc.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::entity::gEntity);
-                nthp::entity::gEntity* entities = (nthp::entity::gEntity*)(data->blockData[ptr_dsc.block - 1].data);
+                const auto entityCount = (data->blockData[ptr_dsc.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::entity::gEntity);
+                nthp::entity::gEntity* entities = (nthp::entity::gEntity*)(data->blockData[ptr_dsc.block].data);
 
                 for(size_t i = 0; i < entityCount; ++i) { entities[i].clean(); }
 
-                free(data->blockData[ptr_dsc.block - 1].data);
-                data->blockData[ptr_dsc.block - 1].isFree = true;
-                data->blockData[ptr_dsc.block - 1].size = 0;
+                free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].isFree = true;
+                data->blockData[ptr_dsc.block].size = 0;
 
                 return 0;
         }
@@ -845,8 +825,8 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_TARGET) {
         EVAL_PTRREF(targetBlock);
         const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
         if(ptr.block) {
-                data->entityBlock = (nthp::entity::gEntity*)(data->blockData[ptr.block - 1].data);
-                data->textureBlockSize = (data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::entity::gEntity);
+                data->entityBlock = (nthp::entity::gEntity*)(data->blockData[ptr.block].data);
+                data->textureBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::entity::gEntity);
 
                 return 0;
         }
@@ -1152,8 +1132,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_POSITION) {
 
         const auto pos = data->entityBlock[nthp::fixedToInt(target.value)].getPosition();
 
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = pos.x;
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = pos.y;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = pos.x;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = pos.y;
 
         return 0;
 }
@@ -1164,7 +1144,7 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_CURRENTFRAME) {
 
         const auto cf = data->entityBlock[nthp::fixedToInt(target.value)].getCurrentFrameIndex();
         
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = nthp::intToFixed(cf);
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = nthp::intToFixed(cf);
 
         return 0;
 }
@@ -1175,10 +1155,10 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_HITBOX) {
 
         const auto box = data->entityBlock[nthp::fixedToInt(target.value)].getHitbox();
 
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = box.x;
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = box.y;
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL3_GLOBAL_INDEX] = box.w;
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL4_GLOBAL_INDEX] = box.h;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = box.x;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = box.y;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL3_GLOBAL_INDEX] = box.w;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL4_GLOBAL_INDEX] = box.h;
 
         return 0;
 }
@@ -1190,8 +1170,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_RENDERSIZE) {
 
         const auto rs = data->entityBlock[target.value].getRenderSize();
 
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = rs.x;
-        data->globalVarSet[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = rs.y;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = rs.x;
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = rs.y;
 
         return 0;
 }
@@ -1366,10 +1346,10 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
 
         size_t byteSize = nthp::fixedToInt(fileSize) * sizeof(nthp::script::stdVarWidth);
 
-        nthp_internal_alloc(data, target_dsc, fileSize, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        nthp::script::nthp_internal_alloc(data, target_dsc, fileSize, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
         if(ptr.block) {
-                file.read((char*)data->blockData[ptr.block - 1].data, fileSize);
+                file.read((char*)data->blockData[ptr.block].data, fileSize);
                 file.close();
 
                 return 0;
@@ -1402,10 +1382,10 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
         }
 
 
-        nthp::script::stdVarWidth size = nthp::intToFixed(data->blockData[ptr.block - 1].size);
+        nthp::script::stdVarWidth size = nthp::intToFixed(data->blockData[ptr.block].size);
         file.write((char*)&size, sizeof(nthp::script::stdVarWidth));
 
-        size_t byteSize = data->blockData[ptr.block - 1].size * sizeof(nthp::script::stdVarWidth);
+        size_t byteSize = data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth);
         file.write((char*)target_dsc, byteSize);
 
         file.close();

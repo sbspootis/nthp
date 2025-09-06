@@ -89,14 +89,16 @@ int nthp::script::Runtime::importExecutable(const char* filename) {
                 }
         }
 
-        data.globalVarSet = (nthp::script::stdVarWidth*)malloc(sizeof(nthp::script::stdVarWidth) * data.globalMemBudget);
-        if(data.globalVarSet == NULL) {
+
+        auto globalVarSet = nthp::script::nthp_internal_alloc(&data, NULL, nthp::intToFixed(data.globalMemBudget), nthp::script::BlockMemoryEntry::bmType::GLOBAL);
+        if(globalVarSet == NULL) {
                 PRINT_DEBUG_ERROR("Unable to allocate global memory.\n");
                 return 1;
         }
         
         PRINT_DEBUG("Reserved [%u] entries in GLOBAL list.\n", data.globalMemBudget);
-        memset((data.globalVarSet), 0, sizeof(nthp::script::stdVarWidth) * data.globalMemBudget);
+        memset((globalVarSet), 0, sizeof(nthp::script::stdVarWidth) * data.globalMemBudget);
+
 
         return 0;
 }
@@ -135,8 +137,8 @@ void nthp::script::Runtime::handleEvents() {
         nthp::mousePosition = nthp::generateWorldPosition(nthp::vectGeneric(x, y), &nthp::core.p_coreDisplay);
         nthp::mousePosition -= nthp::core.p_coreDisplay.cameraWorldPosition;
 
-        data.globalVarSet[MOUSEPOS_X_GLOBAL_INDEX] = nthp::mousePosition.x;
-        data.globalVarSet[MOUSEPOS_Y_GLOBAL_INDEX] = nthp::mousePosition.y;
+        data.blockData[0].data[MOUSEPOS_X_GLOBAL_INDEX] = nthp::mousePosition.x;
+        data.blockData[0].data[MOUSEPOS_Y_GLOBAL_INDEX] = nthp::mousePosition.y;
 
         data.inputBufferPtr = 0;
 
@@ -170,15 +172,15 @@ void nthp::script::Runtime::handleEvents() {
 
                 case SDL_MOUSEBUTTONDOWN:
                         if(nthp::core.eventList.button.button == SDL_BUTTON_LEFT) {
-                                data.globalVarSet[MOUSE1_GLOBAL_INDEX] = nthp::intToFixed(1);
+                                data.blockData[0].data[MOUSE1_GLOBAL_INDEX] = nthp::intToFixed(1);
                                 break;
                         }
                         if(nthp::core.eventList.button.button == SDL_BUTTON_RIGHT) {
-                                data.globalVarSet[MOUSE2_GLOBAL_INDEX] = nthp::intToFixed(1);
+                                data.blockData[0].data[MOUSE2_GLOBAL_INDEX] = nthp::intToFixed(1);
                                 break;
                         }
                         if(nthp::core.eventList.button.button == SDL_BUTTON_MIDDLE) {
-                                data.globalVarSet[MOUSE3_GLOBAL_INDEX] = nthp::intToFixed(1);
+                                data.blockData[0].data[MOUSE3_GLOBAL_INDEX] = nthp::intToFixed(1);
                                 break;
                         }
                         
@@ -186,15 +188,15 @@ void nthp::script::Runtime::handleEvents() {
 
                 case SDL_MOUSEBUTTONUP:
                         if(nthp::core.eventList.button.button == SDL_BUTTON_LEFT) {
-                                data.globalVarSet[MOUSE1_GLOBAL_INDEX] = 0;
+                                data.blockData[0].data[MOUSE1_GLOBAL_INDEX] = 0;
                                 break;
                         }
                         if(nthp::core.eventList.button.button == SDL_BUTTON_RIGHT) {
-                                data.globalVarSet[MOUSE2_GLOBAL_INDEX] = 0;
+                                data.blockData[0].data[MOUSE2_GLOBAL_INDEX] = 0;
                                 break;
                         }
                         if(nthp::core.eventList.button.button == SDL_BUTTON_MIDDLE) {
-                                data.globalVarSet[MOUSE3_GLOBAL_INDEX] = 0;
+                                data.blockData[0].data[MOUSE3_GLOBAL_INDEX] = 0;
                                 break;
                         }
                 break;

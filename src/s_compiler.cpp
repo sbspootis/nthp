@@ -480,11 +480,10 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 }
 
                 ref.value = nthp::doubleToFixed(value);
-                if(ptr_reference) {
+                if(ptr_reference || (PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE))) {
                         // Convert the saved index into a ptr descriptor. Block 0 is the GLOBAL LIST.
                         ref.value = nthp::script::constructPtrDescriptor(0, nthp::fixedToInt(ref.value));
                 }
-        
 
         }
         catch(std::invalid_argument) {

@@ -92,7 +92,8 @@ namespace script {
                         TYPELESS,
                         TEXTURE,
                         FRAME,
-                        ENTITY
+                        ENTITY,
+                        GLOBAL
                 } bmType;
 
                 nthp::script::stdVarWidth* data;
@@ -115,7 +116,7 @@ namespace script {
                 FIXED_TYPE address      : nthp::script::internal_constants::blockMemoryBitAllocation;
         } PtrDescriptor_st;
 
-
+        constexpr int GLOBAL_LIST = 0;
 
         constexpr FIXED_TYPE constructPtrDescriptor(FIXED_TYPE block, FIXED_TYPE address) {
                 using namespace nthp::script::internal_constants;
@@ -130,7 +131,6 @@ namespace script {
 
                 return ret;
         }
-
 
 
         typedef enum __P_REF_FLAGS_BITS {

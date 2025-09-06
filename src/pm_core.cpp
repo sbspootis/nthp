@@ -74,7 +74,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                                 }
                                 
                                 g_access.lock();
-                                        mainRuntime.data.globalVarSet[nthp::script::predefined_globals::DELTATIME_GLOBAL_INDEX] = nthp::deltaTime;
+                                        mainRuntime.data.blockData[0].data[nthp::script::predefined_globals::DELTATIME_GLOBAL_INDEX] = nthp::deltaTime;
                                 g_access.unlock();
                         }
 
@@ -757,17 +757,17 @@ L_BEGIN:
                                                 index = i;
                                                 printf ("\t[%04zX (%zu), ", i, i);
                                                 if(printSymbols) { std::cout << "[>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
-                                                std::cout << "] " << mainRuntime.data.globalVarSet + index << "; = [";
+                                                std::cout << "] " << mainRuntime.data.blockData[0].data + index << "; = [";
                                                 switch(displayFormat) {
                                                         case MEM_DISPLAY_FORMAT::STD:
-                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
                                                                 break;
                                                         case MEM_DISPLAY_FORMAT::PTR:
-                                                                const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.globalVarSet[index]);
+                                                                const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.blockData[0].data[index]);
                                                                 std::cout << 'b' << ptr.block << 'a' << ptr.address << "]\n";
                                                                 break;
                                                         default:
-                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
                                                                 break;
                                                 }
                                                 // << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
@@ -793,14 +793,14 @@ L_BEGIN:
                                         
                                         try {
                                                 if(isIndex) {
-                                                        mainRuntime.data.globalVarSet[std::stoul(args[1], NULL, 0)] = nthp::doubleToFixed(std::stod(args[2]));
+                                                        mainRuntime.data.blockData[0].data[std::stoul(args[1], NULL, 0)] = nthp::doubleToFixed(std::stod(args[2]));
                                                 }
                                                 else {
                                                         std::string reference = args[1];
                                                         reference.erase(reference.begin());
                                                         for(size_t i = 0; i < symbolData.globalList.size(); ++i) {
                                                                 if(reference == symbolData.globalList[i].varName) {
-                                                                        mainRuntime.data.globalVarSet[symbolData.globalList[i].relativeIndex] = nthp::doubleToFixed(std::stod(args[2]));
+                                                                        mainRuntime.data.blockData[0].data[symbolData.globalList[i].relativeIndex] = nthp::doubleToFixed(std::stod(args[2]));
                                                                         break;
                                                                 }
                                                         }
@@ -829,7 +829,7 @@ L_BEGIN:
                                                 uint8_t b = 0;
                                                 for(size_t i = 0; i < mainRuntime.data.blockDataSize; ++i) {
                                                         b = mainRuntime.data.blockData[i].isFree;
-                                                        PM_PRINT("ID: %zu(b%zu) at [%p]. Contains [%zu] address space (Vacancy:%d).\n", i, (i+1), mainRuntime.data.blockData[i].data, mainRuntime.data.blockData[i].size, b);
+                                                        PM_PRINT("ID: %zu(b%zu) at [%p]. Contains [%zu] address space (Vacancy:%d).\n", i, (i), mainRuntime.data.blockData[i].data, mainRuntime.data.blockData[i].size, b);
                                                 }
 
                                                 g_access.unlock();
