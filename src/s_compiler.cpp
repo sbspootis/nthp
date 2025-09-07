@@ -262,7 +262,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
 // Substitues a VAR reference or parses numeral references (for compatibility).
 // Returning REF without the IS_VALID bit set assumes a failure.
-nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext) {
+nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext) {
         stdRef ref;
         ref.metadata = 0;
         ref.value = 0;
@@ -427,9 +427,9 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                 if(globalList[i].isPrivate && (globalList[i].definedIn != currentFile)) {
                                         continue;
                                 }
-
-                                if(globalList[i].isStruct) {
-                                        if(isStructAccess) {
+                                if(isStructAccess) {
+                                        if(globalList[i].isStruct) {
+                                        
                                                 bool validAccess = false;
                                                 for(size_t j = 0; structList[globalList[i].structID].members.size(); ++j) {
                                                         
@@ -444,8 +444,28 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                         PRINT_COMPILER_ERROR("STRUCT [%s] has no member [%s].", structList[globalList[i].structID].name.c_str(), structAccess.c_str());
                                                         return ref;
                                                 }
-
+                                        }
+                                        else {
+                                                if(structAccess[0] == '#') { nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList); }
                                                 
+                                                // I use evalRef here because it's safe and has all the error-checking and handling built in. Much easier than try-ing here.
+                                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
+                                                if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
+                                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
+                                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
+                                                        return ref;
+                                                }
+                                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_STRING)) {
+                                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a string reference.\n");
+                                                        return ref;
+                                                }
+                                                if(nthp::fixedToInt(offsetExpression.value) > UINT8_MAX) {
+                                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 256.\n");
+                                                        return ref;
+                                                }
+                                                
+                                                ref.offset = nthp::fixedToInt(offsetExpression.value);
+                                                PRINT_COMPILER("Custom offset of [%u] applied to stdRef.\n", ref.offset);
                                         }
                                 }
 
@@ -510,7 +530,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 // Generic conviencence macro to evaluate the next symbol in the stream. Automatically pulls the next
 // symbol from a macro or source file into 'fileRead'
 #define EVAL_SYMBOL() ____S_EVAL(file, fileRead, constantList, macroList, currentMacroPosition, targetMacro, evaluateMacro)
-#define EVAL_PREF() EvaluateReference(fileRead, globalList, strList, structList, currentFile, NULL, buildSystemContext)
+#define EVAL_PREF() EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, NULL, buildSystemContext)
 
 #define CHECK_REF(ref) if(!PR_METADATA_GET(ref, nthp::script::flagBits::IS_VALID)) return 1 
 
@@ -1023,50 +1043,54 @@ DEFINE_COMPILATION_BEHAVIOUR(IF) {
 
         // God this is wonderful. I love C++
         EVAL_SYMBOL();
-        if (fileRead == "EQU") {
-                ADD_NODE(LOGIC_EQU);
-        }
-        else 
-        if (fileRead == "NOT") {
-                ADD_NODE(LOGIC_NOT);
-        }
-        else 
-        if (fileRead == "GRT") {
-                ADD_NODE(LOGIC_GRT);
-        }
-        else 
-        if (fileRead == "LST") {
-                ADD_NODE(LOGIC_LST);
-        }
-        else 
-        if (fileRead == "GRTE") {
-                ADD_NODE(LOGIC_GRTE);
-        }
-        else 
-        if (fileRead == "LSTE") {
-                ADD_NODE(LOGIC_LSTE);
-        }
-        else {
-                // Completely different compiler behaviour if using the BNE instruction.
-                // opA is the only data parsed here.
-                
-                
-                // Because opA is the only argument, EXPRESSION currently is the next instruction after the IF.
-                // This will make sure the next argument is NOT read at the start of the next pass.
+        do {
+                if (fileRead == "EQU") {
+                        ADD_NODE(LOGIC_EQU);
+                        break;
+                }
+                if (fileRead == "NOT") {
+                        ADD_NODE(LOGIC_NOT);
+                        break;
+                }
+                if (fileRead == "GRT") {
+                        ADD_NODE(LOGIC_GRT);
+                        break;
+                }
+                if (fileRead == "LST") {
+                        ADD_NODE(LOGIC_LST);
+                        break;
+                }
+                if (fileRead == "GRTE") {
+                        ADD_NODE(LOGIC_GRTE);
+                        break;
+                }
+                if (fileRead == "LSTE") {
+                        ADD_NODE(LOGIC_LSTE);
+                        break;
+                }
+                {
+                        // Completely different compiler behaviour if using the BNE instruction.
+                        // opA is the only data parsed here.
+                        
+                        
+                        // Because opA is the only argument, EXPRESSION currently is the next instruction after the IF.
+                        // 'skipInstructionCheck' will make sure the next argument is NOT read at the start of the next pass,
+                        // allowing the current symbol to be properly handled as a new expression.
+                        // The warning 'Skipping eval this pass' is printed whenever skipInstructionCheck causes a skip.
+
+                        ADD_NODE(LOGIC_IF_TRUE);
+                        skipInstructionCheck = true;
 
 
-                ADD_NODE(LOGIC_IF_TRUE);
-                skipInstructionCheck = true;
+                        ifList.push_back(currentNode);
+                        nthp::script::instructions::stdRef* opA = (decltype(opA))(nodeList[currentNode].access.data);
 
+                        *opA = static_opA;
 
-                ifList.push_back(currentNode);
-                nthp::script::instructions::stdRef* opA = (decltype(opA))(nodeList[currentNode].access.data);
-
-                *opA = static_opA;
-
-                PRINT_NODEDATA();
-                return 0;
-        }
+                        PRINT_NODEDATA();
+                        return 0;
+                }
+        } while(0);
 
         EVAL_SYMBOL();
         static_opB = EVAL_PREF();
@@ -1151,7 +1175,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEW) {
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto storage_ptr = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto storage_ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
                         CHECK_REF(storage_ptr);
 
                         // Auto-assign the structure.
@@ -1230,7 +1254,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -1264,7 +1288,7 @@ DEFINE_COMPILATION_BEHAVIOUR(PREV) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -1483,12 +1507,12 @@ DEFINE_COMPILATION_BEHAVIOUR(FRAME_SET) {
         auto stextureIndex = EVAL_PREF();
         CHECK_REF(stextureIndex);
 
-        stdRef* frameIndex = (decltype(frameIndex))(nodeList[currentNode].access.data);
-        stdRef* x = (decltype(frameIndex))(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* y = (decltype(frameIndex))(nodeList[currentNode].access.data + (sizeof(stdRef) * 2));
-        stdRef* w = (decltype(frameIndex))(nodeList[currentNode].access.data + (sizeof(stdRef) * 3));
-        stdRef* h = (decltype(frameIndex))(nodeList[currentNode].access.data + (sizeof(stdRef) * 4));
-        stdRef* textureIndex = (decltype(frameIndex))(nodeList[currentNode].access.data + (sizeof(stdRef) * 5));
+        stdRef* frameIndex = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        stdRef* y = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 2));
+        stdRef* w = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 3));
+        stdRef* h = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 4));
+        stdRef* textureIndex = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 5));
 
         *frameIndex = sframeIndex;
         *x = sx;
@@ -2083,7 +2107,7 @@ DEFINE_COMPILATION_BEHAVIOUR(ACTION_BIND) {
 
 
         EVAL_SYMBOL();
-        int32_t key = fileRead[0]; // should correspond to keycode. idk _
+        int32_t key = fileRead[0]; // should correspond to keycode. idk -_-
 
         do {
                 
@@ -2749,7 +2773,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         size_t pos = 0;
 
                                         EVAL_SYMBOL();
-                                        auto eval_target = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
                                         CHECK_REF(eval_target);
 
                                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
@@ -2779,7 +2803,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto eval_target = EvaluateReference(fileRead, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
                         CHECK_REF(eval_target);
 
                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {

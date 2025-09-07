@@ -11,7 +11,7 @@ static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) {
                 {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
-                        ref.value = data->blockData[ptr.block].data[ptr.address + ref.offset];
+                        ref.value = data->blockData[ptr.block].data[ptr.address];
                 }
                 // This is okay because the compiler simplifies ptr_descriptor call dereferences.
                 // Technically *&var is syntaxically correct and will evaluate correctly, but will take much longer.
