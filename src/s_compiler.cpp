@@ -249,8 +249,11 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
                 if(waitForCommentEnd) continue;
 
+                // Allows MACROs to be called with CONSTs, and makes sure (if the first argument is a CONST) that another eval is done.
                 if(EvaluateConst(expression, constList)) return 1;
                 if(EvaluateMacro(file, expression, macroList, constList, currentMacroPosition, targetMacro, evaluatingMacro)) return 1;
+                if(EvaluateConst(expression, constList)) return 1;
+                
 
                 break;
                 
@@ -1041,7 +1044,7 @@ DEFINE_COMPILATION_BEHAVIOUR(IF) {
         auto static_opA = EVAL_PREF();
         CHECK_REF(static_opA);
 
-        // God this is wonderful. I love C++
+
         EVAL_SYMBOL();
         do {
                 if (fileRead == "EQU") {
@@ -1373,21 +1376,6 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_FREE) {
 	return 0;
 }
 
-DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_TARGET) {
-        ADD_NODE(TEXTURE_TARGET);
-
-        EVAL_SYMBOL();
-        auto ptr = EVAL_PREF();
-        CHECK_REF(ptr);
-
-        ptrRef* target = (ptrRef*)(nodeList[currentNode].access.data);
-        *target = ptr;
-
-
-        PRINT_NODEDATA();
-        return 0;
-}
-
 
 DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_LOAD) {
         ADD_NODE(TEXTURE_LOAD);
@@ -1400,8 +1388,8 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_LOAD) {
         auto string = EVAL_PREF();
         CHECK_REF(string);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        strRef* _filename = (strRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        textureRef* _target = (textureRef*)(nodeList[currentNode].access.data);
+        strRef* _filename = (strRef*)(nodeList[currentNode].access.data + sizeof(textureRef));
 
         *_target = target;
         *_filename = string;
@@ -1466,20 +1454,6 @@ DEFINE_COMPILATION_BEHAVIOUR(FRAME_FREE) {
         return 0;
 }
 
-DEFINE_COMPILATION_BEHAVIOUR(FRAME_TARGET) {
-        ADD_NODE(FRAME_TARGET);
-
-        EVAL_SYMBOL();
-        auto target = EVAL_PREF();
-        CHECK_REF(target);
-
-        ptrRef* dTarget = (ptrRef*)(nodeList[currentNode].access.data);
-        *dTarget = target;
-
-        PRINT_NODEDATA();
-        return 0;
-}
-
 DEFINE_COMPILATION_BEHAVIOUR(FRAME_SET) {
         ADD_NODE(FRAME_SET);
 
@@ -1507,12 +1481,12 @@ DEFINE_COMPILATION_BEHAVIOUR(FRAME_SET) {
         auto stextureIndex = EVAL_PREF();
         CHECK_REF(stextureIndex);
 
-        stdRef* frameIndex = (stdRef*)(nodeList[currentNode].access.data);
+        frameRef* frameIndex = (frameRef*)(nodeList[currentNode].access.data);
         stdRef* x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
         stdRef* y = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 2));
         stdRef* w = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 3));
         stdRef* h = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 4));
-        stdRef* textureIndex = (stdRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 5));
+        textureRef* textureIndex = (textureRef*)(nodeList[currentNode].access.data + (sizeof(stdRef) * 5));
 
         *frameIndex = sframeIndex;
         *x = sx;
@@ -1607,20 +1581,6 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_FREE) {
         return 0;
 }
 
-DEFINE_COMPILATION_BEHAVIOUR(ENT_TARGET) {
-        ADD_NODE(ENT_TARGET);
-
-        EVAL_SYMBOL();
-        auto target = EVAL_PREF();
-        CHECK_REF(target);
-        
-        ptrRef* dtarget = (ptrRef*)(nodeList[currentNode].access.data);
-        *dtarget = target;
-
-        PRINT_NODEDATA();
-        return 0;   
-}
-
 
 DEFINE_COMPILATION_BEHAVIOUR(ENT_SETCURRENTFRAME) {
         ADD_NODE(ENT_SETCURRENTFRAME);
@@ -1633,8 +1593,8 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETCURRENTFRAME) {
         auto frameN = EVAL_PREF();
         CHECK_REF(frameN);
 
-        stdRef* tout = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* tframe = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        entRef* tout = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* tframe = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
 
         *tout = target;
         *tframe = frameN;
@@ -1659,9 +1619,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETPOS) {
         auto y = EVAL_PREF();
         CHECK_REF(y);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
 
         *_target = target;
@@ -1687,9 +1647,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_MOVE) {
         auto y = EVAL_PREF();
         CHECK_REF(y);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
 
         *_target = target;
@@ -1717,9 +1677,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETFRAMERANGE) {
         CHECK_REF(size);
 
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _start = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _start = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
         *_target = target;
         *_start = start;
@@ -1745,9 +1705,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETHITBOXSIZE) {
         auto y = EVAL_PREF();
         CHECK_REF(y);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
 
         *_target = target;
@@ -1774,9 +1734,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETHITBOXOFFSET) {
         auto y = EVAL_PREF();
         CHECK_REF(y);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
 
         *_target = target;
@@ -1804,9 +1764,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETRENDERSIZE) {
         auto y = EVAL_PREF();
         CHECK_REF(y);
 
-        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
 
         *_target = target;
@@ -1834,9 +1794,9 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_CHECKCOLLISION) {
         CHECK_REF(_output);
 
 
-        stdRef* enta = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* entb = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-        ptrRef* output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef* enta = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* entb = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        ptrRef* output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
         *enta = ent_a;
         *entb = ent_b;
@@ -1931,7 +1891,7 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_QRENDER) {
         auto entity = EVAL_PREF();
         CHECK_REF(entity);
 
-        stdRef* ent = (stdRef*)nodeList[currentNode].access.data;
+        entRef* ent = (entRef*)nodeList[currentNode].access.data;
         *ent = entity;
 
         PRINT_NODEDATA();
@@ -1945,7 +1905,7 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_ABS_QRENDER) {
         auto entity = EVAL_PREF();
         CHECK_REF(entity);
 
-        stdRef* ent = (stdRef*)nodeList[currentNode].access.data;
+        entRef* ent = (entRef*)nodeList[currentNode].access.data;
         *ent = entity;
 
         PRINT_NODEDATA();
@@ -2185,7 +2145,7 @@ DEFINE_COMPILATION_BEHAVIOUR(POLL) {
 
         } while(0);
 
-        stdRef* ent = (stdRef*)(nodeList[currentNode].access.data);
+        entRef* ent = (entRef*)(nodeList[currentNode].access.data);
 
         *ent = entity;
         PRINT_NODEDATA();
@@ -3356,7 +3316,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(INDEX);
 
 		CHECK_COMP(TEXTURE_ALLOC);
-                CHECK_COMP(TEXTURE_TARGET);
 		CHECK_COMP(TEXTURE_FREE);
 		CHECK_COMP(TEXTURE_LOAD);
                 CHECK_COMP(SET_ACTIVE_PALETTE);
@@ -3364,7 +3323,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                 CHECK_COMP(FRAME_ALLOC);
                 CHECK_COMP(FRAME_FREE);
-                CHECK_COMP(FRAME_TARGET);
                 CHECK_COMP(FRAME_SET);
 
                 CHECK_COMP(SM_WRITE);
@@ -3372,8 +3330,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                 CHECK_COMP(ENT_ALLOC);
                 CHECK_COMP(ENT_FREE);
-                CHECK_COMP(ENT_TARGET);
-                
+
                 CHECK_COMP(ENT_SETCURRENTFRAME);
                 CHECK_COMP(ENT_SETPOS);
                 CHECK_COMP(ENT_MOVE);

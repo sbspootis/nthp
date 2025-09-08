@@ -1,8 +1,15 @@
 
-BUILD_SYSTEM
-        script/vtinit.thp script/vtinit.thpcs                   T_INIT
-        script/viewtexture.thp script/viewtexture.thpcs         T_TICK
-        script/vexit.thp script/vexit.thpcs                     T_EXIT
-END
+CONST win_x     800
+CONST win_y     800
 
-EXIT
+MACRO init_flags { 
+/       x       y       tx      ty      cx      cy      fs      sr     /
+        #win_x  #win_y  #win_x  #win_y  0       0       0       0
+}
+
+BUILD_SYSTEM
+        script/init.thp script/init.thpcs       T_INIT
+        script/core.thp script/core.thpcs       T_TICK
+        script/exit.thp script/exit.thpcs       T_EXIT
+
+END

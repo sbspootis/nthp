@@ -77,19 +77,16 @@ namespace ID {
                 INDEX,\
 		TEXTURE_ALLOC,\
 		TEXTURE_FREE,\
-                TEXTURE_TARGET,\
                 TEXTURE_CLEAN,\
 		TEXTURE_LOAD,\
 		SET_ACTIVE_PALETTE,\
                 FRAME_ALLOC,\
                 FRAME_FREE,\
-                FRAME_TARGET,\
                 FRAME_SET,\
                 SM_READ,\
                 SM_WRITE,\
                 ENT_ALLOC,\
                 ENT_FREE,\
-                ENT_TARGET,\
                 ENT_SETCURRENTFRAME,\
                 ENT_SETPOS,\
                 ENT_MOVE,\
@@ -147,9 +144,18 @@ namespace ID {
 }
 
 #define GET_INSTRUCTION_ID(instruction) nthp::script::instructions::ID::instruction
+
+
 typedef P_Reference<nthp::script::stdVarWidth> stdRef;  // The standard value type; Can be a reference to memory or a constant, 'metadata' bits can be set for type description. The endpoint should be a workable value.
 typedef stdRef ptrRef;                                  // ptrRef endpoints are evaluated as ptr_descriptors; otherwise identical to stdRefs
 typedef stdRef strRef;                                  // strRef endpoints are the same as stdRef, but instead point to a STRING node or assumed block data (ptr_descriptor) string.
+
+// Special types with custom runtime evaluation go here VV 
+
+typedef stdRef entRef;                                  // Uses eval_special on runtime to parse a gEntity object in a given block.
+typedef stdRef textureRef;                              // Uses eval_special on runtime to parse a gTexture object in a given block.
+typedef stdRef frameRef;                                // Uses eval_special on runtime to parse a Frame object in a given block.
+
 
 // Sizes must have the same name as the ENUM entry in 'ID'.
 namespace Size {
@@ -202,36 +208,33 @@ namespace Size {
 
 		TEXTURE_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
 		TEXTURE_FREE = sizeof(ptrRef),
-                TEXTURE_TARGET = sizeof(ptrRef),
-                TEXTURE_CLEAN = sizeof(stdRef),
-		TEXTURE_LOAD = sizeof(stdRef) + sizeof(strRef), 
+                TEXTURE_CLEAN = sizeof(textureRef),
+		TEXTURE_LOAD = sizeof(textureRef) + sizeof(strRef), 
 		SET_ACTIVE_PALETTE = sizeof(strRef), 
 
 
                 FRAME_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 FRAME_FREE = sizeof(ptrRef),
-                FRAME_TARGET = sizeof(ptrRef),
-                FRAME_SET = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
+                FRAME_SET = sizeof(frameRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(textureRef),
                 SM_WRITE = sizeof(stdRef) + sizeof(stdRef),
                 SM_READ = sizeof(stdRef) + sizeof(ptrRef),
 
                 ENT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 ENT_FREE = sizeof(ptrRef),
-                ENT_TARGET = sizeof(ptrRef),
 
-                ENT_SETCURRENTFRAME = sizeof(stdRef) + sizeof(stdRef),
-                ENT_SETPOS = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_MOVE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_SETFRAMERANGE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_SETHITBOXSIZE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_SETHITBOXOFFSET = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_SETRENDERSIZE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
-                ENT_CHECKCOLLISION = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
+                ENT_SETCURRENTFRAME = sizeof(entRef) + sizeof(stdRef),
+                ENT_SETPOS = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
+                ENT_MOVE = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
+                ENT_SETFRAMERANGE = sizeof(entRef) + sizeof(frameRef) + sizeof(stdRef),
+                ENT_SETHITBOXSIZE = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
+                ENT_SETHITBOXOFFSET = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
+                ENT_SETRENDERSIZE = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
+                ENT_CHECKCOLLISION = sizeof(entRef) + sizeof(stdRef) + sizeof(entRef),
 
 
                 CORE_INIT = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(uint8_t) + sizeof(strRef),
-                CORE_QRENDER = sizeof(stdRef),
-                CORE_ABS_QRENDER = sizeof(stdRef),
+                CORE_QRENDER = sizeof(entRef),
+                CORE_ABS_QRENDER = sizeof(entRef),
                 CORE_CLEAR = 0,
                 CORE_DISPLAY = 0,
                 CORE_SETMAXFPS = sizeof(stdRef),

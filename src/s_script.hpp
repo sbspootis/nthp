@@ -78,16 +78,6 @@ namespace script {
 
                         /////////////////////////
 
-
-                        nthp::texture::gTexture* textureBlock; // Context texture data.
-                        size_t textureBlockSize;
-
-                        nthp::entity::gEntity* entityBlock; // Context entity data
-                        size_t entityBlockSize;
-
-                        nthp::texture::Frame* frameBlock; // Context frame data.
-                        size_t frameBlockSize;
-
                         nthp::script::BlockMemoryEntry* blockData;
                         size_t blockDataSize;
 

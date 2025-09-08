@@ -48,6 +48,21 @@ inline char* ____eval_str(ptrRef& ref, nthp::script::Script::ScriptDataSet* data
         return (char*)(data->blockData[ptr_dsc.block].data + ptr_dsc.address);
 }
 
+// Allows evaluating whole blocks as custom, non-script-dynamic types.
+// Uses the pointer descriptor address + offset as the special type's index in the block, rather than binary position.
+// Returns a pointer of template type to the object at position address + offset.
+template<class Type>
+static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet* data) {
+        EVAL_STDREF(ref);
+        const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+        Type* const target = (Type*)(data->blockData[ptr.block].data);
+
+        return (target + (ptr.address + ref.offset));
+}
+
+#define EVAL_ENTREF(ref)                eval_special<nthp::entity::gEntity>(ref, data)
+#define EVAL_TEXTUREREF(ref)            eval_special<nthp::texture::gTexture>(ref, data)
+#define EVAL_FRAMEREF(ref)              eval_special<nthp::texture::Frame>(ref, data)
 
 
 
@@ -579,11 +594,6 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
 
         for(size_t i = 0; i < textures; ++i) { b_texture[i].init(); }
 
-
-        // Automatically sets as target block.
-        data->textureBlock = b_texture;
-        data->textureBlockSize = textures;
-
 	return 0;
 }
 
@@ -610,44 +620,24 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
 	return 1;
 }
 
-DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_TARGET) {
-        ptrRef targetBlock = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-
-        EVAL_PTRREF(targetBlock);
-        const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
-        if(ptr.block) {
-                data->textureBlock = (nthp::texture::gTexture*)(data->blockData[ptr.block].data);
-                data->textureBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::gTexture);
-
-                return 0;
-        }
-
-        PRINT_DEBUG_ERROR("TEXTURE_TARGET cannot target global list.\n");
-        return 1;
-}
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAN) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        textureRef target = *(textureRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(target);
+        auto t = EVAL_TEXTUREREF(target);
 
-        data->textureBlock[nthp::fixedToInt(target.value)].getTextureData().cleanSTData();
+        t->getTextureData().cleanSTData();
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
-	stdRef output = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+	textureRef output = *(textureRef*)(data->nodeSet[data->currentNode].access.data);
 	strRef file = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(output);
+        auto t = EVAL_TEXTUREREF(output);
         auto filename = EVAL_STRREF(file);
-
-	if(nthp::fixedToInt(output.value) > data->textureBlockSize) {
-		PRINT_DEBUG_ERROR("Output index of TEXTURE_LOAD instuction out of bounds.\n");		
-		return 1;
-	}
 	
-	if(data->textureBlock[nthp::fixedToInt(output.value)].autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer()));
+	if(t->autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer()));
 
 	return 0;
 }
@@ -677,10 +667,6 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::FRAME);
         if(newBlock == NULL) { return 1; }
 
-        // Automatically set as target.
-        data->frameBlock = newBlock;
-        data->frameBlockSize = frames;
-
         return 0;
 }
 
@@ -702,36 +688,20 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
         return 1;
 }
 
-DEFINE_EXECUTION_BEHAVIOUR(FRAME_TARGET) {
-        ptrRef targetBlock = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-
-        EVAL_PTRREF(targetBlock);
-        const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
-        if(ptr.block) {
-                data->frameBlock = (nthp::texture::Frame*)(data->blockData[ptr.block].data);
-                data->frameBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::texture::Frame);
-
-                return 0;
-        }
-
-        PRINT_DEBUG_ERROR("TEXTURE_TARGET cannot target global list.\n");
-        return 1;
-}
-
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
-        stdRef frameIndex = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        frameRef frameIndex = *(frameRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 2));
         stdRef w = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));
         stdRef h = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));
-        stdRef textureIndex = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));
+        textureRef textureIndex = *(textureRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));
 
-        EVAL_STDREF(frameIndex);
+        auto frame = EVAL_FRAMEREF(frameIndex);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
         EVAL_STDREF(w);
         EVAL_STDREF(h);
-        EVAL_STDREF(textureIndex);
+        auto texture = EVAL_TEXTUREREF(textureIndex);
 
         SDL_Rect rect;
         rect.x = nthp::fixedToInt(x.value);
@@ -739,8 +709,8 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
         rect.w = nthp::fixedToInt(w.value);
         rect.h = nthp::fixedToInt(h.value);
         
-        data->frameBlock[nthp::fixedToInt(frameIndex.value)].src = rect;
-        data->frameBlock[nthp::fixedToInt(frameIndex.value)].texture = data->textureBlock[nthp::fixedToInt(textureIndex.value)].getTextureData().texture;
+        frame->src = rect;
+        frame->texture = texture->getTextureData().texture;
 
         return 0;
 }
@@ -788,10 +758,6 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
 
         for(size_t i = 0; i < entities; ++i) { entityBlock[i].init(); }
 
-        // Automatically sets as target block.
-        data->entityBlock = entityBlock;
-        data->entityBlockSize = entities;
-
         return 0;
 }
 
@@ -819,126 +785,109 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
 }
 
 
-DEFINE_EXECUTION_BEHAVIOUR(ENT_TARGET) {
-        ptrRef targetBlock = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-
-        EVAL_PTRREF(targetBlock);
-        const auto ptr = nthp::script::parsePtrDescriptor(targetBlock.value);
-        if(ptr.block) {
-                data->entityBlock = (nthp::entity::gEntity*)(data->blockData[ptr.block].data);
-                data->textureBlockSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth)) / sizeof(nthp::entity::gEntity);
-
-                return 0;
-        }
-
-        PRINT_DEBUG_ERROR("ENT_TARGET cannot target global list.\n");
-        return 1;
-}
-
-
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETCURRENTFRAME) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef frame = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef frame = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
         
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(frame);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].setCurrentFrame(nthp::fixedToInt(frame.value));
+        entity->setCurrentFrame(nthp::fixedToInt(frame.value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETPOS) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].setPosition(nthp::vectFixed(x.value, y.value));
+        entity->setPosition(nthp::vectFixed(x.value, y.value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_MOVE) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].move(nthp::vectFixed(x.value, y.value));
+        entity->move(nthp::vectFixed(x.value, y.value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETFRAMERANGE) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef start = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        frameRef start = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(frameRef));
 
-        EVAL_STDREF(target);
-        EVAL_STDREF(start);
+        auto entity = EVAL_ENTREF(target);
+        auto frameStart = EVAL_FRAMEREF(start);
         EVAL_STDREF(size);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].importFrameData(data->frameBlock + nthp::fixedToInt(start.value), nthp::fixedToInt(size.value), false);
+        entity->importFrameData(frameStart, nthp::fixedToInt(size.value), false);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETHITBOXSIZE) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].setHtiboxSize(nthp::vectFixed(x.value, y.value));
+        entity->setHtiboxSize(nthp::vectFixed(x.value, y.value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETHITBOXOFFSET) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].setHitboxOffset(nthp::vectFixed(x.value, y.value));
+        entity->setHitboxOffset(nthp::vectFixed(x.value, y.value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETRENDERSIZE) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
-        EVAL_STDREF(target);
+        auto entity = EVAL_ENTREF(target);
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        data->entityBlock[nthp::fixedToInt(target.value)].setRenderSize(nthp::vectFixed(x.value, y.value));
+        entity->setRenderSize(nthp::vectFixed(x.value, y.value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_CHECKCOLLISION) {
-        stdRef entA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef entB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        entRef entA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        entRef entB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
         
-        EVAL_STDREF(entA);
-        EVAL_STDREF(entB);
+        auto a = EVAL_ENTREF(entA);
+        auto b = EVAL_ENTREF(entB);
         EVAL_PTRREF(output);
 
-        *target_dsc = nthp::intToFixed(nthp::entity::checkRectCollision(data->entityBlock[nthp::fixedToInt(entA.value)].getHitbox(), data->entityBlock[nthp::fixedToInt(entB.value)].getHitbox()));
+        *target_dsc = nthp::intToFixed(nthp::entity::checkRectCollision(a->getHitbox(), b->getHitbox()));
 
         return 0;
 }
@@ -974,11 +923,11 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_QRENDER) {
-        stdRef entity = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(entity);
+        auto entity = EVAL_ENTREF(target);
 
-        if(nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].getUpdateRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
+        if(nthp::core.render(entity->getUpdateRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
                 PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
         }
         return 0;
@@ -986,11 +935,11 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_QRENDER) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_QRENDER) {
-        stdRef entity = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(entity);
+        auto entity = EVAL_ENTREF(target);
 
-        if(nthp::core.render(data->entityBlock[nthp::fixedToInt(entity.value)].abs_getRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
+        if(nthp::core.render(entity->abs_getRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
                 PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
         }
         return 0;
@@ -1127,10 +1076,10 @@ DEFINE_EXECUTION_BEHAVIOUR(STAGE_LOAD) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_POSITION) {
-        stdRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        EVAL_STDREF(target);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(target);
 
-        const auto pos = data->entityBlock[nthp::fixedToInt(target.value)].getPosition();
+        const auto pos = entity->getPosition();
 
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = pos.x;
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = pos.y;
@@ -1139,10 +1088,10 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_POSITION) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_CURRENTFRAME) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        EVAL_STDREF(target);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(target);
 
-        const auto cf = data->entityBlock[nthp::fixedToInt(target.value)].getCurrentFrameIndex();
+        const auto cf = entity->getCurrentFrameIndex();
         
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = nthp::intToFixed(cf);
 
@@ -1150,10 +1099,10 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_CURRENTFRAME) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_HITBOX) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        EVAL_STDREF(target);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(target);
 
-        const auto box = data->entityBlock[nthp::fixedToInt(target.value)].getHitbox();
+        const auto box = entity->getHitbox();
 
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = box.x;
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = box.y;
@@ -1164,11 +1113,11 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_HITBOX) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_RENDERSIZE) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        EVAL_STDREF(target);
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(target);
         
 
-        const auto rs = data->entityBlock[target.value].getRenderSize();
+        const auto rs = entity->getRenderSize();
 
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = rs.x;
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = rs.y;

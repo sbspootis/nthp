@@ -1,7 +1,0 @@
-
-TEXTURE_FREE $txp_textures
-FRAME_FREE $frp_frames
-ENT_FREE $entp_entities
-
-
-EXIT

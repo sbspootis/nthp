@@ -1,0 +1,90 @@
+
+STRING windowTitle "ViewTexture Test"
+CORE_INIT @init_flags ~windowTitle
+
+STRING paletteFile "resource/genericPalette.pal"
+SET_ACTIVE_PALETTE ~paletteFile
+
+CORE_SETMAXFPS 30
+
+
+/ ================================================================ /
+/                     TEXTURES                                     /
+
+
+VAR tp_textures
+
+ENUM {
+        texture_0
+        texture_1
+        texture_2
+        texture_3
+}
+
+
+TEXTURE_ALLOC 4 &tp_textures
+
+STRING texture_A "resource/outputTexture.cst"
+STRING texture_B "resource/platform.cst"
+STRING texture_C "resource/player_sheet.cst"
+STRING texture_D "resource/wall.cst"
+
+TEXTURE_LOAD $tp_textures.#texture_0 ~texture_A
+TEXTURE_LOAD $tp_textures.#texture_1 ~texture_B
+TEXTURE_LOAD $tp_textures.#texture_2 ~texture_C
+TEXTURE_LOAD $tp_textures.#texture_3 ~texture_D
+
+
+/ =============================================================== /
+/                       FRAMES                                    /
+
+VAR fp_frames
+
+FRAME_ALLOC 4 &fp_frames
+
+FRAME_SET $fp_frames.#texture_0 0 0 300 228 $tp_textures.#texture_0
+FRAME_SET $fp_frames.#texture_1 0 0 180 41 $tp_textures.#texture_1
+FRAME_SET $fp_frames.#texture_2 0 0 120 174 $tp_textures.#texture_2
+FRAME_SET $fp_frames.#texture_3 0 0 100 76 $tp_textures.#texture_3
+
+/ =============================================================== /
+/                       ENTITIES                                  /
+
+VAR ep_entities
+
+ENT_ALLOC 4 &ep_entities
+
+ENT_SETFRAMERANGE $ep_entities.#texture_0 $fp_frames.#texture_0 1
+ENT_SETRENDERSIZE $ep_entities.#texture_0 300 228
+
+ENT_SETFRAMERANGE $ep_entities.#texture_1 $fp_frames.#texture_1 1
+ENT_SETRENDERSIZE $ep_entities.#texture_1 180 41
+
+ENT_SETFRAMERANGE $ep_entities.#texture_2 $fp_frames.#texture_2 1
+ENT_SETRENDERSIZE $ep_entities.#texture_2 120 174
+
+ENT_SETFRAMERANGE $ep_entities.#texture_3 $fp_frames.#texture_3 1
+ENT_SETRENDERSIZE $ep_entities.#texture_3 100 76
+
+
+
+
+
+ENUM {
+        ai_left
+        ai_right
+
+        ac_size
+}
+
+ACTION_DEFINE #ac_size
+
+VAR a_left
+VAR a_right
+
+ACTION_BIND #ai_left &a_left LEFT
+ACTION_BIND #ai_right &a_right RIGHT
+
+
+
+EXIT

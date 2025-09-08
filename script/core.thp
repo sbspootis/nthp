@@ -1,0 +1,35 @@
+
+PRIVATE currentIndex
+SET &currentIndex 0
+
+LABEL 1
+
+        IF $a_left
+                IF $currentIndex NOT 0
+                        DEC &currentIndex
+                        SET &a_left 0
+                ELSE
+                        SET &currentIndex 3
+                        SET &a_left 0
+                END
+        END
+        IF $a_right
+                INC &currentIndex
+                SET &a_right 0
+        END
+        IF $currentIndex GRT 3
+                SET &currentIndex 0
+        END
+
+        INDEX &ep_entities $currentIndex
+
+
+        CORE_CLEAR
+                CORE_QRENDER $ep_entities
+        CORE_DISPLAY
+
+
+        SUSPEND
+        GOTO 1
+
+EXIT
