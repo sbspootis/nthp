@@ -760,16 +760,22 @@ L_BEGIN:
                                                 std::cout << "] " << mainRuntime.data.blockData[0].data + index << "; = [";
                                                 switch(displayFormat) {
                                                         case MEM_DISPLAY_FORMAT::STD:
-                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
-                                                                break;
-                                                        case MEM_DISPLAY_FORMAT::PTR:
-                                                                const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.blockData[0].data[index]);
-                                                                std::cout << 'b' << ptr.block << 'a' << ptr.address << "]\n";
-                                                                break;
-                                                        default:
-                                                                std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
-                                                                break;
-                                                }
+                                                                {
+									std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
+                                                                	break;
+                                                        	}
+							case MEM_DISPLAY_FORMAT::PTR:
+                                                                {
+									const nthp::script::PtrDescriptor_st ptr = nthp::script::parsePtrDescriptor(mainRuntime.data.blockData[0].data[index]);
+                                                                	std::cout << 'b' << ptr.block << 'a' << ptr.address << "]\n";
+                                                                	break;
+                                                        	}
+							default:
+                                                                {
+									std::cout << nthp::fixedToDouble(mainRuntime.data.blockData[0].data[index]) << "]\n";
+                                                                	break;
+                                                		}
+						}
                                                 // << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
                                         }
 
