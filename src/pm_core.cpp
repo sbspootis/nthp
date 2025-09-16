@@ -264,7 +264,7 @@ L_BEGIN:
 
                         if(args[0] == "load") {
                                 if(args.size() < 2) {
-                                        PM_PRINT_ERROR("Need target script file to execute. (load scriptFile)\n");
+                                        PM_PRINT_ERROR("Need target pm script file to execute. (load scriptFile)\n");
                                         continue;
                                 }
 
@@ -756,7 +756,7 @@ L_BEGIN:
                                         for(size_t i = 0; i < mainRuntime.data.globalMemBudget; ++i) {
                                                 index = i;
                                                 printf ("\t[%04zX (%zu), ", i, i);
-                                                if(printSymbols) { std::cout << "[>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
+                                                if(printSymbols) { std::cout << "o." << symbolData.globalList[i].definedIn << " [>" << symbolData.globalList[i].varName; index = symbolData.globalList[i].relativeIndex; }
                                                 std::cout << "] " << mainRuntime.data.blockData[0].data + index << "; = [";
                                                 switch(displayFormat) {
                                                         case MEM_DISPLAY_FORMAT::STD:

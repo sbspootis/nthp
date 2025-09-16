@@ -55,6 +55,9 @@ namespace nthp {
 
                 int cleanup();
 
+                void startTextInput();
+                void stopTextInput();
+
                 nthp::audio::defaultAudioSystem audioSystem;
 
                 ~EngineCore();

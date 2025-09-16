@@ -1421,6 +1421,32 @@ DEFINE_EXECUTION_BEHAVIOUR(IB_STOP) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_START) {
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(target);
+
+        data->textInputActive = true;
+        data->textInputTarget = (char*)target_dsc;
+
+        nthp::core.startTextInput();
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_STOP) {
+        if(!data->textInputActive) { return 0; }
+
+        data->textInputTarget[data->textInputBufferPosition] = '\0';
+
+        data->textInputActive = false;
+        data->textInputBufferPosition = 0;
+        data->textInputTarget = nullptr;
+
+        nthp::core.stopTextInput();
+
+        return 0;
+}
 
 
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {

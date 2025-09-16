@@ -73,6 +73,7 @@ ENT_SETRENDERSIZE $ep_entities.#texture_3 100 76
 ENUM {
         ai_left
         ai_right
+        ai_enter
 
         ac_size
 }
@@ -81,10 +82,16 @@ ACTION_DEFINE #ac_size
 
 VAR a_left
 VAR a_right
+VAR a_enter
 
 ACTION_BIND #ai_left &a_left LEFT
 ACTION_BIND #ai_right &a_right RIGHT
+ACTION_BIND #ai_enter &a_enter RETURN
 
+VAR inputString
+ALLOC 10 &inputString
+
+TEXTINPUT_START $inputString
 
 
 EXIT

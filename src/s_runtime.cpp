@@ -160,6 +160,7 @@ void nthp::script::Runtime::handleEvents() {
                                         *(data.actionList[i].varLocation) = nthp::intToFixed(1);
                                 }
                         }
+
                 break;
                 
                 case SDL_KEYUP:
@@ -183,6 +184,8 @@ void nthp::script::Runtime::handleEvents() {
                                 data.blockData[0].data[MOUSE3_GLOBAL_INDEX] = nthp::intToFixed(1);
                                 break;
                         }
+
+                        
                         
                 break;
 
@@ -201,10 +204,23 @@ void nthp::script::Runtime::handleEvents() {
                         }
                 break;
 
+                case SDL_TEXTINPUT:
+                {
+                        if(!data.textInputActive) { break; }
 
+                        uint8_t i = 0;
+                        for(;nthp::core.eventList.text.text[i] != '\0'; ++i) data.textInputTarget[data.textInputBufferPosition + i] = nthp::core.eventList.text.text[i];
+                        data.textInputBufferPosition += i;
+
+                        break;
+                }
+
+                
                 default:
                         break;
                 }
+
+                
         }
         
         data.inputBuffer[data.inputBufferPtr] = 0; // Mark end of buffer with 0

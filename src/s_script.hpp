@@ -62,7 +62,7 @@ namespace script {
                         uint32_t sourceDestination;
                 };
 
-        struct ScriptDataSet {
+                struct ScriptDataSet {
                         uint32_t globalMemBudget;
 
                         uint32_t* currentLabelBlock;
@@ -94,6 +94,10 @@ namespace script {
                         unsigned int ibTargetPosition;  // No file data/maximums needed, so use standard int.
                         bool ibTargetSet;
                         
+                        char* textInputTarget;
+                        bool textInputActive;
+                        uint8_t textInputBufferPosition;
+                        
 
                         unsigned short penColor; // stores a color as an index to the palette to draw primitives with the DRAW instruction.
 
@@ -101,7 +105,8 @@ namespace script {
 
                         bool isSuspended, changeStage; // Stage stuff.
 
-        };
+                };
+        
                 static inline void cleanDataSet(ScriptDataSet* data) {
                         if(data->actionListSize > 0) delete[] data->actionList;
                         if(data->blockDataSize > 0) {

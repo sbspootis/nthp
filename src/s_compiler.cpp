@@ -2520,6 +2520,28 @@ DEFINE_COMPILATION_BEHAVIOUR(IB_STOP) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_START) {
+        ADD_NODE(TEXTINPUT_START);
+
+        EVAL_SYMBOL();
+        auto ref = EVAL_PREF();
+        CHECK_REF(ref);
+
+        ptrRef* target = (ptrRef*)(nodeList[currentNode].access.data);
+
+        *target = ref;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_STOP) {
+        ADD_NODE(TEXTINPUT_STOP);
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 DEFINE_COMPILATION_BEHAVIOUR(STRING_COPY) {
         ADD_NODE(STRING_COPY);
@@ -3387,6 +3409,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_SET_TARGET);
                 CHECK_COMP(IB_WRITE_STRING);
                 CHECK_COMP(IB_STOP);
+                CHECK_COMP(TEXTINPUT_START);
+                CHECK_COMP(TEXTINPUT_STOP);
 
                 PRINT_COMPILER_WARNING("Unknown symbol [%s];\n", fileRead.c_str());
 

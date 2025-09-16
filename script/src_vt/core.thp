@@ -2,6 +2,9 @@
 PRIVATE currentIndex
 SET &currentIndex 0
 
+
+TEXTINPUT_START $inputString
+
 LABEL 1
 
         IF $a_left
@@ -19,6 +22,10 @@ LABEL 1
         END
         IF $currentIndex GRT 3
                 SET &currentIndex 0
+        END
+
+        IF $a_enter
+                TEXTINPUT_STOP
         END
 
         INDEX &ep_entities $currentIndex

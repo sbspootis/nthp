@@ -136,6 +136,8 @@ namespace ID {
                 IB_SET_TARGET,\
                 IB_WRITE_STRING,\
                 IB_STOP,\
+                TEXTINPUT_START,\
+                TEXTINPUT_STOP,\
                 FUNC_START,\
                 FUNC_CALL\
         )
@@ -279,6 +281,9 @@ namespace Size {
                 IB_SET_TARGET = sizeof(ptrRef),
                 IB_WRITE_STRING = 0,
                 IB_STOP = 0,
+                TEXTINPUT_START = sizeof(ptrRef),
+                TEXTINPUT_STOP = 0,
+
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
                 FUNC_CALL = sizeof(uint32_t) // Func ID, to be matched to a FUNC_START by the linker.
         );

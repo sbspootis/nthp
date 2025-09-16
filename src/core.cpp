@@ -14,6 +14,7 @@ nthp::EngineCore::EngineCore(nthp::RenderRuleSet settings, const char* title, bo
 
 int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering) {
         p_coreDisplay = settings;
+        SDL_StopTextInput();
 
         // If already initialized, skip the init.
         if(!initSuccess) {
@@ -233,6 +234,14 @@ int nthp::EngineCore::cleanup() {
         NOVERB_PRINT_DEBUG("done.\n");
 
         return 0;
+}
+
+void nthp::EngineCore::stopTextInput() {
+        SDL_StopTextInput();
+}
+
+void nthp::EngineCore::startTextInput() {
+        SDL_StartTextInput();
 }
 
 nthp::EngineCore::~EngineCore() {
