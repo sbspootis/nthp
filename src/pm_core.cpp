@@ -394,6 +394,8 @@ L_BEGIN:
                                 else {
                                         PM_PRINT_ERROR("Currently running in headless mode; No target.\n");
                                 }
+
+                                continue;
                         }
                         if(args[0] == "target") {
                                 if(inHeadlessMode) {

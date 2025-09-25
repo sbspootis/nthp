@@ -8,6 +8,7 @@
 #include "st_compress.hpp"
 #include "s_linker.hpp"
 #include "s_runtime.hpp"
+#include "st_mono.hpp"
 
 
 nthp::EngineCore nthp::core;
@@ -17,6 +18,8 @@ nthp::script::Runtime mainRuntime;
 int nthp::runtimeBehaviour(int argv, char** argc) {
         // The DEBUG_INIT is called at the start of main, and DEBUG_CLOSE
         // is called after the destruction of the main core.
+
+        
 
 
 #ifdef DEBUG
@@ -34,6 +37,17 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
                         // Init phase.
                         if(mainRuntime.execInit()) return -1;
+
+
+                        nthp::texture::MonochromeTexture test;
+                        test.createEmtpyTexture(10, 10);
+                        
+                        bool swi = false;
+
+                        if(!swi) {
+                                test.regenerateTexture(&nthp::script::activePalette, 0, nthp::core.getRenderer());
+                                swi = true;
+                        }
   
                         
                         while(nthp::core.isRunning() && (!mainRuntime.data.changeStage)) {
