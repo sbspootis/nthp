@@ -15,11 +15,11 @@ namespace nthp {
 
                 enum C_OPERATE { INVALID = 0, VALID, ABSOLUTE } state;
         };
-        static const nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, nthp::RenderPacket::C_OPERATE s) {
+        constexpr nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, nthp::RenderPacket::C_OPERATE s) {
                 return {texture, srcRect, dst, s};
         }
 
-        #define INVALID_RENDERPACKET generateRenderPacket(NULL, NULL, {0,0,0,0}, nthp::RenderPacket::C_OPERATE::INVALID)
+        constexpr auto INVALID_RENDERPACKET = generateRenderPacket(NULL, NULL, {0,0,0,0}, nthp::RenderPacket::C_OPERATE::INVALID);
 
 
 

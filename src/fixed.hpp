@@ -33,7 +33,10 @@ namespace nthp {
 #endif
 
 
-
+#if FIXED_POINT_SCALE > FIXED_POINT_WIDTH
+        #undef FIXED_POINT_SCALE
+        #define FIXED_POINT_SCALE       (FIXED_POINT_WIDTH / 2)
+#endif
 
 
 
@@ -67,14 +70,6 @@ namespace nthp {
 
                 #endif
         #endif
-#endif
-
-
-
-
-#if FIXED_POINT_SCALE > FIXED_POINT_WIDTH
-        #undef FIXED_POINT_SCALE
-        #define FIXED_POINT_SCALE       (FIXED_POINT_WIDTH / 2)
 #endif
 
   
