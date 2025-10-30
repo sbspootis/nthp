@@ -39,15 +39,6 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                         if(mainRuntime.execInit()) return -1;
 
 
-                        nthp::texture::MonochromeTexture test;
-                        test.createEmtpyTexture(10, 10);
-                        
-                        bool swi = false;
-
-                        if(!swi) {
-                                test.regenerateTexture(&nthp::script::activePalette, 0, nthp::core.getRenderer());
-                                swi = true;
-                        }
   
                         
                         while(nthp::core.isRunning() && (!mainRuntime.data.changeStage)) {
@@ -57,7 +48,6 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
                                 // Tick phase.
                                 mainRuntime.execTick();
-
 
                                 nthp::deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
                                 if(nthp::deltaTime < nthp::frameDelay) {

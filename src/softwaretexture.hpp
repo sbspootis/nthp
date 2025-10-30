@@ -106,6 +106,8 @@ namespace nthp {
                 }
 
                 struct Frame {
+                        void init() { texture = nullptr; src = { 0,0,0,0 }; }
+
                         SDL_Texture*    texture;
                         SDL_Rect        src;
                 };

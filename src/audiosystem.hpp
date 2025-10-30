@@ -120,7 +120,6 @@ namespace nthp {
                         
                         size_t soundSize;
                         size_t musicSize;
-
                 };
 
 

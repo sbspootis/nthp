@@ -481,6 +481,23 @@ nthp::script::stdVarWidth* nthp::script::nthp_internal_alloc(nthp::script::Scrip
         return data->blockData[data->blockDataSize - 1].data;
 }
 
+template<class SpecialType>
+SpecialType* nthp::script::nthp_internal_alloc_special(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth entries, nthp::script::BlockMemoryEntry::bmType type) {
+        
+
+	const auto bytes = (sizeof(SpecialType) * entries);
+        const auto stdEntries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
+
+        SpecialType* specialBlock = (SpecialType*)nthp::script::nthp_internal_alloc(data, target_dsc, stdEntries, type);
+        if(specialBlock == NULL) { return nullptr; }
+
+        for(size_t i = 0; i < entries; ++i) { specialBlock[i].init(); }
+
+        return specialBlock;
+}
+
+
+
 DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         ptrRef ptrOutput = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
@@ -584,15 +601,8 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
 	EVAL_STDREF(size);
         EVAL_PTRREF(target);    // where to write the pointer descriptor to!
 
-        const auto textures = nthp::fixedToInt(size.value);
-	const auto bytes = (sizeof(nthp::texture::gTexture) * textures);
-        const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
-
-
-        nthp::texture::gTexture* b_texture = (nthp::texture::gTexture*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::TEXTURE);
-        if(b_texture == NULL) { return 1; }
-
-        for(size_t i = 0; i < textures; ++i) { b_texture[i].init(); }
+        auto textureBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::gTexture>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::TEXTURE);
+        if(textureBlock == nullptr) { return 1; }
 
 	return 0;
 }
@@ -660,12 +670,8 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(output);
         
-        const auto frames = nthp::fixedToInt(size.value);
-        const auto bytes = frames * sizeof(nthp::texture::Frame);
-        const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
-
-        nthp::texture::Frame* newBlock = (nthp::texture::Frame*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::FRAME);
-        if(newBlock == NULL) { return 1; }
+        auto frameBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::Frame>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::FRAME);
+        if(frameBlock == nullptr) { return 1; }
 
         return 0;
 }
@@ -749,14 +755,8 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(target);
 
-        const auto entities = nthp::fixedToInt(size.value);
-	const auto bytes = (sizeof(nthp::entity::gEntity) * entities);
-        const auto entries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
-
-        nthp::entity::gEntity* entityBlock = (nthp::entity::gEntity*)nthp::script::nthp_internal_alloc(data, target_dsc, entries, nthp::script::BlockMemoryEntry::bmType::ENTITY);
-        if(entityBlock == NULL) { return 1; }
-
-        for(size_t i = 0; i < entities; ++i) { entityBlock[i].init(); }
+        auto entityBlock = nthp::script::nthp_internal_alloc_special<nthp::entity::gEntity>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::ENTITY);
+        if(entityBlock == nullptr) { return 1; }
 
         return 0;
 }

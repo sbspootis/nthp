@@ -35,7 +35,6 @@ namespace nthp {
                 public:
                         struct MST_Header {
                                 uint8_t signature;
-                                uint8_t width;
                                 uint32_t x;
                                 uint32_t y;
                         };
@@ -58,7 +57,12 @@ namespace nthp {
                         // Uses cached MST data to create an SDL texture with any given palette and color.
                         int regenerateTexture(nthp::texture::Palette* palette, NTHPST_COLOR_WIDTH colorIndex, SDL_Renderer* renderer);
 
+                        // Destroys all data and resets object to initialized state.
                         void clean();
+
+                        // Frees cached MST data, but leaves the compiled texture untouched. Use if
+                        // the target texture will never need to be regenerated or recompiled to save memory.
+                        void purgeMSTData();
                         
                         ~MonochromeTexture();
 

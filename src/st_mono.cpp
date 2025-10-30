@@ -46,10 +46,6 @@ int nthp::texture::MonochromeTexture::importFromFile(const char* filename) {
                 PRINT_DEBUG_ERROR("Unable to import monochrome ST file [%s]; invalid file format.\n", filename);
                 return 1;
         }
-        if(header.width != NTHP_MONOCHROME_BITWIDTH) {
-                PRINT_DEBUG_ERROR("Unable to import monochrome ST file [%s]; Encoded bit width does not match.\n", filename);
-                return 1;
-        }
 
         totalPixelCount = (header.x * header.y);
         totalWidthCount = (totalPixelCount / NTHP_MONOCHROME_BITWIDTH) + 1;
@@ -113,7 +109,6 @@ int nthp::texture::MonochromeTexture::regenerateTexture(nthp::texture::Palette* 
 
 int nthp::texture::MonochromeTexture::createEmtpyTexture(uint32_t x, uint32_t y) {
         header.signature = nthp::texture::MonochromeTexture::MST_HeaderSignature;
-        header.width = NTHP_MONOCHROME_BITWIDTH;
         header.x = x;
         header.y = y;
 
@@ -141,12 +136,15 @@ int nthp::texture::MonochromeTexture::generateTexture(const char* filename, nthp
         return 0;
 }
 
-
-void nthp::texture::MonochromeTexture::clean() {
+void nthp::texture::MonochromeTexture::purgeMSTData() {
         if((pixelData != nullptr) && (totalPixelCount)) {
                 free(pixelData);
         }
+}
 
+
+void nthp::texture::MonochromeTexture::clean() {
+        purgeMSTData();
         SDL_DestroyTexture(texture);
 
         totalPixelCount = 0;
