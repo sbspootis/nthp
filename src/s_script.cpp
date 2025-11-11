@@ -454,7 +454,7 @@ nthp::script::stdVarWidth* nthp::script::nthp_internal_alloc(nthp::script::Scrip
         
                         data->blockData[i].size = nthp::fixedToInt(size);
                         data->blockData[i].isFree = false;
-                        if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(i + 1, 0); // Initalize the ptr to the first element in the allocated block.
+                        if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(i, 0); // Initalize the ptr to the first element in the allocated block.
                         data->blockData[i].type = type;
                         return data->blockData[i].data;
                 }
@@ -590,6 +590,35 @@ DEFINE_EXECUTION_BEHAVIOUR(INDEX) {
         EVAL_STDREF(addr);
 
         *target_dsc = ((*target_dsc) & nthp::script::internal_constants::blockMemoryBlockMask) | nthp::fixedToInt(addr.value);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
+        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(size);
+
+        auto newSizeBytes = nthp::fixedToInt(size.value) * sizeof(nthp::script::BlockMemoryEntry) + 1;
+        auto temp = (nthp::script::BlockMemoryEntry*)realloc(data->blockData, newSizeBytes);
+
+        if(temp != NULL) { data->blockData = temp; }
+        else {
+                PRINT_DEBUG_ERROR("Failed to resize BLOCK LIST.\n");
+                return 1;
+        }
+        printf("%zu  %d\n", data->blockDataSize, nthp::fixedToInt(size.value));
+
+        for(size_t i = data->blockDataSize; i < nthp::fixedToInt(size.value); ++i) {
+                data->blockData[i].isFree = true;
+                data->blockData[i].type = nthp::script::BlockMemoryEntry::bmType::TYPELESS;
+                data->blockData[i].size = 0;
+                data->blockData[i].data = nullptr;
+        }
+
+        data->blockDataSize = nthp::fixedToInt(size.value);
+
+        PRINT_DEBUG("Reserved fixed BLOCK LIST size; size=%u.\n", nthp::fixedToInt(size.value));
+
         return 0;
 }
 

@@ -1339,6 +1339,21 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
+        ADD_NODE(SET_BLOCKLISTSIZE);
+
+        EVAL_SYMBOL();
+        auto size = EVAL_PREF();
+        CHECK_REF(size);
+
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data);
+
+        *_size = size;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 DEFINE_COMPILATION_BEHAVIOUR(TEXTURE_ALLOC) {
 	ADD_NODE(TEXTURE_ALLOC);
@@ -3336,6 +3351,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(NEXT);
                 CHECK_COMP(PREV);
                 CHECK_COMP(INDEX);
+                CHECK_COMP(SET_BLOCKLISTSIZE);
 
 		CHECK_COMP(TEXTURE_ALLOC);
 		CHECK_COMP(TEXTURE_FREE);

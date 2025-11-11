@@ -75,6 +75,7 @@ namespace ID {
                 NEXT,\
                 PREV,\
                 INDEX,\
+                SET_BLOCKLISTSIZE,\
 		TEXTURE_ALLOC,\
 		TEXTURE_FREE,\
                 TEXTURE_CLEAN,\
@@ -207,6 +208,7 @@ namespace Size {
                 NEXT = sizeof(ptrRef) + sizeof(uint8_t),
                 PREV = sizeof(ptrRef) + sizeof(uint8_t),
                 INDEX = sizeof(ptrRef) + sizeof(stdRef),
+                SET_BLOCKLISTSIZE = sizeof(stdRef),
 
 		TEXTURE_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
 		TEXTURE_FREE = sizeof(ptrRef),

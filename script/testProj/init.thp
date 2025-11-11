@@ -1,4 +1,4 @@
-CONST pd_value ?b3a5
+SET_BLOCKLISTSIZE 10
 
 STRING windowTitle "platformer"
 CORE_INIT @initFlags	~windowTitle
@@ -14,6 +14,8 @@ VAR downInput
 VAR leftInput
 VAR rightInput
 
+
+
 ENUM {
 	ai_up
 	ai_down
@@ -25,7 +27,7 @@ ENUM {
 
 ACTION_DEFINE #action_size
 
-ACTION_BIND #ai_up &upInput			UP
+ACTION_BIND #ai_up &upInput		UP
 ACTION_BIND #ai_down &downInput		DOWN
 ACTION_BIND #ai_left &leftInput		LEFT
 ACTION_BIND #ai_right &rightInput	RIGHT

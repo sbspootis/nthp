@@ -134,7 +134,7 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
         SDL_Surface* conv = NULL;
         if(palette == NULL) {
                 PRINT_DEBUG_ERROR("[%u] Invalid palette for approximation.\n", SDL_GetTicks());
-                return -1;
+                return 1;
         }
         {
                 nthp::texture::rawSurface img(IMG_Load(inputImageFile));
@@ -142,14 +142,14 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
                 if(img.getSurface() == NULL) {
                         PRINT_DEBUG_ERROR("Unable to generate softwareTexture from image; Unable to allocate.\n");
                         PRINT_DEBUG("[%u] %s\n", SDL_GetTicks(), SDL_GetError());
-                        return -1;
+                        return 1;
                 }
 
                 conv = SDL_ConvertSurfaceFormat(img.getSurface(), SDL_PixelFormatEnum::SDL_PIXELFORMAT_RGBA32, 0);
                 if(conv == NULL) {
                         PRINT_DEBUG_ERROR("Unable to generate softwareTexture from image; Unable to convert surface format.\n");
                         PRINT_DEBUG_ERROR("[%u] %s\n", SDL_GetTicks(), SDL_GetError());
-                        return -1;
+                        return 1;
                 }
         }
         nthp::texture::rawSurface baseImage(conv);
@@ -198,7 +198,7 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
         std::fstream file(outputFile, std::ios::out | std::ios::binary);
         if(file.fail()) {
                 PRINT_DEBUG_ERROR("Unable to generate softwareTexture from image; File not accessible.\n");
-                return -1;
+                return 1;
         }
 
         file.write((char*)&header, sizeof(header));
