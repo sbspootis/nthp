@@ -136,7 +136,7 @@ namespace nthp {
 
                 // Up to 8 bits can be used for execution data.
                         typedef enum {
-                                T_NONE,         // #0
+                                T_NONE = 0,     // #0
                                 T_INIT,         // #1
                                 T_TICK,         // #2
                                 T_EXIT,         // #3

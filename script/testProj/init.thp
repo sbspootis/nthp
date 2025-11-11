@@ -1,0 +1,70 @@
+CONST pd_value ?b3a5
+
+STRING windowTitle "platformer"
+CORE_INIT @initFlags	~windowTitle
+
+CORE_SETMAXFPS 60
+CONST speed 5.5
+
+STRING palette "resource/genericPalette.pal"
+SET_ACTIVE_PALETTE ~palette
+
+VAR upInput
+VAR downInput
+VAR leftInput
+VAR rightInput
+
+ENUM {
+	ai_up
+	ai_down
+	ai_left
+	ai_right
+	
+	action_size
+}
+
+ACTION_DEFINE #action_size
+
+ACTION_BIND #ai_up &upInput			UP
+ACTION_BIND #ai_down &downInput		DOWN
+ACTION_BIND #ai_left &leftInput		LEFT
+ACTION_BIND #ai_right &rightInput	RIGHT
+
+
+VAR textures
+CONST fluffyTexture 0
+TEXTURE_ALLOC 1 &textures
+
+
+STRING fluffyTexture "resource/fluffy.cst"
+TEXTURE_LOAD $textures.#fluffyTexture ~fluffyTexture
+
+/ Fluffy texture animation frames /
+ENUM {
+	fi_up
+	fi_down
+	fi_left
+	fi_right
+	
+	fluffyAnimationSize
+}
+
+VAR fluffyFrames
+FRAME_ALLOC #fluffyAnimationSize &fluffyFrames
+
+FRAME_SET $fluffyFrames.#fi_up 0 0 20 20 $textures.#fluffyTexture
+FRAME_SET $fluffyFrames.#fi_down 20 0 20 20 $textures.#fluffyTexture
+FRAME_SET $fluffyFrames.#fi_left 40 0 20 20 $textures.#fluffyTexture
+FRAME_SET $fluffyFrames.#fi_right 60 0 20 20 $textures.#fluffyTexture
+
+VAR player
+ENT_ALLOC 1 &player
+
+ENT_SETFRAMERANGE $player $fluffyFrames 4
+ENT_SETRENDERSIZE $player 60 60
+ENT_HITBOXSIZE $player 20 20
+ENT_SETPOS $player 230 230
+
+ENT_SETCURRENTFRAME $player 0
+
+EXIT

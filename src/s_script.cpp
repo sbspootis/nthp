@@ -454,7 +454,7 @@ nthp::script::stdVarWidth* nthp::script::nthp_internal_alloc(nthp::script::Scrip
         
                         data->blockData[i].size = nthp::fixedToInt(size);
                         data->blockData[i].isFree = false;
-                        *target_dsc = nthp::script::constructPtrDescriptor(i + 1, 0); // Initalize the ptr to the first element in the allocated block.
+                        if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(i + 1, 0); // Initalize the ptr to the first element in the allocated block.
                         data->blockData[i].type = type;
                         return data->blockData[i].data;
                 }

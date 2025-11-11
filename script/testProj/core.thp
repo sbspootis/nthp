@@ -1,0 +1,28 @@
+
+
+LABEL 1
+
+	
+	IF $upInput
+		ENT_SETCURRENTFRAME $player #fi_up
+	END
+	IF $downInput
+		ENT_SETCURRENTFRAME $player #fi_down
+	END
+	IF $leftInput
+		ENT_SETCURRENTFRAME $player #fi_left
+	END
+	IF $rightInput
+		ENT_SETCURRENTFRAME $player #fi_right
+	END
+	
+	
+
+	CORE_CLEAR
+	CORE_QRENDER $player
+	CORE_DISPLAY
+
+	SUSPEND
+	GOTO 1
+		
+EXIT

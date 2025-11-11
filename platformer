@@ -1,0 +1,15 @@
+
+
+MACRO initFlags {
+/	x	y	tx	ty	cx	cy	fs	sr	/
+	500	500	500	500	0	0	0	0
+}
+
+BUILD_SYSTEM
+	script/testProj/init.thp script/testProj/init.thps 	T_INIT
+	script/testProj/core.thp script/testProj/core.thps	T_TICK
+	script/testProj/exit.thp script/testProj/exit.thps	T_EXIT
+
+END
+
+EXIT

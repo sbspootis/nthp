@@ -1678,8 +1678,8 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_SETFRAMERANGE) {
 
 
         entRef* _target = (entRef*)(nodeList[currentNode].access.data);
-        stdRef* _start = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
-        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
+        frameRef* _start = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef) + sizeof(frameRef));
 
         *_target = target;
         *_start = start;
