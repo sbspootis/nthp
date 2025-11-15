@@ -2,5 +2,6 @@
 TEXTURE_FREE $tp_textures
 FRAME_FREE $fp_frames
 ENT_FREE $ep_entities
+SP_FREE $p_setpieceTest
 
 EXIT

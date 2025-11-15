@@ -91,13 +91,13 @@ int nthp::script::Runtime::importExecutable(const char* filename) {
 
 
         auto globalVarSet = nthp::script::nthp_internal_alloc(&data, NULL, nthp::intToFixed(data.globalMemBudget), nthp::script::BlockMemoryEntry::bmType::GLOBAL);
-        if(globalVarSet == NULL) {
+        if(globalVarSet.block) {
                 PRINT_DEBUG_ERROR("Unable to allocate global memory.\n");
                 return 1;
         }
         
         PRINT_DEBUG("Reserved [%u] entries in GLOBAL list.\n", data.globalMemBudget);
-        memset((globalVarSet), 0, sizeof(nthp::script::stdVarWidth) * data.globalMemBudget);
+        memset(data.blockData[globalVarSet.block].data, 0, sizeof(nthp::script::stdVarWidth) * data.globalMemBudget);
 
 
         return 0;
@@ -209,7 +209,11 @@ void nthp::script::Runtime::handleEvents() {
                         if(!data.textInputActive) { break; }
 
                         uint8_t i = 0;
-                        for(;nthp::core.eventList.text.text[i] != '\0'; ++i) data.textInputTarget[data.textInputBufferPosition + i] = nthp::core.eventList.text.text[i];
+                        for(;nthp::core.eventList.text.text[i] != '\0'; ++i) {
+                                if((data.textInputBufferPosition + i) >= (data.blockData[data.textInputLocation.block].size * sizeof(nthp::script::stdVarWidth))) break;
+
+                                data.textInputTarget[data.textInputBufferPosition + i] = nthp::core.eventList.text.text[i];
+                        }
                         data.textInputBufferPosition += i;
 
                         break;

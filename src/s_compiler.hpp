@@ -202,9 +202,6 @@ namespace nthp {
 
                                 globalList.push_back(def);
                         }
-                        
-                        
-                
                 
                 };
 

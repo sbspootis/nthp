@@ -89,19 +89,25 @@ namespace script {
         
         struct BlockMemoryEntry {
                 typedef enum {
-                        TYPELESS,
+                        TYPELESS = 0,
                         TEXTURE,
                         FRAME,
                         ENTITY,
-                        GLOBAL
+                        SETPIECE,
+                        GLOBAL,
+
+                        bmTypeSize
                 } bmType;
 
                 nthp::script::stdVarWidth* data;
                 size_t size;
+                size_t sizeSpecial;
         
                 int type = bmType::TYPELESS;
                 char isFree;
         };
+
+
 
 
 
@@ -117,6 +123,7 @@ namespace script {
         } PtrDescriptor_st;
 
         constexpr int GLOBAL_LIST = 0;
+        constexpr PtrDescriptor_st NULL_REF = {0,0};
 
         constexpr FIXED_TYPE constructPtrDescriptor(FIXED_TYPE block, FIXED_TYPE address) {
                 using namespace nthp::script::internal_constants;

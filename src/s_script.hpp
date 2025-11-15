@@ -6,6 +6,7 @@
 #include "e_entity.hpp"
 #include "e_collision.hpp"
 #include "gtexture.hpp"
+#include "e_setpiece.hpp"
 
 #ifdef PM
         #ifndef DEBUG
@@ -94,6 +95,7 @@ namespace script {
                         unsigned int ibTargetPosition;  // No file data/maximums needed, so use standard int.
                         bool ibTargetSet;
                         
+                        PtrDescriptor_st textInputLocation;
                         char* textInputTarget;
                         bool textInputActive;
                         uint8_t textInputBufferPosition;
@@ -169,7 +171,7 @@ namespace script {
 
         // Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
         // Returns NULL on failure, or a pointer to the newly allocated block on success.
-        extern nthp::script::stdVarWidth* nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type);
+        extern const nthp::script::PtrDescriptor_st nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type);
         
         template<class SpecialType>
         extern SpecialType* nthp_internal_alloc_special(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth entries, nthp::script::BlockMemoryEntry::bmType type);

@@ -5,7 +5,9 @@ CORE_INIT @init_flags ~windowTitle
 STRING paletteFile "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~paletteFile
 
-CORE_SETMAXFPS 30
+CORE_SETMAXFPS 60
+
+
 
 
 / ================================================================ /
@@ -19,20 +21,25 @@ ENUM {
         texture_1
         texture_2
         texture_3
+        texture_4
+
+        textureSize
 }
 
 
-TEXTURE_ALLOC 4 &tp_textures
+TEXTURE_ALLOC #textureSize &tp_textures
 
 STRING texture_A "resource/outputTexture.cst"
 STRING texture_B "resource/platform.cst"
 STRING texture_C "resource/player_sheet.cst"
 STRING texture_D "resource/wall.cst"
+STRING texture_E "resource/fluffy.cst"
 
 TEXTURE_LOAD $tp_textures.#texture_0 ~texture_A
 TEXTURE_LOAD $tp_textures.#texture_1 ~texture_B
 TEXTURE_LOAD $tp_textures.#texture_2 ~texture_C
 TEXTURE_LOAD $tp_textures.#texture_3 ~texture_D
+TEXTURE_LOAD $tp_textures.#texture_4 ~texture_E
 
 
 / =============================================================== /
@@ -40,12 +47,13 @@ TEXTURE_LOAD $tp_textures.#texture_3 ~texture_D
 
 VAR fp_frames
 
-FRAME_ALLOC 4 &fp_frames
+FRAME_ALLOC #textureSize &fp_frames
 
 FRAME_SET $fp_frames.#texture_0 0 0 300 228 $tp_textures.#texture_0
 FRAME_SET $fp_frames.#texture_1 0 0 180 41 $tp_textures.#texture_1
 FRAME_SET $fp_frames.#texture_2 0 0 120 174 $tp_textures.#texture_2
 FRAME_SET $fp_frames.#texture_3 0 0 100 76 $tp_textures.#texture_3
+FRAME_SET $fp_frames.#texture_4 0 0 20 20 $tp_textures.#texture_4
 
 / =============================================================== /
 /                       ENTITIES                                  /
@@ -67,6 +75,23 @@ ENT_SETFRAMERANGE $ep_entities.#texture_3 $fp_frames.#texture_3 1
 ENT_SETRENDERSIZE $ep_entities.#texture_3 100 76
 
 
+/ =============================================================== /
+/                       SETPIECES                                 /
+
+
+VAR p_setpieceTest
+SP_ALLOC 2 &p_setpieceTest
+
+
+SP_SETRENDERSIZE $p_setpieceTest.0 40 40
+SP_SETPOS $p_setpieceTest.0 700 0
+SP_SETFRAMERANGE $p_setpieceTest.0 $fp_frames.#texture_4 1
+
+SP_ABS_COMPILE $p_setpieceTest
+
+
+/ =============================================================== /
+/                       ACTIONS                                   /
 
 
 
@@ -74,6 +99,10 @@ ENUM {
         ai_left
         ai_right
         ai_enter
+        ai_panUp
+        ai_panDown
+        ai_panLeft
+        ai_panRight
 
         ac_size
 }
@@ -84,14 +113,21 @@ VAR a_left
 VAR a_right
 VAR a_enter
 
+VAR a_panUp
+VAR a_panDown
+VAR a_panLeft
+VAR a_panRight
+
 ACTION_BIND #ai_left &a_left LEFT
 ACTION_BIND #ai_right &a_right RIGHT
 ACTION_BIND #ai_enter &a_enter RETURN
 
-VAR inputString
-ALLOC 10 &inputString
+ACTION_BIND #ai_panUp &a_panUp w
+ACTION_BIND #ai_panDown &a_panDown s
+ACTION_BIND #ai_panLeft &a_panLeft a
+ACTION_BIND #ai_panRight &a_panRight d
 
-TEXTINPUT_START $inputString
+
 
 
 EXIT

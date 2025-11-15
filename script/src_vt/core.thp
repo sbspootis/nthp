@@ -2,9 +2,6 @@
 PRIVATE currentIndex
 SET &currentIndex 0
 
-
-TEXTINPUT_START $inputString
-
 LABEL 1
 
         IF $a_left
@@ -24,15 +21,30 @@ LABEL 1
                 SET &currentIndex 0
         END
 
-        IF $a_enter
-                TEXTINPUT_STOP
+
+        IF $a_panUp
+                CORE_MOVECAMERA 0 1
         END
+
+        IF $a_panDown 
+                CORE_MOVECAMERA 0 -1 
+        END
+
+        IF $a_panLeft
+                CORE_MOVECAMERA 1 0
+        END
+
+        IF $a_panRight 
+                CORE_MOVECAMERA -1 0
+        END
+
 
         INDEX &ep_entities $currentIndex
 
 
         CORE_CLEAR
                 CORE_QRENDER $ep_entities
+                CORE_SP_QRENDER $p_setpieceTest.0
         CORE_DISPLAY
 
 

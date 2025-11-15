@@ -1821,6 +1821,174 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_CHECKCOLLISION) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(SP_ALLOC) {
+        ADD_NODE(SP_ALLOC);
+        
+        EVAL_SYMBOL();
+        auto size = EVAL_PREF();
+        CHECK_REF(size);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_size = size;
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_FREE) {
+        ADD_NODE(SP_FREE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_SETRENDERSIZE) {
+        ADD_NODE(SP_SETRENDERSIZE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto w = EVAL_PREF();
+        CHECK_REF(w);
+
+        EVAL_SYMBOL();
+        auto h = EVAL_PREF();
+        CHECK_REF(h);
+
+        setpieceRef* _target = (setpieceRef*)(nodeList[currentNode].access.data);
+        stdRef* _w = (stdRef*)(nodeList[currentNode].access.data + sizeof(setpieceRef));
+        stdRef* _h = (stdRef*)(nodeList[currentNode].access.data + sizeof(setpieceRef) + sizeof(stdRef));
+
+        *_target = target;
+        *_w = w;
+        *_h = h;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_SETFRAMERANGE) {
+        ADD_NODE(SP_SETFRAMERANGE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto start = EVAL_PREF();
+        CHECK_REF(start);
+
+        EVAL_SYMBOL();
+        auto size = EVAL_PREF();
+        CHECK_REF(size);
+
+        setpieceRef* _target = (setpieceRef*)(nodeList[currentNode].access.data);
+        frameRef* _start = (frameRef*)(nodeList[currentNode].access.data + sizeof(setpieceRef));
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data + sizeof(setpieceRef) + sizeof(frameRef));
+
+        *_target = target;
+        *_start = start;
+        *_size = size;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_SETCURRENTFRAME) {
+        ADD_NODE(SP_SETCURRENTFRAME);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto cf = EVAL_PREF();
+        CHECK_REF(cf);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        stdRef* _cf = (stdRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        *_target = target;
+        *_cf = cf;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_SETPOS) {
+        ADD_NODE(SP_SETPOS);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto x = EVAL_PREF();
+        CHECK_REF(x);
+
+        EVAL_SYMBOL();
+        auto y = EVAL_PREF();
+        CHECK_REF(y);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        stdRef* _x = (stdRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+        stdRef* _y = (stdRef*)(nodeList[currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
+        
+        
+        *_target = target;
+        *_x = x;
+        *_y = y;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_COMPILE) {
+        ADD_NODE(SP_COMPILE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_ABS_COMPILE) {
+        ADD_NODE(SP_ABS_COMPILE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
 
 DEFINE_COMPILATION_BEHAVIOUR(CORE_INIT) {
         ADD_NODE(CORE_INIT);
@@ -1926,6 +2094,35 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_ABS_QRENDER) {
         PRINT_NODEDATA();
         return 0;
 }
+
+DEFINE_COMPILATION_BEHAVIOUR(CORE_SP_QRENDER) {
+        ADD_NODE(CORE_SP_QRENDER);
+
+        EVAL_SYMBOL();
+        auto setpiece = EVAL_PREF();
+        CHECK_REF(setpiece);
+
+        setpieceRef* _setpiece = (setpieceRef*)(nodeList[currentNode].access.data);
+        *_setpiece = setpiece;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(CORE_SP_QRENDER_BLOCK) {
+        ADD_NODE(CORE_SP_QRENDER_BLOCK);
+
+        EVAL_SYMBOL();
+        auto setpiece = EVAL_PREF();
+        CHECK_REF(setpiece);
+
+        ptrRef* _setpieceBlock = (ptrRef*)(nodeList[currentNode].access.data);
+        *_setpieceBlock = setpiece;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 DEFINE_COMPILATION_BEHAVIOUR(CORE_CLEAR) {
         ADD_NODE(CORE_CLEAR);
@@ -3378,9 +3575,20 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(ENT_SETRENDERSIZE);
                 CHECK_COMP(ENT_CHECKCOLLISION);
 
+                CHECK_COMP(SP_ALLOC);
+                CHECK_COMP(SP_FREE);
+                CHECK_COMP(SP_SETRENDERSIZE);
+                CHECK_COMP(SP_SETFRAMERANGE);
+                CHECK_COMP(SP_SETCURRENTFRAME);
+                CHECK_COMP(SP_SETPOS);
+                CHECK_COMP(SP_COMPILE);
+                CHECK_COMP(SP_ABS_COMPILE);
+
                 CHECK_COMP(CORE_INIT);
                 CHECK_COMP(CORE_QRENDER);
                 CHECK_COMP(CORE_ABS_QRENDER);
+                CHECK_COMP(CORE_SP_QRENDER);
+                CHECK_COMP(CORE_SP_QRENDER_BLOCK);
                 CHECK_COMP(CORE_CLEAR);
                 CHECK_COMP(CORE_DISPLAY);
                 CHECK_COMP(CORE_SETMAXFPS);

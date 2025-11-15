@@ -65,7 +65,7 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
         
 
 
-        // Copy all definitions to a single buffer!
+        // Copy all definitions to a single buffer
         PRINT_DEBUG("Copying structure to new container... ");
 
         nthp::script::Node* tempStorage = new nthp::script::Node[header.totalNodeCount];
@@ -86,16 +86,14 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
                         uint32_t* headerLocation = (uint32_t*)(tempStorage[i].access.data + sizeof(uint32_t));
 
                         uint32_t finder = i;
-                        for(; tempStorage[finder].access.ID != GET_INSTRUCTION_ID(HEADER); --finder); // Nice one-liner to find the corresponding header.
+                        for(; tempStorage[finder].access.ID != GET_INSTRUCTION_ID(HEADER); --finder);
 
                         *headerLocation = finder;
                 }
         }
 
 
-        // Match FUNC defs! There is DEFINITELY a better to do this, but I don't feel like
-        // it.
-
+        // Match FUNC defs
         for(uint32_t i = 0; i < header.totalNodeCount; ++i) {
                 if(tempStorage[i].access.ID == GET_INSTRUCTION_ID(FUNC_CALL)) {
 

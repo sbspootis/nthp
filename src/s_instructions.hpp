@@ -96,9 +96,19 @@ namespace ID {
                 ENT_SETHITBOXOFFSET,\
                 ENT_SETRENDERSIZE,\
                 ENT_CHECKCOLLISION,\
+                SP_ALLOC,\
+                SP_FREE,\
+                SP_SETRENDERSIZE,\
+                SP_SETFRAMERANGE,\
+                SP_SETCURRENTFRAME,\
+                SP_SETPOS,\
+                SP_COMPILE,\
+                SP_ABS_COMPILE,\
                 CORE_INIT,\
                 CORE_QRENDER,\
                 CORE_ABS_QRENDER,\
+                CORE_SP_QRENDER,\
+                CORE_SP_QRENDER_BLOCK,\
                 CORE_CLEAR,\
                 CORE_DISPLAY,\
                 CORE_SETMAXFPS,\
@@ -158,6 +168,7 @@ typedef stdRef strRef;                                  // strRef endpoints are 
 typedef stdRef entRef;                                  // Uses eval_special on runtime to parse a gEntity object in a given block.
 typedef stdRef textureRef;                              // Uses eval_special on runtime to parse a gTexture object in a given block.
 typedef stdRef frameRef;                                // Uses eval_special on runtime to parse a Frame object in a given block.
+typedef stdRef setpieceRef;                             // Uses eval_special on runtime to parse staticSetpiece object in a given block.
 
 
 // Sizes must have the same name as the ENUM entry in 'ID'.
@@ -235,10 +246,20 @@ namespace Size {
                 ENT_SETRENDERSIZE = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
                 ENT_CHECKCOLLISION = sizeof(entRef) + sizeof(stdRef) + sizeof(entRef),
 
+                SP_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+                SP_FREE = sizeof(ptrRef),
+                SP_SETRENDERSIZE = sizeof(setpieceRef) + sizeof(stdRef) + sizeof(stdRef),
+                SP_SETFRAMERANGE = sizeof(setpieceRef) + sizeof(frameRef) + sizeof(stdRef),
+                SP_SETCURRENTFRAME = sizeof(setpieceRef) + sizeof(stdRef),
+                SP_SETPOS = sizeof(setpieceRef) + sizeof(stdRef) + sizeof(stdRef),
+                SP_COMPILE = sizeof(ptrRef),
+                SP_ABS_COMPILE = sizeof(ptrRef),
 
                 CORE_INIT = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(uint8_t) + sizeof(strRef),
                 CORE_QRENDER = sizeof(entRef),
                 CORE_ABS_QRENDER = sizeof(entRef),
+                CORE_SP_QRENDER = sizeof(setpieceRef),
+                CORE_SP_QRENDER_BLOCK = sizeof(ptrRef),
                 CORE_CLEAR = 0,
                 CORE_DISPLAY = 0,
                 CORE_SETMAXFPS = sizeof(stdRef),
