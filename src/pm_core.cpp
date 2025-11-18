@@ -980,9 +980,9 @@ L_BEGIN:
                                 }
 
                         }
-
-                        PM_PRINT_ERROR("\"%s\", Unknown command.\n", args[0].c_str());
-                        continue;
+                        std::cout << "\"" << args[0] << "\", unknown command.\n";
+                        continue; 
+                
 		} // if(input != "")
 
 
