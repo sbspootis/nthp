@@ -612,7 +612,6 @@ DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
                 PRINT_DEBUG_ERROR("Failed to resize BLOCK LIST.\n");
                 return 1;
         }
-        printf("%zu  %d\n", data->blockDataSize, nthp::fixedToInt(size.value));
 
         for(size_t i = data->blockDataSize; i < nthp::fixedToInt(size.value); ++i) {
                 data->blockData[i].isFree = true;

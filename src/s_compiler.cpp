@@ -278,6 +278,46 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         // Binary write; constant value, not converted to fixed point.
         if(expression[0] == '?') {
                 expression.erase(expression.begin());
+                
+                if(expression[0] == 'b') { // Write a constant pointer descriptor; seperate b#a#
+                        expression.erase(expression.begin());
+
+                        size_t a_pos = expression.find('a');
+                        if(a_pos == std::string::npos) {
+                                PRINT_COMPILER_ERROR("Invalid pointer descriptor; address not specified.\n");
+                                return ref;
+                        }
+
+                        std::string address_value = expression;
+                        address_value.erase(0, a_pos);
+                        address_value.erase(address_value.begin());
+
+                        std::cout << address_value << '\n';
+
+
+                        expression.erase(expression.begin()+a_pos, expression.end());
+
+                        std::cout << expression << '\n';
+                        nthp::script::PtrDescriptor_st ptr;
+                        try {
+                                ptr.block = std::stoi(expression);
+                                ptr.address = std::stoi(address_value);
+                        }
+                        catch(std::invalid_argument) {
+                                PRINT_COMPILER_ERROR("Invalid pointer descriptor; unable to parse\n");
+                                return ref;
+                        }
+
+                        ref.value = nthp::script::constructPtrDescriptor(ptr.block, ptr.address);
+                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+
+                        PRINT_COMPILER("Constructed constant ptr_descriptor [b%da%d] and assigned to ref.\n", ptr.block, ptr.address);
+
+                        return ref;
+                }
+
+
+
                 try {
                         ref.value = std::stol(expression, nullptr, 0);
                 }
@@ -3896,6 +3936,17 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                                 blockwidth.value = std::to_string(sizeof(stdVarWidth));
 
                                 constantList.push_back(blockwidth);
+                        }
+
+                        {
+                                STRUCT_DEF ray;
+                                ray.name = "ray";
+                                ray.members.push_back("x1");
+                                ray.members.push_back("y1");
+                                ray.members.push_back("x2");
+                                ray.members.push_back("y2");
+
+                                structList.push_back(ray);
                         }
 
 
