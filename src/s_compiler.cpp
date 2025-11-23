@@ -292,12 +292,8 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         address_value.erase(0, a_pos);
                         address_value.erase(address_value.begin());
 
-                        std::cout << address_value << '\n';
-
-
                         expression.erase(expression.begin()+a_pos, expression.end());
 
-                        std::cout << expression << '\n';
                         nthp::script::PtrDescriptor_st ptr;
                         try {
                                 ptr.block = std::stoi(expression);
@@ -3676,7 +3672,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(TEXTINPUT_START);
                 CHECK_COMP(TEXTINPUT_STOP);
 
-                PRINT_COMPILER_WARNING("Unknown symbol [%s];\n", fileRead.c_str());
+                PRINT_COMPILER_ERROR("Unknown symbol [%s];\n", fileRead.c_str());
+                return 1;
 
         } // Main loop
 
