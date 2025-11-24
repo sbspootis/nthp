@@ -1,7 +1,3 @@
-#ifndef DEBUG
-        #define DEBUG
-#endif
-
 #include "global.hpp"
 
 nthp::fixed_t nthp::deltaTime = 0;
@@ -10,7 +6,6 @@ nthp::fixed_t nthp::frameDelay = 0;
 nthp::vectFixed nthp::mousePosition;
 
 
-FILE* NTHP_debug_output = stdout;
 
 void nthp::THROW_FATAL(char errorcode, const char* fatal_message) {
         printf("[t %u] FATAL: %s\n", SDL_GetTicks(), fatal_message);
@@ -18,6 +13,8 @@ void nthp::THROW_FATAL(char errorcode, const char* fatal_message) {
         throw FATAL_ERROR(errorcode);
 }
 
+#ifdef DEBUG
+FILE* NTHP_debug_output = stdout;
 
 void PRINT_DEBUG(const char* format, ...) {
 	va_list ap;
@@ -93,7 +90,7 @@ void NTHP_GEN_DEBUG_CLOSE(void) {
                 NTHP_debug_output = stdout;
         }
 }
-
+#endif
 
 
 nthp::RenderRuleSet::RenderRuleSet() { 

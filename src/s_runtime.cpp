@@ -41,7 +41,7 @@ int nthp::script::Runtime::importExecutable(const char* filename) {
 
         data.nodeSetSize = header.totalNodeCount;
         data.nodeSet = new (std::nothrow) nthp::script::Node[data.nodeSetSize];
-        printf("Allocated [%zu] nodes.\n", data.nodeSetSize);
+        PRINT_DEBUG("Allocated [%zu] nodes.\n", data.nodeSetSize);
         if(data.nodeSet == NULL) { 
                 PRINT_DEBUG_ERROR("Unable to allocate executable memory for [%s].\n", filename);
                 file.close();
