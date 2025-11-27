@@ -274,6 +274,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         bool ptr_reference = false;
         bool deref_ptr = false;
         bool get_size = false;
+        bool is_fixed_ref = false;
 
         // Binary write; constant value, not converted to fixed point.
         if(expression[0] == '?') {
@@ -473,6 +474,13 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                 for(size_t j = 0; structList[globalList[i].structID].members.size(); ++j) {
                                                         
                                                         if(structAccess == structList[globalList[i].structID].members[j]) {
+                                                                if(globalList[i].isFixed) {
+                                                                        is_fixed_ref = true;
+                                                                        validAccess = true;
+                                                                        ref.offset = j;
+
+                                                                        break;
+                                                                }
                                                                 validAccess = true;
                                                                 ref.offset = j;
                                                                 PRINT_COMPILER("Assigned offset [%u] (%s) ; %s\n", ref.offset, structList[globalList[i].structID].members[j].c_str(), globalList[i].varName.c_str());
@@ -554,6 +562,13 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         // relative index of a reference, removing the IS_REFERENCE flag makes it evalute as a constant, meaning the
         // unadultered index of the VAR, or a ptr_reference!
         if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
+
+        // In order for is_fixed_ref to pass this check, IS_REFERENCE is set, a valid struct and offset is assigned, and the global in question
+        // was declared as a FIXED. ref.value therefor is not encoded as a fixed point number.
+        if(is_fixed_ref) {
+                ref.value += ref.offset;
+                ref.offset = 0;
+        }
 
 
         PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
@@ -2931,6 +2946,10 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         EVAL_SYMBOL();
                         if(fileRead == "{") {
                                 EVAL_SYMBOL();
+                                if(fileRead == "}") {
+                                        PRINT_COMPILER_ERROR("STRUCT cannot be defined; No members defined.\n");
+                                        return 1;
+                                }
 
                                 while(fileRead != "}") {
                                         structList.back().members.push_back(fileRead);
@@ -2942,10 +2961,10 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         }
                         else {
                                 PRINT_COMPILER_ERROR("STRUCT cannot be defined; scope required.\n");
-                                structList.pop_back();
-                                continue;
+                                return 1;
                         }
 
+                        continue;
                 }
 
                 if(fileRead == "EXIT") {
@@ -3045,6 +3064,59 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         globalList[pos].structID = 0;
 
                         PRINT_COMPILER("Removed STRUCT assignment from [%s].\n", fileRead.c_str());
+                        continue;
+                }
+
+                if(fileRead == "FIXED") {
+
+                        EVAL_SYMBOL();
+                        bool validStruct = false;
+                        size_t newFixedPosition = 0;
+                        for(size_t i = 0; i < structList.size(); ++i) {
+                                if(fileRead == structList[i].name) {
+                                        EVAL_SYMBOL();
+
+                                        for(size_t j = 0; j < globalList.size(); ++j) {
+                                                if(fileRead == globalList[j].varName) {
+                                                        if((globalList[j].isPrivate) && globalList[j].definedIn != currentFile) {
+                                                                break;
+                                                        }
+                                                        
+                                                        PRINT_COMPILER_ERROR("Defined duplicate VAR/PRIVATE [%s] in [%s].\n", fileRead.c_str(), currentFile.c_str());
+                                                        return 1;
+                                                }
+                                        }
+
+                                        GLOBAL_DEF newFixed;
+                                        newFixed.varName = fileRead;
+                                        newFixed.definedIn = currentFile;
+                                        newFixed.relativeIndex = globalList.size();
+                                        newFixedPosition = globalList.size();
+                                        newFixed.isPrivate = false;
+                                        newFixed.structID = i;
+                                        newFixed.isStruct = true;
+                                        newFixed.isFixed = true;
+
+                                        globalList.push_back(newFixed);
+                                        ++globalAlloc;
+
+                                        std::string globalAdd;
+                                        for(size_t k = 1; k < structList[i].members.size(); ++k) {
+                                                globalAdd = "__." + (structList[i].members[k]);
+                                                addGlobalDef(globalAdd.c_str(), currentFile.c_str());
+                                                ++globalAlloc;
+                                        }
+                                        
+                                        validStruct = true;
+                                }
+                        }
+
+                        if(!validStruct) {
+                                PRINT_COMPILER_ERROR("Unable to define FIXED; [%s] Invalid struct.\n", fileRead.c_str());
+                                return 1;
+                        }
+
+                        PRINT_COMPILER("Added new FIXED [%s] to GLOBAL list; struct=[%s] size=[%zu].\n", fileRead.c_str(), structList[globalList[newFixedPosition].structID].name.c_str(), structList[globalList[newFixedPosition].structID].members.size());
                         continue;
                 }
 

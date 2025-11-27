@@ -40,6 +40,7 @@ namespace nthp {
                         std::string definedIn;
 
                         bool isStruct;
+                        bool isFixed;
                         size_t structID;
                 };
 
