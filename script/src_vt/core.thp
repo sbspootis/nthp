@@ -38,8 +38,6 @@ LABEL 1
                 CORE_MOVECAMERA -1 0
         END
 
-        PRINT $player.gravity
-
         INDEX &ep_entities $currentIndex
 
 

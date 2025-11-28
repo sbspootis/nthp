@@ -71,9 +71,20 @@ void PRINT_COMPILER_ERROR(const char* format, ...) {
         va_list ap;
 	
 	va_start(ap, format);
+#ifdef PM
+        va_list pmOutputList;
+        va_copy(pmOutputList, ap);
+#endif
 
 	fprintf(NTHP_debug_output, "[t %u] ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
+
+#ifdef PM
+        printf("[t %u] ERROR: ", SDL_GetTicks());
+        vprintf(format, pmOutputList);
+
+        va_end(pmOutputList);
+#endif
 
 	va_end(ap);
 }
@@ -82,10 +93,20 @@ void PRINT_COMPILER_WARNING(const char* format, ...) {
         va_list ap;
 	
 	va_start(ap, format);
+#ifdef PM
+        va_list pmOutputList;
+        va_copy(pmOutputList, ap);
+#endif
 
 	fprintf(NTHP_debug_output, "[t %u] WARNING: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
+#ifdef PM
+        printf("[t %u] WARNING: ", SDL_GetTicks());
+        vprintf(format, pmOutputList);
+
+        va_end(pmOutputList);
+#endif
 
 	va_end(ap);
 }
@@ -94,10 +115,20 @@ void PRINT_COMPILER_DEPEND_ERROR(const char* format, ...) {
         va_list ap;
 	
 	va_start(ap, format);
+#ifdef PM
+        va_list pmOutputList;
+        va_copy(pmOutputList, ap);
+#endif
 
 	fprintf(NTHP_debug_output, "[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());	
 	vfprintf(NTHP_debug_output, format, ap);
 
+#ifdef PM
+        printf("[t %u] DEPENDENCY ERROR: ", SDL_GetTicks());
+        vprintf(format, pmOutputList);
+
+        va_end(pmOutputList);
+#endif
 
 	va_end(ap);
 }
