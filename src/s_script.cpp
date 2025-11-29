@@ -1177,7 +1177,7 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_MOVECAMERA) {
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(nthp::f_fixedProduct(x.value, nthp::deltaTime), nthp::f_fixedProduct(y.value, nthp::deltaTime));
+        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(x.value, y.value);
         return 0;
 }
 
