@@ -437,8 +437,32 @@ DEFINE_EXECUTION_BEHAVIOUR(SET) {
 
 
 // Internal allocator function to occupy a new block list entry. Only allocates in units of nthp::script::stdVarWidth.
-// Returns NULL on failure, or a pointer to the newly allocated block on success.
-const nthp::script::PtrDescriptor_st nthp::script::nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth size, nthp::script::BlockMemoryEntry::bmType type) {
+// Returns a PtrDescriptor_st containing the block occupied. Block will be 0 on failure.
+// size_t target parameter takes an index in the block list to allocate to a specific register; if target is 0, then the allocator
+// will either find a vacant register or resize the block list to add a new register on top.
+const nthp::script::PtrDescriptor_st nthp::script::nthp_internal_alloc(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::fixed_t size, size_t target, nthp::script::BlockMemoryEntry::bmType type) {
+        if(target) {
+                if(!data->blockData[target].isFree) {   PRINT_DEBUG_WARNING("ALLOC_TARGET target [%zu] not vacant; block data will be erased. SPECIAL TYPES ARE NOT CLEANED PROPERLY.\n", target);
+                                                        free(data->blockData[target].data); }
+                data->blockData[target].data = (nthp::script::stdVarWidth*)malloc(sizeof(nthp::script::stdVarWidth) * nthp::fixedToInt(size));
+                        
+              
+                if(data->blockData[target].data == NULL) {
+                        PRINT_DEBUG_ERROR("Unable to allocate data block at [%p] (%zu).\n",data->blockData + target, target);
+                        return nthp::script::NULL_REF;
+                }
+
+
+                data->blockData[target].size = nthp::fixedToInt(size);
+                data->blockData[target].isFree = false;
+                if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(target, 0); // Initalize the ptr to the first element in the allocated block.
+                data->blockData[target].type = type;
+
+                return nthp::script::parsePtrDescriptor(nthp::script::constructPtrDescriptor(target, 0));       
+        }
+
+        
+        
         // Linear search for open blocks. If none, reallocate block memory and use
         // last entry.
         for(size_t i = 0; i < data->blockDataSize; ++i) {
@@ -481,6 +505,8 @@ const nthp::script::PtrDescriptor_st nthp::script::nthp_internal_alloc(nthp::scr
         return nthp::script::parsePtrDescriptor(nthp::script::constructPtrDescriptor(data->blockDataSize - 1, 0));
 }
 
+// Runs nthp_internal_allocator to the size of <SpecialType> and initializes the new memory with SpecialType.init(). Target type must have
+// a virtual init() function to be allocated with this.
 template<class SpecialType>
 SpecialType* nthp::script::nthp_internal_alloc_special(nthp::script::Script::ScriptDataSet* data, nthp::script::stdVarWidth* target_dsc, nthp::script::stdVarWidth entries, nthp::script::BlockMemoryEntry::bmType type) {
         
@@ -488,7 +514,7 @@ SpecialType* nthp::script::nthp_internal_alloc_special(nthp::script::Script::Scr
 	const auto bytes = (sizeof(SpecialType) * entries);
         const auto stdEntries = nthp::intToFixed((bytes / sizeof(nthp::script::stdVarWidth)) + 1);
 
-        const auto ptr_eval = nthp::script::nthp_internal_alloc(data, target_dsc, stdEntries, type);
+        const auto ptr_eval = nthp::script::nthp_internal_alloc(data, target_dsc, stdEntries, 0, type);
         if(ptr_eval.block == 0) { PRINT_DEBUG_ERROR("Special Allocation failed @ inst. [%zu].\n", data->currentNode); return nullptr; }
 
         SpecialType* specialBlock = (SpecialType*)(data->blockData[ptr_eval.block].data);
@@ -511,7 +537,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp::script::nthp_internal_alloc(data, target_dsc, size.value, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
+        if(nthp::script::nthp_internal_alloc(data, target_dsc, size.value, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
         
         return 0;
 }
@@ -524,7 +550,7 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
+        if(nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
 
         return 0;
 }
@@ -538,14 +564,15 @@ DEFINE_EXECUTION_BEHAVIOUR(FREE) {
         
         if(ptr_dsc.block) {
                 free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].data = nullptr;
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].size = 0;
 
                 return 0;
         }
 
-        PRINT_DEBUG_WARNING("FREE at [%zu] Attempted to free global list.\n", data->currentNode);
-        return 0;
+        PRINT_DEBUG_ERROR("FREE at [%zu] Attempted to free global list.\n", data->currentNode);
+        return 1;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(COPY) {
@@ -623,6 +650,26 @@ DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
         data->blockDataSize = nthp::fixedToInt(size.value);
 
         PRINT_DEBUG("Reserved fixed BLOCK LIST size; size=%u.\n", nthp::fixedToInt(size.value));
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(ALLOC_TARGET) {
+        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef block = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        EVAL_STDREF(size);
+        EVAL_STDREF(block);
+        EVAL_PTRREF(output);
+
+        if(block.value < 0 || block.value > nthp::intToFixed(data->blockDataSize)) {
+                PRINT_DEBUG_ERROR("Invalid target for ALLOC_TARGET @ [%zu]; Entry [%d] not registered.\n", data->currentNode, nthp::fixedToInt(block.value));
+                return 1;
+        }
+
+        const auto result = nthp::script::nthp_internal_alloc(data, target_dsc, size.value, nthp::fixedToInt(block.value), nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        if(result.block == nthp::script::NULL_REF.block) { return 1; }
 
         return 0;
 }
@@ -1177,7 +1224,7 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_MOVECAMERA) {
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(x.value, y.value);
+        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(nthp::f_fixedProduct(x.value, nthp::deltaTime), nthp::f_fixedProduct(y.value, nthp::deltaTime));
         return 0;
 }
 
@@ -1467,7 +1514,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
 
         size_t byteSize = nthp::fixedToInt(fileSize) * sizeof(nthp::script::stdVarWidth);
 
-        nthp::script::nthp_internal_alloc(data, target_dsc, fileSize, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        nthp::script::nthp_internal_alloc(data, target_dsc, fileSize, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
         if(ptr.block) {
                 file.read((char*)data->blockData[ptr.block].data, fileSize);

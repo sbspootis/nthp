@@ -31,10 +31,8 @@ namespace nthp {
                         int start() {
                                 if(Mix_PlayMusic(musicData, -1) == -1) {
                                         PRINT_DEBUG_ERROR("Failed to start music track at [%p]. %s\n", this, SDL_GetError());
-
                                         return -1;
                                 }
-
                                 return 0;
                         }
 

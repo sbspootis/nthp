@@ -56,8 +56,8 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                                 }
                                 mainRuntime.data.blockData[0].data[nthp::script::predefined_globals::DELTATIME_GLOBAL_INDEX] = nthp::deltaTime;
                         }
-
-
+                        
+                        
                         // Exit Phase
                         if(mainRuntime.execExit()) return -1;
 

@@ -5,9 +5,11 @@ CORE_INIT @init_flags ~windowTitle
 STRING paletteFile "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~paletteFile
 
-CORE_SETMAXFPS 60
+CORE_SETMAXFPS 30
 
 SET_BLOCKLISTSIZE 10
+ALLOC_TARGET 20 8 &null
+CONST ptr_fixedBlock ?b8a0
 
 / ================================================================ /
 /                     TEXTURES                                     /
@@ -34,14 +36,12 @@ STRING texture_B "resource/platform.cst"
 STRING texture_C "resource/player_sheet.cst"
 STRING texture_D "resource/wall.cst"
 STRING texture_E "resource/fluffy.cst"
-STRING texture_F "resource/noexist.cst"
 
 TEXTURE_LOAD $tp_textures.#texture_0 ~texture_A
 TEXTURE_LOAD $tp_textures.#texture_1 ~texture_B
 TEXTURE_LOAD $tp_textures.#texture_2 ~texture_C
 TEXTURE_LOAD $tp_textures.#texture_3 ~texture_D
 TEXTURE_LOAD $tp_textures.#texture_4 ~texture_E
-TEXTURE_LOAD $tp_textures.#texture_5 ~texture_F
 
 / =============================================================== /
 /                       FRAMES                                    /

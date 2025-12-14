@@ -90,7 +90,7 @@ int nthp::script::Runtime::importExecutable(const char* filename) {
         }
 
 
-        auto globalVarSet = nthp::script::nthp_internal_alloc(&data, NULL, nthp::intToFixed(data.globalMemBudget), nthp::script::BlockMemoryEntry::bmType::GLOBAL);
+        auto globalVarSet = nthp::script::nthp_internal_alloc(&data, NULL, nthp::intToFixed(data.globalMemBudget), 0, nthp::script::BlockMemoryEntry::bmType::GLOBAL);
         if(globalVarSet.block) {
                 PRINT_DEBUG_ERROR("Unable to allocate global memory.\n");
                 return 1;
@@ -211,7 +211,6 @@ void nthp::script::Runtime::handleEvents() {
                         uint8_t i = 0;
                         for(;nthp::core.eventList.text.text[i] != '\0'; ++i) {
                                 if((data.textInputBufferPosition + i) >= (data.blockData[data.textInputLocation.block].size * sizeof(nthp::script::stdVarWidth))) break;
-
                                 data.textInputTarget[data.textInputBufferPosition + i] = nthp::core.eventList.text.text[i];
                         }
                         data.textInputBufferPosition += i;
