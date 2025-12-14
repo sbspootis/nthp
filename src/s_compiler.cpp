@@ -1625,50 +1625,6 @@ DEFINE_COMPILATION_BEHAVIOUR(FRAME_SET) {
 }
 
 
-DEFINE_COMPILATION_BEHAVIOUR(SM_WRITE) {
-        ADD_NODE(SM_WRITE);
-
-        EVAL_SYMBOL();
-        auto to = EVAL_PREF();
-        CHECK_REF(to);
-
-        EVAL_SYMBOL();
-        auto from = EVAL_PREF();
-        CHECK_REF(from);
-
-        stdRef* _to = (stdRef*)(nodeList[currentNode].access.data);
-        stdRef* value = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-
-        *_to = to;
-        *value = from;
-
-
-        PRINT_NODEDATA();
-        return 0;
-}
-
-DEFINE_COMPILATION_BEHAVIOUR(SM_READ) {
-        ADD_NODE(SM_READ);
-
-
-        stdRef* from = (stdRef*)(nodeList[currentNode].access.data);
-        ptrRef* into = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
-
-
-        EVAL_SYMBOL();
-        auto _from = EVAL_PREF();
-        CHECK_REF(_from);
-
-        EVAL_SYMBOL();
-        auto _into = EVAL_PREF();
-        CHECK_REF(_into);
-
-        *from = _from;
-        *into = _into;
-        PRINT_NODEDATA();
-        return 0;
-}
-
 
 DEFINE_COMPILATION_BEHAVIOUR(ENT_ALLOC) {
         ADD_NODE(ENT_ALLOC);
@@ -2103,7 +2059,6 @@ DEFINE_COMPILATION_BEHAVIOUR(SP_ABS_COMPILE) {
 DEFINE_COMPILATION_BEHAVIOUR(CORE_INIT) {
         ADD_NODE(CORE_INIT);
 
-        
 
         EVAL_SYMBOL();
         auto spx = EVAL_PREF();
@@ -2431,22 +2386,6 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_STOP) {
         PRINT_NODEDATA();
         return 0;
 }
-
-DEFINE_COMPILATION_BEHAVIOUR(STAGE_LOAD) {
-        ADD_NODE(STAGE_LOAD);
-
-        EVAL_SYMBOL();
-        auto filename = EVAL_PREF();
-        CHECK_REF(filename);
-
-        strRef* _file = (decltype(_file))(nodeList[currentNode].access.data);
-
-        *_file = filename;
-
-        PRINT_NODEDATA();
-        return 0;
-}
-
 
 DEFINE_COMPILATION_BEHAVIOUR(POLL) {
 
@@ -3728,9 +3667,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(FRAME_FREE);
                 CHECK_COMP(FRAME_SET);
 
-                CHECK_COMP(SM_WRITE);
-                CHECK_COMP(SM_READ);
-
                 CHECK_COMP(ENT_ALLOC);
                 CHECK_COMP(ENT_FREE);
 
@@ -3769,8 +3705,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(ACTION_BIND);
                 CHECK_COMP(ACTION_DEFINE);
                 CHECK_COMP(ACTION_CLEAR);
-
-                CHECK_COMP(STAGE_LOAD);
 
                 CHECK_COMP(POLL);
 

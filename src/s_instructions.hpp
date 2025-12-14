@@ -85,8 +85,6 @@ namespace ID {
                 FRAME_ALLOC,\
                 FRAME_FREE,\
                 FRAME_SET,\
-                SM_READ,\
-                SM_WRITE,\
                 ENT_ALLOC,\
                 ENT_FREE,\
                 ENT_SETCURRENTFRAME,\
@@ -121,7 +119,6 @@ namespace ID {
                 ACTION_DEFINE,\
                 ACTION_BIND,\
                 ACTION_CLEAR,\
-                STAGE_LOAD,\
                 POLL_ENT_POSITION,\
                 POLL_ENT_HITBOX,\
                 POLL_ENT_RENDERSIZE,\
@@ -233,8 +230,6 @@ namespace Size {
                 FRAME_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 FRAME_FREE = sizeof(ptrRef),
                 FRAME_SET = sizeof(frameRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(textureRef),
-                SM_WRITE = sizeof(stdRef) + sizeof(stdRef),
-                SM_READ = sizeof(stdRef) + sizeof(ptrRef),
 
                 ENT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 ENT_FREE = sizeof(ptrRef),
@@ -274,7 +269,6 @@ namespace Size {
                 ACTION_DEFINE = sizeof(stdRef),
                 ACTION_CLEAR = 0, //
                 ACTION_BIND =  sizeof(stdRef) + sizeof(ptrRef) + sizeof(int32_t), // actionIndex, varIndex, key
-                STAGE_LOAD = sizeof(strRef),
 
                 POLL_ENT_POSITION = sizeof(stdRef),
                 POLL_ENT_HITBOX = sizeof(stdRef),

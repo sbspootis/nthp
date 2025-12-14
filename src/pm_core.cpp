@@ -14,7 +14,6 @@ nthp::script::CompilerInstance symbolData;
 std::string testTarget;
 
 bool debuggingActiveProcess = false;
-bool suspendExecution = false;
 
 
 
@@ -38,7 +37,6 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {
                         if(mainRuntime.importExecutable(target.c_str())) return 1;
-                        memset(nthp::script::stageMemory, 0, STAGEMEM_MAX);
 
                         // Init phase.
                         PRINT_DEBUG("Beginning INIT phase...\n");
@@ -49,14 +47,13 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         g_access.lock();
 
                         nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
-                        suspendExecution = true;
                         nthp::script::debug::suspendExecution = true;
                         PM_PRINT("Ready. Waiting for continue (c)...\n");
 
                         g_access.unlock();
 
                         
-                        while((nthp::core.isRunning()) && (!mainRuntime.data.changeStage) && debuggingActiveProcess) {
+                        while((nthp::core.isRunning()) && debuggingActiveProcess) {
                                 frameStart = SDL_GetTicks();
                                 
                                 mainRuntime.handleEvents();
@@ -84,19 +81,10 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         
                         if(mainRuntime.execExit()) return 1;
 
-                        // If CHANGESTAGE is false after the exit phase, then the core must've been stopped,
-                        // so exit the program. Otherwise, redo the init phase with the new stage. 
-                        if(mainRuntime.data.changeStage && debuggingActiveProcess) {
-                                mainRuntime.data.changeStage = false;
-                                // StageMemory has been set to the new filename.
-                                continue;
-                        }
-                        else {
-                                debuggingActiveProcess = false;
-                                suspendExecution = false;
-                                nthp::script::debug::suspendExecution = false;
-                                break;
-                        }
+                        
+                        debuggingActiveProcess = false;
+                        nthp::script::debug::suspendExecution = false;
+                        break;
                 }
         }
         g_access.lock();
@@ -472,7 +460,6 @@ L_BEGIN:
 
                                                 nthp::core.stop();
                                                 debuggingActiveProcess = false;
-                                                suspendExecution = false;
                                                 nthp::script::debug::debugInstructionCall.x = -1;
                                                 nthp::script::debug::suspendExecution = false;
 
@@ -666,7 +653,7 @@ L_BEGIN:
                                         g_access.lock();
 
                                         nthp::script::debug::debugInstructionCall.x = nthp::script::debug::BREAK;
-                                        suspendExecution = true;
+                                        nthp::script::debug::suspendExecution = true;
                                         PM_PRINT("Breakpoint read at instruction [%zu]; HEAD at [%zu], waiting for continue.\n", mainRuntime.data.currentNode, mainRuntime.data.currentNode);
 
                                         g_access.unlock();
@@ -677,7 +664,7 @@ L_BEGIN:
                                         g_access.lock();
 
                                         nthp::script::debug::debugInstructionCall.x = nthp::script::debug::CONTINUE;
-                                        suspendExecution = false;
+                                        nthp::script::debug::suspendExecution = false;
                                         PM_PRINT("Continuing from instruction [%zu]; HEAD at [%zu].\n", mainRuntime.data.currentNode, mainRuntime.data.currentNode);
 
                                         g_access.unlock();
@@ -726,7 +713,7 @@ L_BEGIN:
                                 }
 
                                 if(args[0] == "step" || args[0] == "s") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to step through.\n");
                                                 continue;
                                         }
@@ -742,7 +729,7 @@ L_BEGIN:
 
                                 }
                                 if(args[0] == "getvar" || args[0] == "gv") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to read memory.\n");
                                                 continue;
                                         }
@@ -786,7 +773,7 @@ L_BEGIN:
                                 }
 
                                 if(args[0] == "setvar" || args[0] == "sv") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to write memory.\n");
                                                 continue;
                                         }
@@ -825,7 +812,7 @@ L_BEGIN:
                                         continue;
                                 }
                                 if(args[0] == "getblock" || args[0] == "gb") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to access block memory.\n");
                                                 continue;
                                         }
@@ -892,7 +879,7 @@ L_BEGIN:
                                 }
 
                                 if(args[0] == "setblock" || args[0] == "sb") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to access block memory.\n");
                                                 continue;
                                         }
@@ -932,7 +919,7 @@ L_BEGIN:
                                 }
 
                                 if(args[0] == "info") {
-                                        if(!suspendExecution) {
+                                        if(!nthp::script::debug::suspendExecution) {
                                                 PM_PRINT_ERROR("Process must be suspended (break, b) to get program info.\n");
                                                 continue;
                                         }

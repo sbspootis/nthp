@@ -3,7 +3,6 @@
 using namespace nthp::script::instructions;
 #define DEFINE_EXECUTION_BEHAVIOUR(instruction) const int instruction (nthp::script::Script::ScriptDataSet* data)
 
-char nthp::script::stageMemory[STAGEMEM_MAX];
 nthp::texture::Palette nthp::script::activePalette;
 
 
@@ -802,32 +801,6 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
 }
 
 
-DEFINE_EXECUTION_BEHAVIOUR(SM_WRITE) {
-        stdRef to = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef from = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-
-        EVAL_STDREF(to);
-        EVAL_STDREF(from);
-
-        nthp::script::stageMemory[nthp::fixedToInt(to.value)] = nthp::fixedToInt(from.value);
-
-        return 0;
-}
-
-DEFINE_EXECUTION_BEHAVIOUR(SM_READ) {
-        stdRef location = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
-
-        EVAL_STDREF(location);
-        EVAL_PTRREF(output);
-
-
-        *target_dsc = nthp::intToFixed(nthp::script::stageMemory[nthp::fixedToInt(location.value)]);
-
-
-        return 0;
-}
-
 DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
@@ -1268,27 +1241,6 @@ DEFINE_EXECUTION_BEHAVIOUR(ACTION_BIND) {
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_CLEAR) {
         delete[] data->actionList;
         data->actionListSize = 0;
-
-        return 0;
-}
-
-DEFINE_EXECUTION_BEHAVIOUR(STAGE_LOAD) {
-        strRef newStage = *(strRef*)(data->nodeSet[data->currentNode].access.data);
-
-        auto filename = EVAL_STRREF(newStage);
-
-        data->changeStage = true;
-        // Copies new stage name into stage memory. 
-        int size = 0;
-        for(uint8_t i = 0; i < 255; ++i) {
-                if(filename[i] == '\000') {
-                        size = i;
-                        break;
-                }
-        }
-
-        memcpy(nthp::script::stageMemory, filename, size);
-        data->isSuspended = true;
 
         return 0;
 }

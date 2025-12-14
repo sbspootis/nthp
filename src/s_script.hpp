@@ -18,10 +18,6 @@
 namespace nthp { 
 namespace script {
 
-                #define STAGEMEM_MAX 256
-
-        extern char stageMemory[STAGEMEM_MAX];
-
 
         namespace debug {
         #ifdef DEBUG
@@ -105,7 +101,7 @@ namespace script {
 
                         int currentMusicTrack;
 
-                        bool isSuspended, changeStage; // Stage stuff.
+                        bool isSuspended;
 
                 };
         

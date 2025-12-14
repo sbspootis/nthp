@@ -73,7 +73,7 @@ namespace nthp {
 
                 }
                 
-                // For convience. Checks the header of the given file to deduce if it's compressed or not,
+                // For convenience. Checks the header of the given file to deduce if it's compressed or not,
                 // decompresses (or just loads as a texture directly), and generates a valid software texture.
                 // NOTE: Texture must be 'regenerated' with a palette to be valid for rendering. Works "out of the box"
                 //       with both compressed and decompressed textures.
