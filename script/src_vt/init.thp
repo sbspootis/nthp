@@ -5,11 +5,8 @@ CORE_INIT @init_flags ~windowTitle
 STRING paletteFile "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~paletteFile
 
-CORE_SETMAXFPS 30
+CORE_SETMAXFPS 60
 
-SET_BLOCKLISTSIZE 10
-ALLOC_TARGET 20 8 &null
-CONST ptr_fixedBlock ?b8a0
 
 / ================================================================ /
 /                     TEXTURES                                     /
@@ -130,5 +127,10 @@ ACTION_BIND #ai_panRight &a_panRight d
 
 VAR p_test
 SET &p_test ?b5a20
+
+
+
+
+PRINT #pi
 
 EXIT

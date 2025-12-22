@@ -484,7 +484,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 }
         }
         
-
         // Evaluate Var.
         // If no VARNAME is referenced, assumes numeral reference type (instead of $VARNAME or >VARNAME, $2 or >2), or constant. Throws
         // Invalid argument if otherwise.
@@ -502,14 +501,15 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                         if(globalList[i].isStruct) {
                                         
                                                 bool validAccess = false;
-                                                for(size_t j = 0; structList[globalList[i].structID].members.size(); ++j) {
-                                                        
+                                                for(size_t j = 0; j < structList[globalList[i].structID].members.size(); ++j) {
+
                                                         if(structAccess == structList[globalList[i].structID].members[j]) {
                                                                 if(globalList[i].isFixed) {
                                                                         is_fixed_ref = true;
                                                                         validAccess = true;
                                                                         ref.offset = j;
 
+                                                                        PRINT_COMPILER("Assigned fixed offset [%u] (%s) ; %s\n", ref.offset, structList[globalList[i].structID].members[j].c_str(), globalList[i].varName.c_str());
                                                                         break;
                                                                 }
                                                                 validAccess = true;
@@ -519,7 +519,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                         }
                                                 }
                                                 if(!validAccess) { 
-                                                        PRINT_COMPILER_ERROR("STRUCT [%s] has no member [%s].", structList[globalList[i].structID].name.c_str(), structAccess.c_str());
+                                                        PRINT_COMPILER_ERROR("STRUCT [%s] has no member [%s].\n", structList[globalList[i].structID].name.c_str(), structAccess.c_str());
                                                         return ref;
                                                 }
                                         }
@@ -564,9 +564,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         expression = "-" + expression;
                 }
         }
-
-
-
 
 
         try {
@@ -1081,6 +1078,136 @@ DEFINE_COMPILATION_BEHAVIOUR(ABS) {
         *_value = value;
         *_ptr = ptr;
 
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SIN) {
+        ADD_NODE(SIN);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(COS) {
+        ADD_NODE(COS);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(TAN) {
+        ADD_NODE(TAN);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(ASIN) {
+        ADD_NODE(ASIN);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(ACOS) {
+        ADD_NODE(ACOS);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(ATAN) {
+        ADD_NODE(ATAN);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_value = value;
+        *_output = output;
 
         PRINT_NODEDATA();
         return 0;
@@ -2930,6 +3057,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         waitingForFuncScopeReturn = true;
                                 }
                         }
+
+                        continue;
                 }
 
 
@@ -3596,7 +3725,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 }
                 
                 // Symbol for a FUNC_CALL
-                if(fileRead[0] == '%') {
+                if(fileRead[0] == '%' || fileRead == "FUNC_CALL") {
                         fileRead.erase(fileRead.begin());
 
                         bool matchedFunc = false;
@@ -3639,6 +3768,12 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(DIV);
                 CHECK_COMP(SQRT);
                 CHECK_COMP(ABS);
+                CHECK_COMP(SIN);
+                CHECK_COMP(COS);
+                CHECK_COMP(TAN);
+                CHECK_COMP(ASIN);
+                CHECK_COMP(ACOS);
+                CHECK_COMP(ATAN);
 
                 CHECK_COMP(IF);
                 CHECK_COMP(END);
@@ -3999,6 +4134,13 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                                 blockwidth.value = std::to_string(sizeof(stdVarWidth));
 
                                 constantList.push_back(blockwidth);
+                        }
+                        {
+                                CONST_DEF valuePi;
+                                valuePi.constName = "#pi";
+                                valuePi.value = std::to_string(M_PI);
+
+                                constantList.push_back(valuePi);
                         }
 
                         {

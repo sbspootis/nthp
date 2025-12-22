@@ -184,7 +184,6 @@ DEFINE_EXECUTION_BEHAVIOUR(RSHIFT) {
         *target_dsc = (*target_dsc) >> nthp::fixedToInt(count.value);
 
       
-
         return 0;
 }
 
@@ -207,7 +206,7 @@ DEFINE_EXECUTION_BEHAVIOUR(ADD) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SUB) {
-        stdRef a = *(stdRef*)data->nodeSet[data->currentNode].access.data;
+        stdRef a = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
@@ -276,6 +275,84 @@ DEFINE_EXECUTION_BEHAVIOUR(ABS) {
 
 
         *target_dsc = std::abs(value.value);
+        return 0;
+}
+
+// Like hell I'm writing a fixed point trigonometry set myself. Just take the slower
+// trig up the ass, not worth my time.
+DEFINE_EXECUTION_BEHAVIOUR(SIN) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::sin(nthp::fixedToDouble(value.value)));
+        return 0;
+}
+
+
+
+DEFINE_EXECUTION_BEHAVIOUR(COS) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::cos(nthp::fixedToDouble(value.value)));
+        return 0;
+}
+
+
+
+DEFINE_EXECUTION_BEHAVIOUR(TAN) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::tan(nthp::fixedToDouble(value.value)));
+        return 0;
+}
+
+
+
+DEFINE_EXECUTION_BEHAVIOUR(ASIN) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::asin(nthp::fixedToDouble(value.value)));
+        return 0;
+}
+
+
+
+DEFINE_EXECUTION_BEHAVIOUR(ACOS) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::acos(nthp::fixedToDouble(value.value)));
+        return 0;
+}
+
+
+
+DEFINE_EXECUTION_BEHAVIOUR(ATAN) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        *target_dsc = nthp::doubleToFixed(std::atan(nthp::fixedToDouble(value.value)));
         return 0;
 }
 

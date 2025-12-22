@@ -56,6 +56,12 @@ namespace ID {
                 DIV,\
                 SQRT,\
                 ABS,\
+                SIN,\
+                COS,\
+                TAN,\
+                ASIN,\
+                ACOS,\
+                ATAN,\
                 LOGIC_IF_TRUE,\
                 LOGIC_EQU,\
                 LOGIC_NOT,\
@@ -194,7 +200,12 @@ namespace Size {
                 DIV = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 SQRT = sizeof(stdRef) + sizeof(ptrRef),
                 ABS = sizeof(stdRef) + sizeof(ptrRef),
-
+                SIN = sizeof(stdRef) + sizeof(ptrRef),
+                COS = sizeof(stdRef) + sizeof(ptrRef),
+                TAN = sizeof(stdRef) + sizeof(ptrRef),
+                ASIN = sizeof(stdRef) + sizeof(ptrRef),
+                ACOS = sizeof(stdRef) + sizeof(ptrRef),
+                ATAN = sizeof(stdRef) + sizeof(ptrRef),
 
                 LOGIC_IF_TRUE = sizeof(stdRef) + sizeof(uint32_t) + sizeof(uint32_t),
                 LOGIC_EQU = sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t) + sizeof(uint32_t), // OpA OpB EndLocation ElseLocation

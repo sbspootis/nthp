@@ -38,11 +38,6 @@ LABEL 1
                 CORE_MOVECAMERA -1 0
         END
 
-        IF $a_enter
-                FREE #ptr_fixedBlock
-                SET &a_enter 0
-        END
-
         INDEX &ep_entities $currentIndex
 
 
