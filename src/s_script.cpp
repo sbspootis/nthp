@@ -6,10 +6,20 @@ using namespace nthp::script::instructions;
 nthp::texture::Palette nthp::script::activePalette;
 
 
-static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
+static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) {
                 {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+                #ifdef DEBUG
+                        if(((ptr.block) >= data->blockDataSize)) {
+                                PRINT_DEBUG_ERROR("Invalid access; invalid block @ [%zu]; b=%d.\n", data->currentNode, ptr.block);
+                                return 1;
+                        }
+                        if(ptr.address >= data->blockData[ptr.block].size) {
+                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                                return 1;
+                        }
+                #endif
                         ref.value = data->blockData[ptr.block].data[ptr.address];
                 }
                 // This is okay because the compiler simplifies ptr_descriptor call dereferences.
@@ -17,32 +27,67 @@ static inline void ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet
                 // The compiler therefore simplifies constant ptr_descriptor dereferences to a simple reference '$'.
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_PTR)) {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+                #ifdef DEBUG
+                        if(((ptr.block) >= data->blockDataSize)) {
+                                PRINT_DEBUG_ERROR("Invalid access; invalid block @ [%zu]; b=%d.\n", data->currentNode, ptr.block);
+                                return 1;
+                        }
+                        if(ptr.address >= data->blockData[ptr.block].size) {
+                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                                return 1;
+                        }
+                #endif
                         ref.value = data->blockData[ptr.block].data[ptr.address + ref.offset];
                 }
                         
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) ref.value = -(ref.value);
         }
+
+        return 0;
 }
         
 
+#ifdef DEBUG
+        #define EVAL_STDREF(ref)        { if(____eval_std(ref, data)) { return 1; } }
+#else
+        #define EVAL_STDREF(ref)        ____eval_std(ref, data)
+#endif
 
-#define EVAL_STDREF(ref)        ____eval_std(ref, data)
 
-#define EVAL_PTRREF(ref)\
-        nthp::script::stdVarWidth* target_dsc;\
-        do {\
-                EVAL_STDREF(ref);\
-                const auto ptr_dsc = nthp::script::parsePtrDescriptor(ref.value);\
-                target_dsc = (data->blockData[ptr_dsc.block].data + ptr_dsc.address + ref.offset); break;\
-        }\
-        while(0)
+static inline int ___eval_ptr(stdRef& ref, nthp::script::stdVarWidth** target_dsc, nthp::script::Script::ScriptDataSet* data) {
+        EVAL_STDREF(ref);
+        const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+        #ifdef DEBUG
+                if(((ptr.block) >= data->blockDataSize)) {
+                        PRINT_DEBUG_ERROR("Invalid access; invalid block @ [%zu]; b=%d.\n", data->currentNode, ptr.block);
+                        return 1;
+                }
+                if(ptr.address >= data->blockData[ptr.block].size) {
+                        PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                        return 1;
+                }
+        #endif
+
+        (*target_dsc) = (data->blockData[ptr.block].data + ptr.address + ref.offset);
+        return 0;
+}
+
+#ifdef DEBUG
+        #define EVAL_PTRREF(ref) nthp::script::stdVarWidth* target_dsc; if(___eval_ptr(ref, &target_dsc, data)) { return 1; }
+#else
+        #define EVAL_PTRREF(ref) nthp::script::stdVarWidth* target_dsc; ___eval_ptr(ref, &target_dsc, data)
+#endif
+
 
 inline char* ____eval_str(ptrRef& ref, nthp::script::Script::ScriptDataSet* data) {
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_NODE_STRING_PTR)) {
                 return data->nodeSet[nthp::fixedToInt(ref.value) + data->currentScriptHeaderLocation].access.data;
         }
+#ifdef DEBUG 
+        if(____eval_std(ref, data)) { return NULL; }
+#else
         EVAL_STDREF(ref);
-
+#endif
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ref.value);
         return (char*)(data->blockData[ptr_dsc.block].data + ptr_dsc.address);
 }
@@ -51,19 +96,30 @@ inline char* ____eval_str(ptrRef& ref, nthp::script::Script::ScriptDataSet* data
 // Uses the pointer descriptor address + offset as the special type's index in the block, rather than binary position.
 // Returns a pointer of template type to the object at position address + offset.
 template<class Type>
-static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet* data) {
+static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet* data, const nthp::script::BlockMemoryEntry::bmType expectedType) {
+#ifdef DEBUG
+        if(____eval_std(ref, data)) { return NULL; }
+#else
         EVAL_STDREF(ref);
+#endif
+
         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
+#ifdef DEBUG
+        if(data->blockData[ptr.block].type != expectedType) {
+                PRINT_DEBUG_ERROR("Expected type [%02zX] in eval_special @ [%zu]; type=[%02zX]\n", expectedType, data->currentNode, data->blockData[ptr.block].type);
+                return NULL;
+        }
+#endif
         Type* const target = (Type*)(data->blockData[ptr.block].data);
 
         return (target + (ptr.address + ref.offset));
 }
 
-#define EVAL_ENTREF(ref)                eval_special<nthp::entity::gEntity>(ref, data)
-#define EVAL_TEXTUREREF(ref)            eval_special<nthp::texture::gTexture>(ref, data)
-#define EVAL_FRAMEREF(ref)              eval_special<nthp::texture::Frame>(ref, data)
-#define EVAL_SETPIECEREF(ref)           eval_special<nthp::entity::staticSetpiece>(ref, data)
 
+#define EVAL_ENTREF(ref)                eval_special<nthp::entity::gEntity>(ref, data, nthp::script::BlockMemoryEntry::bmType::ENTITY)
+#define EVAL_TEXTUREREF(ref)            eval_special<nthp::texture::gTexture>(ref, data, nthp::script::BlockMemoryEntry::bmType::TEXTURE)
+#define EVAL_FRAMEREF(ref)              eval_special<nthp::texture::Frame>(ref, data, nthp::script::BlockMemoryEntry::bmType::FRAME)
+#define EVAL_SETPIECEREF(ref)           eval_special<nthp::entity::staticSetpiece>(ref, data, nthp::script::BlockMemoryEntry::bmType::SETPIECE)
 
 #define EVAL_STRREF(ref)        ____eval_str(ref, data)
 

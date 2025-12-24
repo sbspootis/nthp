@@ -43,7 +43,20 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                
                     
 
-                        if(mainRuntime.execInit()) return 1;
+                        if(mainRuntime.execInit()) {
+                                g_access.lock();
+
+                                mainRuntime.clean();
+                                nthp::core.cleanup();
+                                symbolData.clean();
+
+                                debuggingActiveProcess = false;
+                                nthp::script::debug::suspendExecution = false;
+
+                                g_access.unlock();
+                                
+                                return 1;
+                        }
                         g_access.lock();
 
                         nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
@@ -61,7 +74,20 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
 
                                 
                                 // Tick phase.
-                                mainRuntime.execTick();
+                                if(mainRuntime.execTick()) {
+                                        g_access.lock();
+
+                                        mainRuntime.clean();
+                                        nthp::core.cleanup();
+                                        symbolData.clean();
+
+                                        debuggingActiveProcess = false;
+                                        nthp::script::debug::suspendExecution = false;
+
+                                        g_access.unlock();
+
+                                        return 1;
+                                }
 
                                 deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
                         
@@ -79,7 +105,18 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         PRINT_DEBUG("Beginning EXIT phase...\n");
 
                         
-                        if(mainRuntime.execExit()) return 1;
+                        if(mainRuntime.execExit()) {
+                                g_access.lock();
+
+                                mainRuntime.clean();
+                                nthp::core.cleanup();
+                                symbolData.clean();
+
+                                debuggingActiveProcess = false;
+                                nthp::script::debug::suspendExecution = false;
+
+                                g_access.unlock();
+                        }
 
                         
                         debuggingActiveProcess = false;
@@ -158,7 +195,7 @@ int main(int argv, char** argc) {
 
                         int ret = nthp::debuggerBehaviour(testTarget, debug_fd);
                         if(ret) {
-                                PM_PRINT_ERROR("\nCritical failure in debugger; return code %d\n", ret);
+                                PM_PRINT_ERROR("Critical failure in debugger; return code %d\n", ret);
                                 debuggingActiveProcess = false;
                         }
                         else {

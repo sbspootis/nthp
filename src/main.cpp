@@ -41,7 +41,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
   
                         
-                        while(nthp::core.isRunning() && (!mainRuntime.data.changeStage)) {
+                        while(nthp::core.isRunning()) {
                                 frameStart = SDL_GetTicks();
 
                                 mainRuntime.handleEvents();

@@ -125,12 +125,6 @@ ACTION_BIND #ai_panDown &a_panDown s
 ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
-VAR p_test
-SET &p_test ?b5a20
 
-
-
-
-PRINT #pi
 
 EXIT
