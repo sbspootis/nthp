@@ -126,5 +126,4 @@ ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
 
-
 EXIT

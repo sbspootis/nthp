@@ -815,35 +815,58 @@ L_BEGIN:
                                                 continue;
                                         }
                                         if(args.size() < 3) {
-                                                PM_PRINT_ERROR("Invalid Argument. syn; setvar >symbol/index value");
+                                                PM_PRINT_ERROR("Invalid Argument. syn; setvar >symbol/index value\n");
                                                 continue;
                                         }
+
                                         bool isIndex = false;
-                                        if(args[1][0] != '>')
-                                                isIndex = true;
-                                        g_access.lock();
+                                        unsigned long accessIndex;
                                         
+                                        if(args[1][0] != '>') {
+                                                isIndex = true;
+                                                try {
+                                                        accessIndex = std::stoul(args[1], NULL, 0);
+                                                }
+                                                catch(std::exception x) {
+                                                        PM_PRINT_ERROR("Invalid argument numeral.\n");
+                                                        continue;
+                                                }
+                                        }
+                                        g_access.lock();
+                                        bool found = false;
+
                                         try {
                                                 if(isIndex) {
-                                                        mainRuntime.data.blockData[0].data[std::stoul(args[1], NULL, 0)] = nthp::doubleToFixed(std::stod(args[2]));
+                                                        if(accessIndex >= mainRuntime.data.blockData[0].size) {
+                                                                PM_PRINT_ERROR("Invalid GLOBAL index [%u].\n", accessIndex);
+                                                                
+                                                                g_access.unlock();
+                                                                continue;
+                                                        }
+
+                                                        mainRuntime.data.blockData[0].data[accessIndex] = nthp::doubleToFixed(std::stod(args[2]));
+                                                        found = true;
                                                 }
                                                 else {
                                                         std::string reference = args[1];
+                                                        
                                                         reference.erase(reference.begin());
                                                         for(size_t i = 0; i < symbolData.globalList.size(); ++i) {
                                                                 if(reference == symbolData.globalList[i].varName) {
                                                                         mainRuntime.data.blockData[0].data[symbolData.globalList[i].relativeIndex] = nthp::doubleToFixed(std::stod(args[2]));
+                                                                        found = true;
                                                                         break;
                                                                 }
                                                         }
                                                 }
                                         }
                                         catch(std::invalid_argument x) {
-                                                PM_PRINT("Invalid argument numeral.\n");
+                                                PM_PRINT_ERROR("Invalid argument numeral.\n");
                                                 continue;
                                         }
 
-                                        PM_PRINT("GLOBAL write success.\n");
+                                        if(found) PM_PRINT("GLOBAL write success; VAR [%s] = [%lf].\n", args[1].c_str(), nthp::fixedToDouble(nthp::doubleToFixed(std::stod(args[2]))));
+                                        else PM_PRINT_ERROR("GLOBAL [%s] not found.\n", args[1].c_str());
                                         
                                         g_access.unlock();
                                         continue;

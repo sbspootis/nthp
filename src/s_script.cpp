@@ -197,6 +197,11 @@ DEFINE_EXECUTION_BEHAVIOUR(GETINDEX) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(DATA) {
+        return 0;
+}
+
+
 DEFINE_EXECUTION_BEHAVIOUR(INC) {
         ptrRef var = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
         EVAL_PTRREF(var);
@@ -1771,6 +1776,22 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_CALL) {
         ++(data->stackPointer);
 
         data->currentNode = location; // No -1 here; that is evaluated in the linker!
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(DEBUG_BREAK) {
+#ifdef DEBUG
+std::mutex access;
+
+        access.lock();
+
+        nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
+        printf("Breakpoint read at instruction [%zu]; HEAD at [%zu], waiting for continue.\n", data->currentNode, data->currentNode);
+
+        access.unlock();
+
+#endif
 
         return 0;
 }

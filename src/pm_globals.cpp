@@ -14,8 +14,7 @@ void PM_PRINT_ERROR(const char* format, ...) {
 	va_start(ap, format);
 
 	fprintf(stdout ,"[%u] ERROR: ", SDL_GetTicks());	
-	fprintf(stdout, format, ap);
-
+	vprintf(format, ap);
 
 	va_end(ap);
 }

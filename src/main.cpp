@@ -29,7 +29,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
         { // The entire engine debug context.
                
                 auto frameStart = SDL_GetTicks();
-
+                
 
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {

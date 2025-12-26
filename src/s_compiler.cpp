@@ -2953,6 +2953,13 @@ DEFINE_COMPILATION_BEHAVIOUR(STRING_COPY) {
 }
 
 
+DEFINE_COMPILATION_BEHAVIOUR(DEBUG_BREAK) {
+        ADD_NODE(DEBUG_BREAK);
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 
 // COMPILER INSTANCE BEHAVIOUR GOES HERE                ||
@@ -3872,6 +3879,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_STOP);
                 CHECK_COMP(TEXTINPUT_START);
                 CHECK_COMP(TEXTINPUT_STOP);
+
+                CHECK_COMP(DEBUG_BREAK);
 
                 PRINT_COMPILER_ERROR("Unknown symbol [%s];\n", fileRead.c_str());
                 return 1;

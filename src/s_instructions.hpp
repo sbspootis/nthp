@@ -46,6 +46,7 @@ namespace ID {
                 SUSPEND,\
                 RETURN,\
                 GETINDEX,\
+                DATA,\
                 INC,\
                 DEC,\
                 LSHIFT,\
@@ -154,7 +155,8 @@ namespace ID {
                 TEXTINPUT_START,\
                 TEXTINPUT_STOP,\
                 FUNC_START,\
-                FUNC_CALL\
+                FUNC_CALL,\
+                DEBUG_BREAK\
         )
 
         INSTRUCTION_LIST( INSTRUCTION_TOKENS(), numberOfInstructions);
@@ -188,6 +190,8 @@ namespace Size {
                 SUSPEND = 0,
                 RETURN = 0,
                 GETINDEX = sizeof(ptrRef),
+
+                DATA = DYNAMIC_SIZE,
 
                 INC = sizeof(ptrRef),
                 DEC = sizeof(ptrRef),
@@ -315,7 +319,9 @@ namespace Size {
                 TEXTINPUT_STOP = 0,
 
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
-                FUNC_CALL = sizeof(uint32_t) // Func ID, to be matched to a FUNC_START by the linker.
+                FUNC_CALL = sizeof(uint32_t), // Func ID, to be matched to a FUNC_START by the linker.
+
+                DEBUG_BREAK = 0
         );
 }
 
