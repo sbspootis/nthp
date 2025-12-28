@@ -1,3 +1,4 @@
+#pragma once
 #include "st_compress.hpp"
 
 

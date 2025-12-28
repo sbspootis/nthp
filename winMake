@@ -49,9 +49,9 @@ LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(SDLIMGLibFile) 
 DEBUG_LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(SDLIMGLibPath) -DEBUG -ASSEMBLYDEBUG -SUBSYSTEM:CONSOLE -MACHINE:$(CONFIG)
 PM_LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(PM_SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(PM_SDLIMGLibPath) -SUBSYSTEM:CONSOLE -MACHINE:$(CONFIG)
 
-libTargets = global_defs.obj core.obj position.obj palette.obj rawsurface.obj softwaretexture.obj e_entity.obj e_collision.obj st_compress.obj s_compiler.obj s_script.obj gtexture.obj s_linker.obj s_runtime.obj st_mono.obj
-debug_libTargets = global_defs_d.obj core_d.obj position_d.obj palette_d.obj rawsurface_d.obj softwaretexture_d.obj e_entity_d.obj e_collision_d.obj st_compress_d.obj s_compiler_d.obj s_script_d.obj gtexture_d.obj s_linker_d.obj s_runtime_d.obj st_mono_d.obj
-lib_srcSymbols = $(SRCDIR)global_defs.cpp $(SRCDIR)core.cpp $(SRCDIR)position.cpp $(SRCDIR)palette.cpp $(SRCDIR)rawsurface.cpp $(SRCDIR)softwaretexture.cpp $(SRCDIR)e_entity.cpp $(SRCDIR)e_collision.cpp $(SRCDIR)st_compress.cpp $(SRCDIR)s_compiler.cpp $(SRCDIR)s_script.cpp $(SRCDIR)gtexture.cpp $(SRCDIR)s_linker.cpp $(SRCDIR)s_runtime.cpp $(SRCDIR)st_mono.cpp
+libTargets = global_defs.obj core.obj position.obj palette.obj rawsurface.obj softwaretexture.obj e_entity.obj e_collision.obj st_compress.obj s_compiler.obj s_script.obj gtexture.obj s_linker.obj s_runtime.obj st_mono.obj st_font.obj
+debug_libTargets = global_defs_d.obj core_d.obj position_d.obj palette_d.obj rawsurface_d.obj softwaretexture_d.obj e_entity_d.obj e_collision_d.obj st_compress_d.obj s_compiler_d.obj s_script_d.obj gtexture_d.obj s_linker_d.obj s_runtime_d.obj st_mono_d.obj st_font_d.obj
+lib_srcSymbols = $(SRCDIR)global_defs.cpp $(SRCDIR)core.cpp $(SRCDIR)position.cpp $(SRCDIR)palette.cpp $(SRCDIR)rawsurface.cpp $(SRCDIR)softwaretexture.cpp $(SRCDIR)e_entity.cpp $(SRCDIR)e_collision.cpp $(SRCDIR)st_compress.cpp $(SRCDIR)s_compiler.cpp $(SRCDIR)s_script.cpp $(SRCDIR)gtexture.cpp $(SRCDIR)s_linker.cpp $(SRCDIR)s_runtime.cpp $(SRCDIR)st_mono.cpp $(SRCDIR)st_font.cpp
 
 
 
@@ -120,6 +120,9 @@ s_runtime.obj: $(SRCDIR)s_runtime.hpp $(SRCDIR)s_runtime.cpp
 st_mono.obj: $(SRCDIR)st_mono.hpp $(SRCDIR)st_mono.cpp
 	$(CC) -c $(SRCDIR)st_mono.cpp -Fo"st_mono.obj" $(CFLAGS)
 
+st_font.obj: $(SRCDIR)st_font.hpp $(SRCDIR)st_font.cpp
+	$(CC) -c $(SRCDIR)st_font.cpp -Fo"st_font.obj" $(CFLAGS)
+
 #DEBUG DEPENDENCIES GO HERE
 main_d.obj: $(SRCDIR)main.cpp
 	$(CC) -c $(SRCDIR)main.cpp -Fo"main_d.obj" $(DEBUG_CFLAGS)
@@ -169,6 +172,9 @@ s_runtime_d.obj: $(SRCDIR)s_runtime.hpp $(SRCDIR)s_runtime.cpp
 
 st_mono_d.obj: $(SRCDIR)st_mono.hpp $(SRCDIR)st_mono.cpp
 	$(CC) -c $(SRCDIR)st_mono.cpp -Fo"st_mono_d.obj" $(DEBUG_CFLAGS)
+
+st_font_d.obj: $(SRCDIR)st_font.hpp $(SRCDIR)st_font.cpp
+	$(CC) -c $(SRCDIR)st_font.cpp -Fo"st_font_d.obj" $(DEBUG_CFLAGS)
 
 clean:
 	del *.obj *.pdb *.ilk

@@ -3,6 +3,7 @@
 #include "s_linker.hpp"
 #include "s_script.hpp"
 #include "s_runtime.hpp"
+#include "st_font.hpp"
 #include <sstream>
 #include <thread>
 #include <mutex>

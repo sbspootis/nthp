@@ -536,7 +536,7 @@ L_BEGIN:
                                         PM_PRINT("Generating texture from file [%s] with palette [%s]...\n", args[i].c_str(), args[1].c_str());
                                         PM_PRINT("Calculating color approximations (this may take a while)...\n");
                                         if(nthp::texture::tools::generateSoftwareTextureFromImage(args[i].c_str(), &tempPal, filename.c_str())) {
-                                                PM_PRINT_ERROR("Failed to generate new softwareTexture with file [%s].\n", args[i]);
+                                                PM_PRINT_ERROR("Failed to generate new softwareTexture with file [%s].\n", args[i].c_str());
                                                 goto L_BEGIN;   // hell yeah.
                                         }
                                         PM_PRINT("done.\n");
@@ -802,7 +802,7 @@ L_BEGIN:
                                                                 	break;
                                                 		}
 						}
-                                                // << nthp::fixedToDouble(mainRuntime.data.globalVarSet[index]) << "]\n";
+                                                
                                         }
 
                                         g_access.unlock();
@@ -839,7 +839,7 @@ L_BEGIN:
                                                 if(isIndex) {
                                                         if(accessIndex >= mainRuntime.data.blockData[0].size) {
                                                                 PM_PRINT_ERROR("Invalid GLOBAL index [%u].\n", accessIndex);
-                                                                
+
                                                                 g_access.unlock();
                                                                 continue;
                                                         }

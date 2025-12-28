@@ -9,11 +9,10 @@
 #include "s_linker.hpp"
 #include "s_runtime.hpp"
 #include "st_mono.hpp"
-
+#include "st_font.hpp"
 
 nthp::EngineCore nthp::core;
 nthp::script::Runtime mainRuntime;
-
 
 int nthp::runtimeBehaviour(int argv, char** argc) {
         // The DEBUG_INIT is called at the start of main, and DEBUG_CLOSE
@@ -29,7 +28,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
         { // The entire engine debug context.
                
                 auto frameStart = SDL_GetTicks();
-                
+
 
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {
@@ -38,8 +37,6 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                         // Init phase.
                         if(mainRuntime.execInit()) return -1;
 
-
-  
                         
                         while(nthp::core.isRunning()) {
                                 frameStart = SDL_GetTicks();
@@ -48,6 +45,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
                                 // Tick phase.
                                 mainRuntime.execTick();
+
 
                                 nthp::deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
                                 if(nthp::deltaTime < nthp::frameDelay) {

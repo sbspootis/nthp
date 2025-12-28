@@ -26,11 +26,11 @@ endif
 
 CFLAGS = -lSDL2 -lSDL2_mixer $(SDL_imageLibInclude) -D LINUX -D USE_SDLIMG=$(USE_SDLIMAGE)
 DEBUG_CFLAGS = -g -lSDL2 -lSDL2_mixer $(SDL_imageLibInclude) -D LINUX -D DEBUG -DUSE_SDLIMG=$(USE_SDLIMAGE)
-libTargets = global_defs.o core.o position.o palette.o rawsurface.o softwaretexture.o e_entity.o e_collision.o st_compress.o s_compiler.o s_script.o gtexture.o s_linker.o s_runtime.o st_mono.o
-debug_libTargets = global_defs_d.o core_d.o position_d.o palette_d.o rawsurface_d.o softwaretexture_d.o e_entity_d.o e_collision_d.o st_compress_d.o s_compiler_d.o s_script_d.o gtexture_d.o s_linker_d.o s_runtime_d.o st_mono_d.o
+libTargets = global_defs.o core.o position.o palette.o rawsurface.o softwaretexture.o e_entity.o e_collision.o st_compress.o s_compiler.o s_script.o gtexture.o s_linker.o s_runtime.o st_mono.o st_font.o
+debug_libTargets = global_defs_d.o core_d.o position_d.o palette_d.o rawsurface_d.o softwaretexture_d.o e_entity_d.o e_collision_d.o st_compress_d.o s_compiler_d.o s_script_d.o gtexture_d.o s_linker_d.o s_runtime_d.o st_mono_d.o st_font_d.o
 
 
-lib_srcSymbols = $(SRCDIR)global_defs.cpp $(SRCDIR)core.cpp $(SRCDIR)position.cpp $(SRCDIR)palette.cpp $(SRCDIR)rawsurface.cpp $(SRCDIR)softwaretexture.cpp $(SRCDIR)e_entity.cpp $(SRCDIR)e_collision.cpp $(SRCDIR)st_compress.cpp $(SRCDIR)s_compiler.cpp $(SRCDIR)s_script.cpp $(SRCDIR)gtexture.cpp $(SRCDIR)s_linker.cpp $(SRCDIR)s_runtime.cpp $(SRCDIR)st_mono.cpp
+lib_srcSymbols = $(SRCDIR)global_defs.cpp $(SRCDIR)core.cpp $(SRCDIR)position.cpp $(SRCDIR)palette.cpp $(SRCDIR)rawsurface.cpp $(SRCDIR)softwaretexture.cpp $(SRCDIR)e_entity.cpp $(SRCDIR)e_collision.cpp $(SRCDIR)st_compress.cpp $(SRCDIR)s_compiler.cpp $(SRCDIR)s_script.cpp $(SRCDIR)gtexture.cpp $(SRCDIR)s_linker.cpp $(SRCDIR)s_runtime.cpp $(SRCDIR)st_mono.cpp $(SRCDIR)st_font.cpp
 
 
 PM_CFLAGS = -lSDL2 -lSDL2_mixer $(SDL_imageLibInclude) -D LINUX -D DEBUG -D USE_SDLIMG=$(USE_SDLIMAGE)
@@ -108,6 +108,9 @@ s_runtime.o: $(SRCDIR)s_runtime.hpp $(SRCDIR)s_runtime.cpp
 st_mono.o: $(SRCDIR)st_mono.hpp $(SRCDIR)st_mono.cpp
 	$(CC) $(CFLAGS) -c $(SRCDIR)st_mono.cpp -o st_mono.o
 
+st_font.o: $(SRCDIR)st_font.hpp $(SRCDIR)st_font.cpp
+	$(CC) $(CFLAGS) -c $(SRCDIR)st_font.cpp -o st_font.o
+
 # DEBUG DEPENDENCIES GO HERE VVV
 
 
@@ -167,7 +170,8 @@ s_runtime_d.o: $(SRCDIR)s_runtime.hpp $(SRCDIR)s_runtime.cpp
 st_mono_d.o: $(SRCDIR)st_mono.hpp $(SRCDIR)st_mono.cpp
 	$(CC) $(DEBUG_CFLAGS) -c $(SRCDIR)st_mono.cpp -o st_mono_d.o
 
-
+st_font_d.o: $(SRCDIR)st_font.hpp $(SRCDIR)st_font.cpp
+	$(CC) $(DEBUG_CFLAGS) -c $(SRCDIR)st_font.cpp -o st_font_d.o
 
 
 # PM DEPENDENCIES GO HERE ||
