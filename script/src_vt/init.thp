@@ -8,6 +8,11 @@ SET_ACTIVE_PALETTE ~paletteFile
 CORE_SETMAXFPS 60
 
 
+MUSIC_DEFINE 1
+STRING track "am.wav"
+MUSIC_LOAD 0 ~track
+
+
 / ================================================================ /
 /                     TEXTURES                                     /
 

@@ -617,7 +617,6 @@ L_BEGIN:
                                 nthp::texture::tools::destroySTdata(&b);
 
                                 for(size_t i = 4; i < args.size() - 1; ++i) {
-                                        // TODO
 
                                         a = output;
                                         b = nthp::texture::tools::readTextureData(args[i].c_str());

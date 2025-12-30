@@ -259,3 +259,44 @@ nthp::EngineCore::~EngineCore() {
 #endif
 
 }
+
+nthp::RenderRuleSet::RenderRuleSet() { 
+        pxlResolution_x = 0;
+        pxlResolution_y = 0;
+        tunitResolution_x = 0;
+        tunitResolution_y = 0;
+}
+
+nthp::RenderRuleSet::RenderRuleSet(FIXED_TYPE x, FIXED_TYPE y, nthp::fixed_t tx, nthp::fixed_t ty, vectFixed cameraPosition) {
+        pxlResolution_x = x;
+        pxlResolution_y = y;
+        tunitResolution_x = tx;
+        tunitResolution_y = ty;
+
+        cameraWorldPosition = cameraPosition;
+
+       updateScaleFactor();
+}
+
+
+// If you're running this every frame, and need the speed, use nocast_updateScaleFactor() instead.
+// High accuracy, slower calculation.
+void nthp::RenderRuleSet::updateScaleFactor() {
+        // Yes yes I know. But the precision is too important here to pass up.
+        // It gets converted afterwards back to fixed-point, so overall speed is better.
+        // If you're running this every frame, and need the speed, use nocast_updateScaleFactor() instead.
+	float xs, ys;
+	xs = (float)pxlResolution_x / nthp::fixedToDouble(tunitResolution_x);
+	ys = (float)pxlResolution_y / nthp::fixedToDouble(tunitResolution_y);
+
+
+	scaleFactor.x = nthp::doubleToFixed(xs);
+	scaleFactor.y = nthp::doubleToFixed(ys);
+        PRINT_DEBUG("Recalculated scale factor ; ScaleX=%lf ScaleY=%lf\n", nthp::fixedToDouble(scaleFactor.x), nthp::fixedToDouble(scaleFactor.y));
+}
+
+// Low accuracy, faster calculation. Useful for continuous camera scaling.
+// If using a single camera configuration for the whole program, use updateScaleFactor() for higher accuracy.
+void nthp::RenderRuleSet::nocast_updateScaleFactor() {
+        scaleFactor = nthp::vectFixed(nthp::f_fixedQuotient(nthp::intToFixed(pxlResolution_x), tunitResolution_x), nthp::f_fixedQuotient(nthp::intToFixed(pxlResolution_y), tunitResolution_y));
+}

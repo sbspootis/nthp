@@ -1,4 +1,3 @@
-
 #include "s_script.hpp"
 using namespace nthp::script::instructions;
 #define DEFINE_EXECUTION_BEHAVIOUR(instruction) const int instruction (nthp::script::Script::ScriptDataSet* data)
