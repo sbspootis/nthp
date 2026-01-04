@@ -1530,6 +1530,9 @@ DEFINE_EXECUTION_BEHAVIOUR(MUSIC_LOAD) {
         auto fileString = EVAL_STRREF(filename);
 
         int ret = nthp::core.audioSystem.music[nthp::fixedToInt(objectIndex.value)].load(fileString);
+        if(ret) { PRINT_DEBUG_ERROR("Failed to load track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(objectIndex.value)); }
+        else PRINT_DEBUG("Loaded music track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(objectIndex.value));
+        
         return ret;
 }
 

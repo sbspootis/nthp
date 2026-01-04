@@ -170,6 +170,9 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
 
         pixelScore scores[nthp::texture::PaletteFileSize];
         uint16_t smallestElement = 0;    // This is a pointer.
+        double alphaLevelCalculation = 0;
+
+        uint8_t alphaLevel;
         
         NOVERB_PRINT_DEBUG("\tGENERATING NEW ST TEXTURE FROM FILE %s...\n", inputImageFile);
         double progress = 0;
@@ -189,7 +192,11 @@ int nthp::texture::tools::generateSoftwareTextureFromImage(const char* inputImag
                 }
 
                 // By this point, the smallest score is stored at index colorset[smallestElement].
-                pixelData[i] = (smallestElement << nthp::texture::SoftwareTexture::alphaBitCount) | (baseImage.getPixel(i).A / nthp::texture::SoftwareTexture::alphaLevelSize);
+                alphaLevelCalculation = (double)baseImage.getPixel(i).A / (double)nthp::texture::SoftwareTexture::alphaLevelSize;
+                if(alphaLevelCalculation - floor(alphaLevelCalculation) > 0.3) { alphaLevelCalculation = ceil(alphaLevelCalculation); }
+                alphaLevel = alphaLevelCalculation;
+
+                pixelData[i] = (smallestElement << nthp::texture::SoftwareTexture::alphaBitCount) | alphaLevel;
                 smallestElement = 0;
                 progress = ((double)i / (double)surfaceSize) * (double)100;
         }

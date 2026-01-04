@@ -2,6 +2,11 @@
 TEXTURE_FREE $tp_textures
 FRAME_FREE $fp_frames
 ENT_FREE $ep_entities
-SP_FREE $p_setpieceTest
+ENT_FREE $ep_statusBars
+SP_FREE $sp_mainHud
+
+
+MUSIC_STOP
+MUSIC_CLEAR
 
 EXIT

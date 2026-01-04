@@ -78,7 +78,7 @@ int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool
         NOVERB_PRINT_DEBUG("done.\n\n");
 
 
-        if(Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) == -1) {
+        if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1) {
                 PRINT_DEBUG_ERROR("Unable to initialize audio systems. Disabling audio system until restart.\n");
 
                 // TODO

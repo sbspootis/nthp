@@ -38,7 +38,7 @@ namespace nthp {
                         int exportPaletteToFile(const char* outputFile);
 
                         nthp::texture::Pixel pullColorSetWithAlpha(size_t colorIndex, uint8_t alpha) {
-                                nthp::texture::Pixel pixel({colorSet[colorIndex].R, colorSet[colorIndex].G, colorSet[colorIndex].B, alpha});
+                                const nthp::texture::Pixel pixel({colorSet[colorIndex].R, colorSet[colorIndex].G, colorSet[colorIndex].B, alpha});
                                 return pixel;
                         }
                         

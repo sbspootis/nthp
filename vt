@@ -1,5 +1,5 @@
 
-CONST win_x     800
+CONST win_x     1200
 CONST win_y     800
 
 MACRO init_flags { 

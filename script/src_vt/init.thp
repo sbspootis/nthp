@@ -9,8 +9,9 @@ CORE_SETMAXFPS 60
 
 
 MUSIC_DEFINE 1
-STRING track "am.wav"
+STRING track "test_track_1.wav"
 MUSIC_LOAD 0 ~track
+MUSIC_START 0
 
 
 / ================================================================ /
@@ -37,13 +38,11 @@ STRING texture_A "resource/outputTexture.cst"
 STRING texture_B "resource/platform.cst"
 STRING texture_C "resource/player_sheet.cst"
 STRING texture_D "resource/wall.cst"
-STRING texture_E "resource/fluffy.cst"
 
 TEXTURE_LOAD $tp_textures.#texture_0 ~texture_A
 TEXTURE_LOAD $tp_textures.#texture_1 ~texture_B
 TEXTURE_LOAD $tp_textures.#texture_2 ~texture_C
 TEXTURE_LOAD $tp_textures.#texture_3 ~texture_D
-TEXTURE_LOAD $tp_textures.#texture_4 ~texture_E
 
 / =============================================================== /
 /                       FRAMES                                    /
@@ -56,7 +55,7 @@ FRAME_SET $fp_frames.#texture_0 0 0 300 228 $tp_textures.#texture_0
 FRAME_SET $fp_frames.#texture_1 0 0 180 41 $tp_textures.#texture_1
 FRAME_SET $fp_frames.#texture_2 0 0 120 174 $tp_textures.#texture_2
 FRAME_SET $fp_frames.#texture_3 0 0 100 76 $tp_textures.#texture_3
-FRAME_SET $fp_frames.#texture_4 0 0 20 20 $tp_textures.#texture_4
+FRAME_SET $fp_frames.#texture_4 0 0 834 172 $tp_textures.#texture_4
 
 / =============================================================== /
 /                       ENTITIES                                  /
@@ -82,15 +81,41 @@ ENT_SETRENDERSIZE $ep_entities.#texture_3 100 76
 /                       SETPIECES                                 /
 
 
-VAR p_setpieceTest
-SP_ALLOC 2 &p_setpieceTest
+
+VAR tp_hudTexture
+TEXTURE_ALLOC 1 &tp_hudTexture
+
+STRING hudFile "resource/hudSheet.cst"
+TEXTURE_LOAD $tp_hudTexture ~hudFile
+
+VAR fp_hudFrames
+FRAME_ALLOC 3 &fp_hudFrames
+ENUM { f_mainHud f_health f_stamina }
+FRAME_SET $fp_hudFrames.#f_mainHud 0 0 834 172 $tp_hudTexture
+FRAME_SET $fp_hudFrames.#f_health 834 0 700 36 $tp_hudTexture
+FRAME_SET $fp_hudFrames.#f_stamina 1534 0 711 6 $tp_hudTexture
 
 
-SP_SETRENDERSIZE $p_setpieceTest.0 40 40
-SP_SETPOS $p_setpieceTest.0 700 0
-SP_SETFRAMERANGE $p_setpieceTest.0 $fp_frames.#texture_4 1
+VAR ep_statusBars
+ENT_ALLOC 2 &ep_statusBars
+ENUM { ei_health ei_stamina }
+ENT_SETFRAMERANGE $ep_statusBars.#ei_health $fp_hudFrames.#f_health 1
+ENT_SETFRAMERANGE $ep_statusBars.#ei_stamina $fp_hudFrames.#f_stamina 1
 
-SP_ABS_COMPILE $p_setpieceTest
+ENT_SETRENDERSIZE $ep_statusBars.#ei_health 700 36
+ENT_SETRENDERSIZE $ep_statusBars.#ei_stamina 711 6
+
+ENT_SETPOS $ep_statusBars.#ei_health 105 71     / These are their positions within the hud. /
+ENT_SETPOS $ep_statusBars.#ei_stamina 106 60
+
+VAR sp_mainHud
+SP_ALLOC 1 &sp_mainHud
+
+SP_SETFRAMERANGE $sp_mainHud $fp_hudFrames.#f_mainHud 1
+SP_SETRENDERSIZE $sp_mainHud 834 172
+SP_SETPOS $sp_mainHud 0 0
+
+SP_ABS_COMPILE $sp_mainHud
 
 
 / =============================================================== /

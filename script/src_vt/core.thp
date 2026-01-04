@@ -44,12 +44,20 @@ LABEL 1
                 GOTO 1
         END
 
+        IF $mouse1
+                PRINT $mousepos_x
+                PRINT $mousepos_y
+                SET &mouse1 0
+        END
+
         INDEX &ep_entities $currentIndex
 
 
         CORE_CLEAR
                 CORE_QRENDER $ep_entities
-                CORE_SP_QRENDER $p_setpieceTest.0
+                CORE_SP_QRENDER $sp_mainHud
+                CORE_ABS_QRENDER $ep_statusBars.#ei_health
+                CORE_ABS_QRENDER $ep_statusBars.#ei_stamina
         CORE_DISPLAY
 
 
