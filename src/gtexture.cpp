@@ -23,33 +23,42 @@ nthp::texture::gTexture::gTexture(const char* filename, nthp::texture::Palette* 
 
 
 int nthp::texture::gTexture::autoLoadTextureFile(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer) {
-         std::fstream file(filename, std::ios::in | std::ios::binary);
+        nthp::texture::SoftwareTexture::software_texture_header header;
+        {
+                std::fstream file(filename, std::ios::in | std::ios::binary);
 
-        if(file.fail()) {
-                PRINT_DEBUG_ERROR("Unable to generate texture [%s]; File not accessible.\n", filename);
-                return 1;
+                if(file.fail()) {
+                        PRINT_DEBUG_ERROR("Unable to generate texture [%s]; File not accessible.\n", filename);
+                        return 1;
+                }
+
+                
+                file.read((char*)&header, sizeof(header));
+
+                file.close();
         }
 
-        nthp::texture::SoftwareTexture::software_texture_header header;
-        file.read((char*)&header, sizeof(header));
+        do {
+                if(header.signature == nthp::texture::SoftwareTexture::STheaderSignature) {
+                        nthp::texture::SoftwareTexture::STdata load = nthp::texture::tools::readTextureData(filename);
+                        if(load.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) { return 1; }
 
-        file.close();
-
-        switch(header.signature) {
-                case nthp::texture::SoftwareTexture::STheaderSignature:
-                        texture.generateTexture(filename, palette, nthp::core.getRenderer());
+                        this->texture.pixelData = load.pixelData;
+                        this->texture.metadata = load.header;
+                        this->texture.dataSize = load.header.x * load.header.y;
+                        this->texture.regenerateTexture(palette, coreRenderer);
                         break;
-                
-                case nthp::texture::compression::CSTHeaderSignature:
+                }
+                if(header.signature == nthp::texture::compression::CSTHeaderSignature) {
                         decompressFile(filename);
                         texture.regenerateTexture(palette, coreRenderer);
                         break;
-
-                default:
-                        PRINT_DEBUG_ERROR("Unable to generate texture [%s]; Invalid file format.\n");
-                        return 1;
-                        break;
-        }
+                }
+               
+        
+                PRINT_DEBUG_ERROR("Unable to generate texture [%s]; Invalid file format.\n");
+                return 1;
+        } while(0);
 
         return 0;
 }

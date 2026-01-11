@@ -1,0 +1,8 @@
+
+
+BUILD_SYSTEM
+        script/testing/testing.thp script/testing/testing.thpcs T_INIT
+        script/testing/core.thp script/testing/core.thpcs       T_TICK
+END
+
+EXIT

@@ -237,15 +237,17 @@ nthp::texture::SoftwareTexture::STdata nthp::texture::tools::readTextureData(con
         }
 
         file.read((char*)&ret.header, sizeof(ret.header));
+        if(ret.header.signature != nthp::texture::SoftwareTexture::STheaderSignature) {
+                PRINT_DEBUG_ERROR("Unable to import texture data; invalid file format.\n");
+                ret.header.signature = 0;
+                return ret;
+        }
 
         const size_t dataSize = (ret.header.x * ret.header.y);
         ret.pixelData = (NTHPST_COLOR_WIDTH*)malloc(dataSize * sizeof(NTHPST_COLOR_WIDTH));
 
         file.read((char*)ret.pixelData, (dataSize * sizeof(NTHPST_COLOR_WIDTH)));
         file.close();
-
-
-        ret.header.signature = nthp::texture::SoftwareTexture::STheaderSignature;
 
         NOVERB_PRINT_DEBUG("done.\n");
         return ret;

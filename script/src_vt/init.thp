@@ -85,7 +85,7 @@ ENT_SETRENDERSIZE $ep_entities.#texture_3 100 76
 VAR tp_hudTexture
 TEXTURE_ALLOC 1 &tp_hudTexture
 
-STRING hudFile "resource/hudSheet.cst"
+STRING hudFile "resource/hudSheet.st"
 TEXTURE_LOAD $tp_hudTexture ~hudFile
 
 VAR fp_hudFrames

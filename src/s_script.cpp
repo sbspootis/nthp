@@ -656,7 +656,10 @@ SpecialType* nthp::script::nthp_internal_alloc_special(nthp::script::Script::Scr
         SpecialType* specialBlock = (SpecialType*)(data->blockData[ptr_eval.block].data);
         if(specialBlock == NULL) { return nullptr; }
 
-        for(size_t i = 0; i < entries; ++i) { specialBlock[i].init(); }
+        for(size_t i = 0; i < entries; ++i) { 
+                specialBlock[i].init(); 
+                PRINT_DEBUG("Init special @ [%p]; type=%d\n", specialBlock + i, (int)type);
+        }
         data->blockData[ptr_eval.block].sizeSpecial = entries;
 
         PRINT_DEBUG("Successful alloc_special() @ [%p] ; [b%ua%u], sizeSpecial=%zu.\n", specialBlock, ptr_eval.block, ptr_eval.address, data->blockData[ptr_eval.block].sizeSpecial);
@@ -863,7 +866,9 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
         auto t = EVAL_TEXTUREREF(output);
         auto filename = EVAL_STRREF(file);
 	
-	if(t->autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer()));
+        if(t->autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer())) {
+                return 1;
+        }
 
 	return 0;
 }
@@ -932,7 +937,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
         rect.h = nthp::fixedToInt(h.value);
         
         frame->src = rect;
-        frame->texture = texture->getTextureData().texture;
+        frame->texture = texture->getTextureData().getTexture();
 
         return 0;
 }
