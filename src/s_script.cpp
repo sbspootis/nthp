@@ -1957,7 +1957,10 @@ int nthp::script::Script::execute() {
                         }
                         debug_access.unlock();
 #endif
-                if(exec_func[data->nodeSet[data->currentNode].access.ID](data)) return 1;
+                if(exec_func[data->nodeSet[data->currentNode].access.ID](data)) { 
+                        PRINT_DEBUG_ERROR("Failure in script object [%p] @ inst=%zu.\n", this, data->currentNode);
+                        return 1; 
+                }
                 ++data->currentNode;
         }
 

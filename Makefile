@@ -183,7 +183,7 @@ st_font_d.o: $(SRCDIR)st_font.hpp $(SRCDIR)st_font.cpp
 
 
 pm: $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp
-	$(CC) $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp $(lib_srcSymbols) $(CFLAGS) -D PM  -o pm
+	$(CC) $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp $(lib_srcSymbols) $(PM_CFLAGS) -D PM  -o pm
 
 
 

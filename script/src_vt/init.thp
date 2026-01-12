@@ -9,7 +9,7 @@ CORE_SETMAXFPS 60
 
 
 MUSIC_DEFINE 1
-STRING track "test_track_1.wav"
+STRING track "am.wav"
 MUSIC_LOAD 0 ~track
 MUSIC_START 0
 
