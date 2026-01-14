@@ -39,9 +39,8 @@ LABEL 1
         END
 
         IF $a_enter
-                DEBUG_BREAK
+                MUSIC_SETVOLUME 5
                 SET &a_enter 0
-                GOTO 1
         END
 
         IF $mouse1

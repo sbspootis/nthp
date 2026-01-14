@@ -60,6 +60,24 @@ namespace nthp {
 
                 nthp::audio::defaultAudioSystem audioSystem;
 
+                // Reinitialize the audio system with a new device specified. AudioDeviceID specifies an index in nthp::audio::audioDeviceNames,
+                // which is generated on core_init. NOTE that any generated chunks and music may be invalid after this call, as the new device may
+                // require different encoding. Destroy and reload all loaded audio after calling this to avoid errors.
+                void reloadAudioSystem(unsigned int audioDeviceID) {
+                        Mix_CloseAudio();
+                        Mix_OpenAudioDevice(44100, MIX_DEFAULT_FORMAT, 2, 4096, nthp::audio::audioDeviceNames[audioDeviceID].c_str(), SDL_AUDIO_ALLOW_ANY_CHANGE);
+                }
+
+                void setSoundVolume(unsigned int soundID, unsigned int newVolume) {
+                        Mix_VolumeChunk(audioSystem.soundEffects[soundID].soundData, newVolume);
+                }
+
+                void setMusicVolume(unsigned int newVolume) {
+                        Mix_VolumeMusic(newVolume);
+                }
+
+
+
                 ~EngineCore();
         private:
                 SDL_Window* window;

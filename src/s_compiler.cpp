@@ -22,6 +22,7 @@ using namespace nthp::script::instructions;
                                                                         std::string& fileRead,\
                                                                         std::string& currentFile,\
                                                                         std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList,\
+                                                                        std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF>& constevalList,\
                                                                         std::vector<nthp::script::CompilerInstance::MACRO_DEF>& macroList,\
                                                                         std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList,\
                                                                         std::vector<nthp::script::CompilerInstance::LABEL_DEF>& labelList,\
@@ -296,7 +297,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
 // Substitues a VAR reference or parses numeral references (for compatibility).
 // Returning REF without the IS_VALID bit set assumes a failure.
-nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext) {
+nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF>& constevalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext) {
         stdRef ref;
         ref.metadata = 0;
         ref.value = 0;
@@ -483,6 +484,39 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
                 }
         }
+
+        for(size_t i = 0; i < constevalList.size(); ++i) {
+                if(expression == constevalList[i].name) {
+                        ref.value = constevalList[i].evaluation.value;
+                        
+                        // Cannot offset by a structure type, because structures cannot be assigned to constevals.
+                        if(isStructAccess) {
+                                nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList);
+                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
+                                if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
+                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
+                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
+                                        return ref;
+                                }
+                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_STRING)) {
+                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a string reference.\n");
+                                        return ref;
+                                }
+                                if(nthp::fixedToInt(offsetExpression.value) > UINT8_MAX) {
+                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 255.\n");
+                                        return ref;
+                                }
+
+                                ref.offset = nthp::fixedToInt(offsetExpression.value);
+                                PRINT_COMPILER("Custom offset of [%u] applied to CONSTEVAL stdref.\n", ref.offset);
+                        }
+
+                        if(deref_ptr) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
+                        
+                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+                        return ref;
+                }
+        }
         
         // Evaluate Var.
         // If no VARNAME is referenced, assumes numeral reference type (instead of $VARNAME or >VARNAME, $2 or >2), or constant. Throws
@@ -527,7 +561,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                 if(structAccess[0] == '#') { nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList); }
                                                 
                                                 // I use evalRef here because it's safe and has all the error-checking and handling built in. Much easier than try-ing here.
-                                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
+                                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
                                                 if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
                                                 if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
                                                         PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
@@ -538,7 +572,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                         return ref;
                                                 }
                                                 if(nthp::fixedToInt(offsetExpression.value) > UINT8_MAX) {
-                                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 256.\n");
+                                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 255.\n");
                                                         return ref;
                                                 }
                                                 
@@ -552,6 +586,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                 validReference = true;
                                 expression = std::to_string(globalList[i].relativeIndex);
                         }
+                        
                 }
 
                 if(!(validReference)) {
@@ -612,7 +647,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 // Generic conviencence macro to evaluate the next symbol in the stream. Automatically pulls the next
 // symbol from a macro or source file into 'fileRead'
 #define EVAL_SYMBOL() ____S_EVAL(file, fileRead, constantList, macroList, currentMacroPosition, targetMacro, evaluateMacro)
-#define EVAL_PREF() EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, NULL, buildSystemContext)
+#define EVAL_PREF() EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, NULL, buildSystemContext)
 
 #define CHECK_REF(ref) if(!PR_METADATA_GET(ref, nthp::script::flagBits::IS_VALID)) return 1 
 
@@ -1387,7 +1422,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEW) {
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto storage_ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto storage_ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
                         CHECK_REF(storage_ptr);
 
                         // Auto-assign the structure.
@@ -1466,7 +1501,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -1500,7 +1535,7 @@ DEFINE_COMPILATION_BEHAVIOUR(PREV) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -2748,6 +2783,42 @@ DEFINE_COMPILATION_BEHAVIOUR(MUSIC_RESUME) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(MUSIC_SETVOLUME) {
+        ADD_NODE(MUSIC_SETVOLUME);
+
+        EVAL_SYMBOL();
+        auto vol = EVAL_PREF();
+        CHECK_REF(vol);
+
+        stdRef* volume = (stdRef*)nodeList[currentNode].access.data;
+
+        *volume = vol;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SOUND_SETVOLUME) {
+        ADD_NODE(SOUND_SETVOLUME);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto vol = EVAL_PREF();
+        CHECK_REF(vol);
+
+        stdRef* _target = (stdRef*)nodeList[currentNode].access.data;
+        stdRef* volume = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *volume = vol;
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 DEFINE_COMPILATION_BEHAVIOUR(DFILE_READ) {
         ADD_NODE(DFILE_READ);
 
@@ -3015,7 +3086,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
         bool waitingForFuncScopeReturn = false;
 
 
-        #define COMPILE(instruction) if( instruction ( nodeList, file, fileRead, currentFile, constantList, macroList, globalList, labelList, gotoList, strList, structList, ifLocations, endLocations, skipList, currentMacroPosition, targetMacro, evaluateMacro, buildSystemContext) ) return 1
+        #define COMPILE(instruction) if( instruction ( nodeList, file, fileRead, currentFile, constantList, constevalList, macroList, globalList, labelList, gotoList, strList, structList, ifLocations, endLocations, skipList, currentMacroPosition, targetMacro, evaluateMacro, buildSystemContext) ) return 1
         #define CHECK_COMP(instruction) if(fileRead == #instruction) { COMPILE(instruction); continue; }
 
         bool operationOngoing = true;
@@ -3147,6 +3218,39 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         continue;
                 }
 
+                if(fileRead == "CONSTEVAL") {
+                        EVAL_SYMBOL();
+                        std::string name = fileRead;
+
+                        EVAL_SYMBOL();
+                        std::string original = fileRead;
+                        auto eval = EVAL_PREF();
+
+                        if(PR_METADATA_GET(eval, nthp::script::flagBits::IS_REFERENCE)) {
+                                PRINT_COMPILER_ERROR("CONSTEVAL expression cannot be a reference; [%s] references writable memory.\n", original.c_str());
+                                return 1;
+                        }
+                        if(!PR_METADATA_GET(eval, nthp::script::flagBits::IS_VALID)) {
+                                PRINT_COMPILER_ERROR("CONSTEVAL expression could not be evaluated; Invalid CONSTEVAL [%s].\n", original.c_str());
+                                return 1;
+                        }
+
+                        // If the expression is a pointer descriptor with an offset, the offset is added to the address.
+                        // If not, than the offset cannot be non-zero, therefore this is okay; only applies to memory-mapped pointers
+                        // that are hardcoded, which are not recommended anyhow.
+                        eval.value += eval.offset;
+                        eval.offset = 0;
+
+                        CONSTEVAL_DEF newCst;
+                        newCst.name = name;
+                        newCst.evaluation = eval;
+
+                        constevalList.push_back(newCst);
+
+                        PRINT_COMPILER("Evaluated CONSTEVAL [%s] = %d.\n", name.c_str(), newCst.evaluation.value);
+                        continue;
+                }
+
                 if(fileRead == "ASSIGN") {
                         EVAL_SYMBOL();
                         bool complete = false;
@@ -3156,7 +3260,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         size_t pos = 0;
 
                                         EVAL_SYMBOL();
-                                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
                                         CHECK_REF(eval_target);
 
                                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
@@ -3186,7 +3290,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
                         CHECK_REF(eval_target);
 
                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
@@ -3866,6 +3970,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(MUSIC_STOP);
                 CHECK_COMP(MUSIC_PAUSE);
                 CHECK_COMP(MUSIC_RESUME);
+                CHECK_COMP(MUSIC_SETVOLUME);
+                CHECK_COMP(SOUND_SETVOLUME);
 
                 CHECK_COMP(DFILE_READ);
                 CHECK_COMP(DFILE_WRITE);

@@ -143,6 +143,8 @@ namespace ID {
                 MUSIC_STOP,\
                 MUSIC_PAUSE,\
                 MUSIC_RESUME,\
+                MUSIC_SETVOLUME,\
+                SOUND_SETVOLUME,\
                 DFILE_READ,\
                 DFILE_WRITE,\
                 PRINT_REF,\
@@ -304,6 +306,8 @@ namespace Size {
                 MUSIC_STOP = 0,
                 MUSIC_PAUSE = 0,
                 MUSIC_RESUME = 0,
+                MUSIC_SETVOLUME = sizeof(stdRef),
+                SOUND_SETVOLUME = sizeof(stdRef) + sizeof(stdRef),
 
                 DFILE_READ = sizeof(ptrRef) + sizeof(strRef),
                 DFILE_WRITE = sizeof(ptrRef) + sizeof(strRef),

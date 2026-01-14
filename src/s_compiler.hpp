@@ -44,6 +44,12 @@ namespace nthp {
                         size_t structID;
                 };
 
+                struct CONSTEVAL_DEF {
+                        std::string name;
+
+                        nthp::script::instructions::stdRef evaluation;
+                };
+
                 // Compiler-Only; Represents a macro-like substitution.
                 struct CONST_DEF {
                         std::string constName;
@@ -106,6 +112,7 @@ namespace nthp {
                 int compileStageConfig(const char* stageConfigFile, std::vector<std::string>* targetFiles, bool forceBuild, const bool ignoreInstructionData);
 
                 std::vector<nthp::script::CompilerInstance::CONST_DEF>  constantList;
+                std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF> constevalList;
                 std::vector<nthp::script::CompilerInstance::MACRO_DEF>  macroList;
                 std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>    globalList;
                 std::vector<nthp::script::CompilerInstance::STR_DEF> strList;

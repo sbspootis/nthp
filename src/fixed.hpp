@@ -77,12 +77,12 @@ namespace nthp {
         typedef FIXED_TYPE fixed_t;
 
 
-        constexpr FIXED_TYPE fixedToInt(fixed_t value) { return (value >> FIXED_POINT_SCALE); }
-        constexpr fixed_t intToFixed(FIXED_TYPE value) { return (value << FIXED_POINT_SCALE); }
+        constexpr FIXED_TYPE fixedToInt(const fixed_t value) { return (value >> FIXED_POINT_SCALE); }
+        constexpr fixed_t intToFixed(const FIXED_TYPE value) { return (value << FIXED_POINT_SCALE); }
 
 
-        constexpr double fixedToDouble(fixed_t value) { return ((double)value / (double)((FIXED_TYPE)1 << FIXED_POINT_SCALE)); }
-        constexpr fixed_t doubleToFixed(double value) { return (value * ((FIXED_TYPE)1 << FIXED_POINT_SCALE)); }
+        constexpr double fixedToDouble(const fixed_t value) { return ((double)value / (double)((FIXED_TYPE)1 << FIXED_POINT_SCALE)); }
+        constexpr fixed_t doubleToFixed(const double value) { return (value * ((FIXED_TYPE)1 << FIXED_POINT_SCALE)); }
 
         namespace fixedTypeConstants { 
                 constexpr decltype(FIXED_MAX) FIXED_DECIMAL_MASK = (FIXED_MAX >> (FIXED_POINT_WIDTH - FIXED_POINT_SCALE));

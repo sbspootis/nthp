@@ -52,6 +52,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
 
                                 debuggingActiveProcess = false;
                                 nthp::script::debug::suspendExecution = false;
+                                nthp::script::debug::debugInstructionCall.x = -1;
 
                                 g_access.unlock();
                                 
@@ -114,6 +115,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
 
                                 debuggingActiveProcess = false;
                                 nthp::script::debug::suspendExecution = false;
+                                nthp::script::debug::debugInstructionCall.x = -1;
 
                                 g_access.unlock();
                         }
@@ -121,6 +123,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         
                         debuggingActiveProcess = false;
                         nthp::script::debug::suspendExecution = false;
+                        nthp::script::debug::debugInstructionCall.x = -1;
                         break;
                 }
         }

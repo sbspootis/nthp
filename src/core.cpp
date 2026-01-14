@@ -251,6 +251,7 @@ nthp::EngineCore::~EngineCore() {
 #if USE_SDLIMG == 1
         IMG_Quit();
 #endif
+        Mix_Quit();
 
         initSuccess = false;
 

@@ -1593,6 +1593,27 @@ DEFINE_EXECUTION_BEHAVIOUR(MUSIC_RESUME) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(MUSIC_SETVOLUME) {
+        stdRef volume = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(volume);
+
+        nthp::core.setMusicVolume(nthp::fixedToInt(volume.value));
+        return 0;
+}
+
+
+DEFINE_EXECUTION_BEHAVIOUR(SOUND_SETVOLUME) {
+        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef volume = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(target);
+        EVAL_STDREF(volume);
+
+        nthp::core.setSoundVolume(nthp::fixedToInt(target.value), nthp::fixedToInt(volume.value));
+        return 0;
+}
+
 DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
         ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
         strRef filename = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
