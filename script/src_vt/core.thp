@@ -2,6 +2,8 @@
 PRIVATE currentIndex
 SET &currentIndex 0
 
+PRIVATE randOutput
+
 LABEL 1
 
         IF $a_left
@@ -44,9 +46,8 @@ LABEL 1
         END
 
         IF $mouse1
-                PRINT $mousepos_x
-                PRINT $mousepos_y
-                SET &mouse1 0
+                RAND 50 100 &randOutput
+                PRINT $randOutput
         END
 
         INDEX &ep_entities $currentIndex

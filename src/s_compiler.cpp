@@ -1118,6 +1118,35 @@ DEFINE_COMPILATION_BEHAVIOUR(ABS) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(RAND) {
+        ADD_NODE(RAND);
+
+
+        EVAL_SYMBOL();
+        auto a = EVAL_PREF();
+        CHECK_REF(a);
+
+        EVAL_SYMBOL();
+        auto b = EVAL_PREF();
+        CHECK_REF(b);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+
+        stdRef* _a = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _b = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        *_a = a;
+        *_b = b;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 DEFINE_COMPILATION_BEHAVIOUR(SIN) {
         ADD_NODE(SIN);
 
@@ -3879,6 +3908,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(DIV);
                 CHECK_COMP(SQRT);
                 CHECK_COMP(ABS);
+                CHECK_COMP(RAND);
                 CHECK_COMP(SIN);
                 CHECK_COMP(COS);
                 CHECK_COMP(TAN);

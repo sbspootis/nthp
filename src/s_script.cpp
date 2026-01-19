@@ -15,7 +15,7 @@ static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet*
                                 return 1;
                         }
                         if(ptr.address >= data->blockData[ptr.block].size) {
-                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; b=%d ad=%d.\n", data->currentNode, ptr.block, ptr.address);
                                 return 1;
                         }
                 #endif
@@ -32,7 +32,7 @@ static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet*
                                 return 1;
                         }
                         if(ptr.address >= data->blockData[ptr.block].size) {
-                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                                PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; b=%d ad=%d.\n", data->currentNode, ptr.block, ptr.address);
                                 return 1;
                         }
                 #endif
@@ -62,7 +62,7 @@ static inline int ___eval_ptr(stdRef& ref, nthp::script::stdVarWidth** target_ds
                         return 1;
                 }
                 if(ptr.address >= data->blockData[ptr.block].size) {
-                        PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; ad=%d.\n", data->currentNode, ptr.address);
+                        PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; b=%d ad=%d.\n", data->currentNode, ptr.block, ptr.address);
                         return 1;
                 }
         #endif
@@ -105,7 +105,7 @@ static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet
         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
 #ifdef DEBUG
         if(data->blockData[ptr.block].type != expectedType) {
-                PRINT_DEBUG_ERROR("Expected type [%02zX] in eval_special @ [%zu]; type=[%02zX]\n", expectedType, data->currentNode, data->blockData[ptr.block].type);
+                PRINT_DEBUG_ERROR("Expected type [%02zX] in eval_special @ [%zu]; b=%d, type=[%02zX]\n", expectedType, data->currentNode, ptr.block, data->blockData[ptr.block].type);
                 return NULL;
         }
 #endif
@@ -337,6 +337,20 @@ DEFINE_EXECUTION_BEHAVIOUR(ABS) {
         *target_dsc = std::abs(value.value);
         return 0;
 }
+
+DEFINE_EXECUTION_BEHAVIOUR(RAND) {
+        stdRef a = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        EVAL_STDREF(a);
+        EVAL_STDREF(b);
+        EVAL_PTRREF(output);
+
+        (*target_dsc) = nthp::intToFixed((rand() % (nthp::fixedToInt(b.value - a.value))) + nthp::fixedToInt(a.value));
+        return 0;
+}
+
 
 // Like hell I'm writing a fixed point trigonometry set myself. Just take the slower
 // trig up the ass, not worth my time.

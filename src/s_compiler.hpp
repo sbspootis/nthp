@@ -195,6 +195,7 @@ namespace nthp {
                                 def.definedIn = definedInFile;
 
                                 def.isStruct = false;
+                                def.isFixed = false;
 
                                 globalList.push_back(def);
                         }
@@ -207,6 +208,7 @@ namespace nthp {
                                 def.definedIn = definedInFile;
 
                                 def.isStruct = false;
+                                def.isFixed = false;
 
                                 globalList.push_back(def);
                         }
