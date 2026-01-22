@@ -3273,6 +3273,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         CONSTEVAL_DEF newCst;
                         newCst.name = name;
                         newCst.evaluation = eval;
+                        newCst.original_expression = original;
 
                         constevalList.push_back(newCst);
 
@@ -3866,7 +3867,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 
                 // Symbol for a FUNC_CALL
                 if(fileRead[0] == '%' || fileRead == "FUNC_CALL") {
-                        fileRead.erase(fileRead.begin());
+                        if(fileRead[0] == '%') fileRead.erase(fileRead.begin());
+                        else { EVAL_SYMBOL(); }
 
                         bool matchedFunc = false;
                         for(size_t i = 0; i < funcList.size(); ++i) {

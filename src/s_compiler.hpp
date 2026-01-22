@@ -46,7 +46,7 @@ namespace nthp {
 
                 struct CONSTEVAL_DEF {
                         std::string name;
-
+                        std::string original_expression;
                         nthp::script::instructions::stdRef evaluation;
                 };
 
@@ -148,7 +148,8 @@ namespace nthp {
                                 T_INIT,         // #1
                                 T_TICK,         // #2
                                 T_EXIT,         // #3
-                                T_HIDDEN        // #4
+                                T_HIDDEN,       // #4
+                                T_MODULE        // #5
                         } TriggerBits;
 
                 static inline uint8_t getScriptTriggerFlags(const nthp::script::Node& node) {
