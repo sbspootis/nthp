@@ -3,7 +3,6 @@ PRIVATE currentIndex
 SET &currentIndex 0
 
 PRIVATE randOutput
-PRIVATE newAngle
 
 LABEL 1
 
@@ -51,10 +50,8 @@ LABEL 1
                 PRINT $randOutput
         END
 
-        INC &newAngle
         INDEX &ep_entities $currentIndex
 
-        ENT_SETANGLE $ep_entities $newAngle
 
         CORE_CLEAR
                 CORE_QRENDER $ep_entities

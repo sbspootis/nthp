@@ -137,9 +137,6 @@ void nthp::script::Runtime::handleEvents() {
         nthp::mousePosition = nthp::generateWorldPosition(nthp::vectGeneric(x, y), &nthp::core.p_coreDisplay);
         nthp::mousePosition -= nthp::core.p_coreDisplay.cameraWorldPosition;
 
-        data.blockData[0].data[MOUSEPOS_X_GLOBAL_INDEX] = nthp::mousePosition.x;
-        data.blockData[0].data[MOUSEPOS_Y_GLOBAL_INDEX] = nthp::mousePosition.y;
-
         data.inputBufferPtr = 0;
 
         while(SDL_PollEvent(&nthp::core.eventList)) {

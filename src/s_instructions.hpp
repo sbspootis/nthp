@@ -7,8 +7,6 @@ namespace nthp { namespace script {
         
         typedef enum {
                 NTHP_NULL,
-                MOUSEPOS_X_GLOBAL_INDEX,
-                MOUSEPOS_Y_GLOBAL_INDEX,
                 DELTATIME_GLOBAL_INDEX,
                 MOUSE1_GLOBAL_INDEX,
                 MOUSE2_GLOBAL_INDEX,
@@ -126,6 +124,8 @@ namespace ID {
                 CORE_SETCAMERAPOSITION,\
                 CORE_MOVECAMERA,\
                 CORE_STOP,\
+                CORE_GETMOUSEPOSITION,\
+                CORE_ABS_GETMOUSEPOSITION,\
                 ACTION_DEFINE,\
                 ACTION_BIND,\
                 ACTION_CLEAR,\
@@ -288,6 +288,8 @@ namespace Size {
                 CORE_SETCAMERARES = sizeof(stdRef) + sizeof(stdRef),
                 CORE_SETCAMERAPOSITION = sizeof(stdRef) + sizeof(stdRef),
                 CORE_MOVECAMERA = sizeof(stdRef) + sizeof(stdRef),
+                CORE_GETMOUSEPOSITION = sizeof(ptrRef) + sizeof(ptrRef),
+                CORE_ABS_GETMOUSEPOSITION = sizeof(ptrRef) + sizeof(ptrRef),
                 CORE_STOP = 0,
 
                 ACTION_DEFINE = sizeof(stdRef),

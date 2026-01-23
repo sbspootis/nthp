@@ -1387,6 +1387,49 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_STOP) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(CORE_GETMOUSEPOSITION) {
+        ptrRef _x = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef _y = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        nthp::script::stdVarWidth* xOutput;
+        {
+                EVAL_PTRREF(_x);
+                xOutput = target_dsc;
+        }
+
+        nthp::script::stdVarWidth* yOutput;
+        {
+                EVAL_PTRREF(_y);
+                yOutput = target_dsc;
+        }
+        *xOutput = nthp::mousePosition.x;
+        *yOutput = nthp::mousePosition.y;
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_GETMOUSEPOSITION) {
+        ptrRef _x = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef _y = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        nthp::script::stdVarWidth* xOutput;
+        {
+                EVAL_PTRREF(_x);
+                xOutput = target_dsc;
+        }
+
+        nthp::script::stdVarWidth* yOutput;
+        {
+                EVAL_PTRREF(_y);
+                yOutput = target_dsc;
+        }
+        int x,y;
+        SDL_GetMouseState(&x, &y);
+        
+        *xOutput = nthp::intToFixed(x);
+        *yOutput = nthp::intToFixed(y);
+
+        return 0;
+}
+
 
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_DEFINE) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);

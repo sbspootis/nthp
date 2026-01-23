@@ -2540,6 +2540,50 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_MOVECAMERA) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(CORE_GETMOUSEPOSITION) {
+        ADD_NODE(CORE_GETMOUSEPOSITION);
+
+        EVAL_SYMBOL();
+        auto x_output = EVAL_PREF();
+        CHECK_REF(x_output);
+
+        EVAL_SYMBOL();
+        auto y_output = EVAL_PREF();
+        CHECK_REF(y_output);
+
+        
+        ptrRef* _xOutput = (ptrRef*)(nodeList[currentNode].access.data);
+        ptrRef* _yOutput = (ptrRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        *_xOutput = x_output;
+        *_yOutput = y_output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(CORE_ABS_GETMOUSEPOSITION) {
+        ADD_NODE(CORE_ABS_GETMOUSEPOSITION);
+
+        EVAL_SYMBOL();
+        auto x_output = EVAL_PREF();
+        CHECK_REF(x_output);
+
+        EVAL_SYMBOL();
+        auto y_output = EVAL_PREF();
+        CHECK_REF(y_output);
+
+        
+        ptrRef* _xOutput = (ptrRef*)(nodeList[currentNode].access.data);
+        ptrRef* _yOutput = (ptrRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        *_xOutput = x_output;
+        *_yOutput = y_output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 
 DEFINE_COMPILATION_BEHAVIOUR(ACTION_DEFINE) {
@@ -4028,6 +4072,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(CORE_SETCAMERAPOSITION);
                 CHECK_COMP(CORE_MOVECAMERA);
                 CHECK_COMP(CORE_STOP);
+                CHECK_COMP(CORE_GETMOUSEPOSITION);
+                CHECK_COMP(CORE_ABS_GETMOUSEPOSITION);
 
                 CHECK_COMP(ACTION_BIND);
                 CHECK_COMP(ACTION_DEFINE);
@@ -4312,8 +4358,6 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
                         // Add constant runtime globals.
                         addGlobalDef("null",            "predefined");
-                        addGlobalDef("mousepos_x",      "predefined");
-                        addGlobalDef("mousepos_y",      "predefined");
                         addGlobalDef("deltaTime",       "predefined");
                         addGlobalDef("mouse1",          "predefined");
                         addGlobalDef("mouse2",          "predefined");
