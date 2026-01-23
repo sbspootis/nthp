@@ -12,14 +12,15 @@ namespace nthp {
                 SDL_Texture* texture;
                 SDL_Rect* srcRect;
                 SDL_Rect dstRect;
+                float angle;
 
                 enum C_OPERATE { INVALID = 0, VALID, ABSOLUTE } state;
         };
-        constexpr nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, nthp::RenderPacket::C_OPERATE s) {
-                return {texture, srcRect, dst, s};
+        constexpr nthp::RenderPacket generateRenderPacket(SDL_Texture* texture, SDL_Rect* srcRect, SDL_Rect dst, float angle, nthp::RenderPacket::C_OPERATE s) {
+                return {texture, srcRect, dst, angle, s};
         }
 
-        constexpr auto INVALID_RENDERPACKET = generateRenderPacket(NULL, NULL, {0,0,0,0}, nthp::RenderPacket::C_OPERATE::INVALID);
+        constexpr auto INVALID_RENDERPACKET = generateRenderPacket(NULL, NULL, {0,0,0,0}, 0, nthp::RenderPacket::C_OPERATE::INVALID);
 
 
 

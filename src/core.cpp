@@ -156,11 +156,11 @@ int nthp::EngineCore::render(nthp::RenderPacket packet) {
                                 const vectGeneric offset = nthp::generatePixelPosition(nthp::worldPosition(p_coreDisplay.cameraWorldPosition.x, p_coreDisplay.cameraWorldPosition.y), &p_coreDisplay);
                                 packet.dstRect.x += offset.x;
                                 packet.dstRect.y += offset.y;
-                                return SDL_RenderCopy(renderer, packet.texture, packet.srcRect, &packet.dstRect);
+                                return SDL_RenderCopyEx(renderer, packet.texture, packet.srcRect, &packet.dstRect, packet.angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
                         }
                         break;
                 case nthp::RenderPacket::C_OPERATE::ABSOLUTE:
-                        return SDL_RenderCopy(renderer, packet.texture, packet.srcRect, &packet.dstRect);
+                        return SDL_RenderCopyEx(renderer, packet.texture, packet.srcRect, &packet.dstRect, packet.angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
                         break;
 
 

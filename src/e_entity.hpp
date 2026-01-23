@@ -35,6 +35,9 @@ namespace nthp {
 		void setHitboxOffset(nthp::vectFixed offset);
 		inline nthp::vectFixed getHitboxOffset() { return hbOffset; }
 
+                void setRenderAngle(nthp::fixed_t newAngle);
+                nthp::fixed_t getRenderAngle() { return nthp::doubleToFixed(angle); }
+
                 inline void clean();
                 ~gEntity();
         protected:
@@ -50,6 +53,7 @@ namespace nthp {
                 nthp::entity::cRect hitbox;
 		nthp::vectFixed hbOffset;
 
+                float angle;
         };
 
         }

@@ -14,6 +14,8 @@ inline void nthp::entity::gEntity::init() {
         renderSize = nthp::vectFixed(0,0);
         wPosition = nthp::worldPosition(0,0);
         hbOffset = nthp::vectFixed(0,0);
+
+        angle = 0;
 }
 
 
@@ -32,7 +34,7 @@ const nthp::RenderPacket nthp::entity::gEntity::getUpdateRenderPacket(nthp::Rend
                         (int)pxlPos.y, 
                         (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.x, context->scaleFactor.x)),
                         (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.y, context->scaleFactor.y)),
-                }, state);
+                }, angle, state);
 }
 
 
@@ -51,7 +53,7 @@ const nthp::RenderPacket nthp::entity::gEntity::abs_getRenderPacket(nthp::Render
                         (int)pxlPos.y,
                         (int)nthp::fixedToInt(renderSize.x),
                         (int)nthp::fixedToInt(renderSize.y)
-                }, state);
+                }, angle, state);
 }
 
 
@@ -100,6 +102,9 @@ void nthp::entity::gEntity::setHitboxOffset(nthp::vectFixed offset) {
 	hbOffset = offset;
 }
 
+void nthp::entity::gEntity::setRenderAngle(const nthp::fixed_t newAngle) {
+        angle = nthp::fixedToDouble(newAngle);
+}
 
 
 inline void nthp::entity::gEntity::clean() {

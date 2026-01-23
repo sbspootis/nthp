@@ -19,6 +19,7 @@ namespace nthp {
                                 frames = nullptr;
                                 compiledPacket = INVALID_RENDERPACKET;
                                 frameSize = 0;
+                                angle = 0;
                         }
 
                         nthp::vectFixed renderSize;
@@ -28,6 +29,8 @@ namespace nthp {
                         nthp::texture::Frame* frames;
                         size_t frameSize;
                         nthp::RenderPacket compiledPacket;
+
+                        float angle;
                 };
 
                 inline int compileSetpiece(staticSetpiece* setpiece, nthp::RenderRuleSet* context) {
@@ -47,6 +50,7 @@ namespace nthp {
                         };
                         setpiece->compiledPacket.srcRect = &(setpiece->frames[setpiece->currentFrame].src);
                         setpiece->compiledPacket.state = nthp::RenderPacket::C_OPERATE::VALID;
+                        setpiece->compiledPacket.angle = setpiece->angle;
 
 
                         return 0;
@@ -70,6 +74,7 @@ namespace nthp {
                         };
                         setpiece->compiledPacket.srcRect = &(setpiece->frames[setpiece->currentFrame].src);
                         setpiece->compiledPacket.state = nthp::RenderPacket::C_OPERATE::ABSOLUTE;
+                        setpiece->compiledPacket.angle = setpiece->angle;
 
 
                         return 0;

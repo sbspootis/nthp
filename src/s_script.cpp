@@ -1100,6 +1100,17 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_CHECKCOLLISION) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(ENT_SETANGLE) {
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef angle = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+
+        auto t = EVAL_ENTREF(target);
+        EVAL_STDREF(angle);
+
+        t->setRenderAngle(angle.value);
+        return 0;
+}
+
 DEFINE_EXECUTION_BEHAVIOUR(SP_ALLOC) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
@@ -1186,6 +1197,17 @@ DEFINE_EXECUTION_BEHAVIOUR(SP_SETPOS) {
         EVAL_STDREF(y);
 
         target_ptr->position = nthp::worldPosition(x.value, y.value);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(SP_SETANGLE) {
+        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef angle = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
+
+        auto t = EVAL_SETPIECEREF(target);
+        EVAL_STDREF(angle);
+
+        t->angle = nthp::fixedToDouble(angle.value);
         return 0;
 }
 
@@ -1448,6 +1470,16 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_RENDERSIZE) {
 
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = rs.x;
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL2_GLOBAL_INDEX] = rs.y;
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_ANGLE) {
+        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(target);
+
+        const auto a = entity->getRenderAngle();
+        data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = a;
 
         return 0;
 }

@@ -28,7 +28,7 @@ namespace nthp {
 
 
         // Size of a fixed point number in bits; Must be a standard width (8,16,32,64).
-#define         FIXED_POINT_WIDTH       32
+#define         FIXED_POINT_WIDTH       64
 
 #endif
 
@@ -47,7 +47,7 @@ namespace nthp {
                                 #define FIXED_TYPE               int64_t
                                 #define UPCAST_TYPE              ____NOTYPE
                                 namespace fixedTypeConstants { constexpr uint64_t FIXED_MAX = UINT64_MAX; }
- #else
+#else
         #if FIXED_POINT_WIDTH == 32
                                 #define FIXED_TYPE               int32_t
                                 #define UPCAST_TYPE              int64_t
@@ -67,7 +67,6 @@ namespace nthp {
                                 #define UPCAST_TYPE              int64_t
                                 namespace fixedTypeConstants { constexpr uint32_t FIXED_MAX = UINT32_MAX; }
                         #endif
-
                 #endif
         #endif
 #endif

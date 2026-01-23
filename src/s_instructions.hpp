@@ -103,11 +103,13 @@ namespace ID {
                 ENT_SETHITBOXOFFSET,\
                 ENT_SETRENDERSIZE,\
                 ENT_CHECKCOLLISION,\
+                ENT_SETANGLE,\
                 SP_ALLOC,\
                 SP_FREE,\
                 SP_SETRENDERSIZE,\
                 SP_SETFRAMERANGE,\
                 SP_SETCURRENTFRAME,\
+                SP_SETANGLE,\
                 SP_SETPOS,\
                 SP_COMPILE,\
                 SP_ABS_COMPILE,\
@@ -131,6 +133,7 @@ namespace ID {
                 POLL_ENT_HITBOX,\
                 POLL_ENT_RENDERSIZE,\
                 POLL_ENT_CURRENTFRAME,\
+                POLL_ENT_ANGLE,\
                 DRAW_SETCOLOR,\
                 DRAW_LINE,\
                 SOUND_DEFINE,\
@@ -261,12 +264,14 @@ namespace Size {
                 ENT_SETHITBOXOFFSET = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
                 ENT_SETRENDERSIZE = sizeof(entRef) + sizeof(stdRef) + sizeof(stdRef),
                 ENT_CHECKCOLLISION = sizeof(entRef) + sizeof(stdRef) + sizeof(entRef),
+                ENT_SETANGLE = sizeof(entRef) + sizeof(stdRef),
 
                 SP_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 SP_FREE = sizeof(ptrRef),
                 SP_SETRENDERSIZE = sizeof(setpieceRef) + sizeof(stdRef) + sizeof(stdRef),
                 SP_SETFRAMERANGE = sizeof(setpieceRef) + sizeof(frameRef) + sizeof(stdRef),
                 SP_SETCURRENTFRAME = sizeof(setpieceRef) + sizeof(stdRef),
+                SP_SETANGLE = sizeof(setpieceRef) + sizeof(stdRef),
                 SP_SETPOS = sizeof(setpieceRef) + sizeof(stdRef) + sizeof(stdRef),
                 SP_COMPILE = sizeof(ptrRef),
                 SP_ABS_COMPILE = sizeof(ptrRef),
@@ -289,10 +294,11 @@ namespace Size {
                 ACTION_CLEAR = 0, //
                 ACTION_BIND =  sizeof(stdRef) + sizeof(ptrRef) + sizeof(int32_t), // actionIndex, varIndex, key
 
-                POLL_ENT_POSITION = sizeof(stdRef),
-                POLL_ENT_HITBOX = sizeof(stdRef),
-                POLL_ENT_RENDERSIZE = sizeof(stdRef),
-                POLL_ENT_CURRENTFRAME = sizeof(stdRef),
+                POLL_ENT_POSITION = sizeof(entRef),
+                POLL_ENT_HITBOX = sizeof(entRef),
+                POLL_ENT_RENDERSIZE = sizeof(entRef),
+                POLL_ENT_CURRENTFRAME = sizeof(entRef),
+                POLL_ENT_ANGLE = sizeof(entRef),
 
                 DRAW_SETCOLOR = sizeof(stdRef),
                 DRAW_LINE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),

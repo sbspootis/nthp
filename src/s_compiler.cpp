@@ -2078,6 +2078,29 @@ DEFINE_COMPILATION_BEHAVIOUR(ENT_CHECKCOLLISION) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(ENT_SETANGLE) {
+        ADD_NODE(ENT_SETANGLE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto angle = EVAL_PREF();
+        CHECK_REF(angle);
+
+
+        entRef* _target = (entRef*)(nodeList[currentNode].access.data);
+        stdRef* _angle = (stdRef*)(nodeList[currentNode].access.data + sizeof(entRef));
+
+        *_target = target;
+        *_angle = angle;
+
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 DEFINE_COMPILATION_BEHAVIOUR(SP_ALLOC) {
         ADD_NODE(SP_ALLOC);
         
@@ -2212,6 +2235,29 @@ DEFINE_COMPILATION_BEHAVIOUR(SP_SETPOS) {
         *_target = target;
         *_x = x;
         *_y = y;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SP_SETANGLE) {
+        ADD_NODE(SP_SETANGLE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto angle = EVAL_PREF();
+        CHECK_REF(angle);
+
+
+        setpieceRef* _target = (setpieceRef*)(nodeList[currentNode].access.data);
+        stdRef* _angle = (stdRef*)(nodeList[currentNode].access.data + sizeof(setpieceRef));
+
+        *_target = target;
+        *_angle = angle;
+
 
         PRINT_NODEDATA();
         return 0;
@@ -2591,6 +2637,7 @@ DEFINE_COMPILATION_BEHAVIOUR(POLL) {
                 if(fileRead == "HITBOX")                { ADD_NODE(POLL_ENT_HITBOX); break; }
                 if(fileRead == "CURRENTFRAME")          { ADD_NODE(POLL_ENT_CURRENTFRAME); break; }
                 if(fileRead == "RENDERSIZE")            { ADD_NODE(POLL_ENT_RENDERSIZE); break; }
+                if(fileRead == "ANGLE")                 { ADD_NODE(POLL_ENT_ANGLE); break; }
 
                 PRINT_COMPILER_ERROR("[%s] Invalid POLL request.", fileRead.c_str());
                 return 1;
@@ -3956,6 +4003,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(ENT_SETHITBOXOFFSET);
                 CHECK_COMP(ENT_SETRENDERSIZE);
                 CHECK_COMP(ENT_CHECKCOLLISION);
+                CHECK_COMP(ENT_SETANGLE);
 
                 CHECK_COMP(SP_ALLOC);
                 CHECK_COMP(SP_FREE);
@@ -3963,6 +4011,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(SP_SETFRAMERANGE);
                 CHECK_COMP(SP_SETCURRENTFRAME);
                 CHECK_COMP(SP_SETPOS);
+                CHECK_COMP(SP_SETANGLE);
                 CHECK_COMP(SP_COMPILE);
                 CHECK_COMP(SP_ABS_COMPILE);
 
