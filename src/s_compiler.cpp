@@ -3301,8 +3301,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         file.open(currentFile, std::ios::in);
                                         if(file.fail()) { PRINT_COMPILER_ERROR("Critical Failure returning CALL;\n"); return 1; }
                                         file.seekg(callStack.back().pos);
-                                        EVAL_SYMBOL();
-
+                                        
                                         callStack.pop_back();
                                         if(callStack.size() == 0) { inCalledFile = false; currentFile = inputFile; }
                                 }
@@ -3313,6 +3312,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 operationOngoing = false;
                                 break;
                         }
+
+                        continue;
                 }
 
                 if(fileRead == "VAR") {

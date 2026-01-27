@@ -1,14 +1,14 @@
 
+
 LABEL 1
 
         CORE_CLEAR
-
-        CORE_QRENDER $ent
+        
 
         CORE_DISPLAY
 
-
         SUSPEND
         GOTO 1
+
 
 EXIT

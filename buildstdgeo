@@ -1,0 +1,7 @@
+BUILD_SYSTEM
+        script/stdgeo/core_init.thp script/stdgeo/core_init.thpcs       T_INIT
+        script/stdgeo/main_core.thp script/stdgeo/main_core.thpcs       T_TICK
+        script/stdgeo/exit.thp script/stdgeo/exit.thpcs                 T_EXIT
+END
+
+EXIT

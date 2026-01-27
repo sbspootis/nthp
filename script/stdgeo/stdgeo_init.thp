@@ -1,0 +1,28 @@
+
+/ Object types are defined here./
+ENUM {
+        RECT
+        CIRCLE
+}
+
+STRUCT stdgeoObject {
+        type
+
+        bounds_x
+        bounds_y
+        bounds_w
+        bounds_h
+
+        origin_x
+        origin_y
+
+        flags
+}
+
+VAR stageObjects
+ASSIGN stdgeoObject &stageObjects
+
+
+
+
+EXIT

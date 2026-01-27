@@ -65,6 +65,10 @@ static inline int ___eval_ptr(stdRef& ref, nthp::script::stdVarWidth** target_ds
                         PRINT_DEBUG_ERROR("Invalid access; out of bounds @ [%zu]; b=%d ad=%d.\n", data->currentNode, ptr.block, ptr.address);
                         return 1;
                 }
+                if((ptr.block + ptr.address) == 0) {
+                        PRINT_DEBUG_ERROR("Invalid access; unauthorized write to null/ERRORLEVEL. @ [%zu]; b=%d ad=%d.\n", data->currentNode, ptr.block, ptr.address);
+                        return 1;
+                }
         #endif
 
         (*target_dsc) = (data->blockData[ptr.block].data + ptr.address + ref.offset);
@@ -949,6 +953,13 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
         rect.y = nthp::fixedToInt(y.value);
         rect.w = nthp::fixedToInt(w.value);
         rect.h = nthp::fixedToInt(h.value);
+
+        if(!(rect.w + rect.h)) {
+                rect.x = 0;
+                rect.y = 0;
+                rect.w = texture->getTextureData().metadata.x;
+                rect.h = texture->getTextureData().metadata.y;
+        }
         
         frame->src = rect;
         frame->texture = texture->getTextureData().getTexture();
@@ -1713,8 +1724,9 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
         std::fstream file;
         file.open(fileString, std::ios::in | std::ios::binary);
         if(file.fail()) {
-                PRINT_DEBUG_ERROR("Unable to open file [%s]; File inaccessible.\n", fileString);
-                return 1;
+                PRINT_DEBUG_ERROR("Unable to open file [%s]; File inaccessible. Set null/ERRORLEVEL 1.\n", fileString);
+                data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
+                return 0;
         }
         nthp::script::stdVarWidth fileSize = 0;
         file.read((char*)&fileSize, sizeof(nthp::script::stdVarWidth));
@@ -1730,8 +1742,9 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
                 return 0;
         }
         else {
-                PRINT_DEBUG_ERROR("Cannot use DFILE_READ to input external data into global list.\n");
-                return 1;
+                PRINT_DEBUG_ERROR("Cannot use DFILE_READ to input external data into global list. Set null/ERRORLEVEL 1.\n");
+                data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
+                return 0;
         }
 
         return 0;
@@ -1752,8 +1765,9 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
         std::fstream file;
         file.open(fileString, std::ios::out | std::ios::binary);
         if(file.fail()) {
-                PRINT_DEBUG_ERROR("Unable to open file [%s] for writing; File not accessible.\n", fileString);
-                return 1;
+                PRINT_DEBUG_ERROR("Unable to open file [%s] for writing; File not accessible. Set null/ERRORLEVEL 1.\n", fileString);
+                data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
+                return 0;
         }
 
 
