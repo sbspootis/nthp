@@ -8,8 +8,8 @@ MACRO init_flags {
 }
 
 BUILD_SYSTEM
-        script/src_vt/init.thp script/src_vt/init.thpcs       T_INIT
-        script/src_vt/core.thp script/src_vt/core.thpcs       T_TICK
-        script/src_vt/exit.thp script/src_vt/exit.thpcs       T_EXIT
+        script/src_vt/init.thp  T_INIT
+        script/src_vt/core.thp  T_TICK
+        script/src_vt/exit.thp  T_EXIT
 
 END
