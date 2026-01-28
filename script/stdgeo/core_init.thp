@@ -43,28 +43,6 @@ STRING title "STDGEO - v0.1"
 CORE_INIT *config.x_res *config.y_res *config.last_camera_res_x *config.last_camera_res_y 0 0 0 0 ~title
 
 
-STRING ui_menuBarFile "resource/menuBar.cst"
-
-/ Texture indecies /
-ENUM {
-        ti_uiMenuBar
-
-
-        tc_size
-}
-
-
-VAR p_uiTextures
-TEXTURE_ALLOC #tc_size &p_uiTextures
-
-TEXTURE_LOAD $p_uiTextures.#ti_uiMenuBar ~ui_menuBarFile
-
-
-
-VAR p_uiFrames
-FRAME_ALLOC #tc_size &p_uiFrames
-
-
 
 
 

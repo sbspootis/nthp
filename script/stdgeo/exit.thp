@@ -1,3 +1,5 @@
+STRING output "defaults.config"
+DFILE_WRITE $config ~output
 
 FREE $config
 

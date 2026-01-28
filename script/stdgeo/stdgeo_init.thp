@@ -1,28 +1,27 @@
 
 / Object types are defined here./
 ENUM {
-        RECT
-        CIRCLE
+	RECT
+	CIRCLE
 }
 
 STRUCT stdgeoObject {
-        type
+	type
 
-        bounds_x
-        bounds_y
-        bounds_w
-        bounds_h
+	bounds_x
+	bounds_y
+	bounds_w
+	bounds_h
 
-        origin_x
-        origin_y
+	origin_x
+	origin_y
 
-        flags
+	flags
 }
 
 VAR stageObjects
 ASSIGN stdgeoObject &stageObjects
 
-
-
+VAR stageSize
 
 EXIT

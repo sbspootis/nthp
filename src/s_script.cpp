@@ -954,7 +954,7 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
         rect.w = nthp::fixedToInt(w.value);
         rect.h = nthp::fixedToInt(h.value);
 
-        if(!(rect.w + rect.h)) {
+        if(!(rect.w * rect.h)) {
                 rect.x = 0;
                 rect.y = 0;
                 rect.w = texture->getTextureData().metadata.x;

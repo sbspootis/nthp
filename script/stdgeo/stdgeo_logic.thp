@@ -1,0 +1,47 @@
+
+VAR stageObjectEntities
+PRIVATE p_temp
+ASSIGN stageObject &p_temp
+
+MACRO f_resizeStage {
+	SET &arg0 #ar0
+	FUNC_CALL func_resizeStage
+}
+FUNC func_resizeStage {
+	SET &p_temp $stageObjects
+	NEW stageObject $arg0 &p_temp
+	
+	
+}
+
+
+
+
+
+
+
+
+
+
+MACRO f_newStage {
+	FUNC_CALL func_newStage
+}
+
+FUNC func_newStage {
+	IF $stageSize GRT 0
+		FREE $stageObjects
+		ENT_FREE $stageObjectEntities
+	END
+	
+	
+	SET &stageSize 1
+	
+	
+	
+}
+
+
+
+
+
+EXIT
