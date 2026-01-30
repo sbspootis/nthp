@@ -1,0 +1,7 @@
+TEXTURE_FREE $p_mainPlayer.t_playerTexture
+FRAME_FREE $p_mainPlayer.f_playerFrameData
+ENT_FREE $p_mainPlayer.e_playerEntity
+ENT_FREE $p_mainPlayer.e_playerAttackbox
+
+
+EXIT

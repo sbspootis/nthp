@@ -66,7 +66,6 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
 
                         g_access.unlock();
 
-                        
                         while((nthp::core.isRunning()) && debuggingActiveProcess) {
                                 frameStart = SDL_GetTicks();
                                 

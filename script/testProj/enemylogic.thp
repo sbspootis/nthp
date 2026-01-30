@@ -1,0 +1,41 @@
+/ Enemylogic script - T_HIDDEN /
+
+
+/ Enemy block (with enemy STRUCT), block size /
+MACRO f_initEnemyBlock {
+	SET &arg0 #ar0
+	SET &arg1 #ar1
+	%func_initEnemyBlock
+}
+
+PRIVATE loopCounter
+CONST c_size $arg1
+CONST l_initLoop 1
+
+FUNC func_initEnemyBlock {
+	INDEX &e_enemyEntities 0
+
+	LABEL #l_initLoop
+		
+		
+		@internal_initEnemy ( $e_enemyEntities )
+	
+	
+	INC &loopCounter
+	IF $loopCounter LST #c_size
+		NEXT &e_enemyEntities
+		GOTO #l_initLoop
+	END
+	
+	INDEX &e_enemyEntities 0
+}
+
+/ ptr to var to allocate, size /
+MACRO f_createEnemyBlock {
+	NEW enemy #ar1 #ar0
+	ENT_ALLOC #ar1 &e_enemyEntities
+}
+
+
+
+EXIT

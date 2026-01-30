@@ -1,0 +1,51 @@
+IMPORT script/testProj/globals.b
+
+
+MACRO initFlags {
+/	x		y		tx	ty	cx	cy	fs	sr	/
+	1600 	900		160	90	0	0	0	0
+}
+
+STRING title "Super Black Brothers"
+CORE_INIT @initFlags ~title
+
+STRING palette "resource/genericPalette.pal"
+SET_ACTIVE_PALETTE ~palette
+
+CORE_SETMAXFPS 60
+
+/ Control actions /
+ENUM {
+	ai_moveUp
+	ai_moveDown
+	ai_moveLeft
+	ai_moveRight
+	ai_dodge	
+	ai_attack
+	ai_break
+
+	ac_actionSize
+}
+
+VAR a_mUp
+VAR a_mDown
+VAR a_mLeft
+VAR a_mRight
+VAR a_dodge
+VAR a_attack
+
+VAR a_break
+
+ACTION_DEFINE #ac_actionSize
+
+ACTION_BIND #ai_moveUp &a_mUp 		w
+ACTION_BIND #ai_moveDown &a_mDown 	s
+ACTION_BIND #ai_moveLeft &a_mLeft 	a
+ACTION_BIND #ai_moveRight &a_mRight d
+ACTION_BIND #ai_break &a_break		RETURN
+
+ACTION_BIND #ai_dodge &a_dodge 		q
+ACTION_BIND #ai_attack &a_attack 	e
+
+
+EXIT

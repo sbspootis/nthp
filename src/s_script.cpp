@@ -707,7 +707,9 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_STDREF(size);
         EVAL_PTRREF(ptrOutput);
 
-        if(nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
+        const auto out = nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        data->blockData[out.block].sizeSpecial = nthp::fixedToInt(size.value);
+        if(out.block == 0) { return 1; }
 
         return 0;
 }
@@ -720,11 +722,10 @@ DEFINE_EXECUTION_BEHAVIOUR(FREE) {
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
         if(ptr_dsc.block) {
-                free(data->blockData[ptr_dsc.block].data);
+                if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].data = nullptr;
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].size = 0;
-
                 return 0;
         }
 
@@ -775,11 +776,39 @@ DEFINE_EXECUTION_BEHAVIOUR(PREV) {
 DEFINE_EXECUTION_BEHAVIOUR(INDEX) {
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef addr = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        uint8_t offsetSize = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
 
         EVAL_PTRREF(ptr);
         EVAL_STDREF(addr);
 
-        *target_dsc = ((*target_dsc) & nthp::script::internal_constants::blockMemoryBlockMask) | nthp::fixedToInt(addr.value);
+        *target_dsc = nthp::script::constructPtrDescriptor(nthp::script::parsePtrDescriptor((*target_dsc)).block, (nthp::fixedToInt(addr.value) * offsetSize));
+        return 0;
+}
+
+
+DEFINE_EXECUTION_BEHAVIOUR(LAST) {
+        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        uint8_t offsetSize = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+
+        EVAL_PTRREF(target);
+        auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
+        
+        {       // This is a safety check for the pointer after eval; the regular checks are run on the stored pointer
+                // to ensure validity. Weird fucky hack to make it work with as little effort as possible.
+
+                ptrRef temp;
+                temp.value = nthp::script::constructPtrDescriptor(ptr.block, ptr.address);
+
+                EVAL_PTRREF(temp);
+        }
+
+        if(data->blockData[ptr.block].type != nthp::script::BlockMemoryEntry::bmType::TYPELESS) {
+                (*target_dsc) = nthp::script::constructPtrDescriptor(nthp::script::parsePtrDescriptor((*target_dsc)).block, data->blockData[ptr.block].sizeSpecial - 1);
+        }
+        else {
+                (*target_dsc) = nthp::script::constructPtrDescriptor(nthp::script::parsePtrDescriptor((*target_dsc)).block, (data->blockData[ptr.block].sizeSpecial - 1) * offsetSize);
+        }
+
         return 0;
 }
 
@@ -851,12 +880,13 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
         EVAL_PTRREF(ptr);
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
-        if(ptr_dsc.block) {
+        if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
                 nthp::texture::gTexture* textures = (nthp::texture::gTexture*)(data->blockData[ptr_dsc.block].data);
 
                 for(size_t i = 0; i < data->blockData[ptr_dsc.block].sizeSpecial; ++i) { textures[i].clean(); }
 
-                free(data->blockData[ptr_dsc.block].data);
+
+                if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].size = 0;
 
@@ -921,8 +951,8 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
         EVAL_PTRREF(target);
         auto ptr = nthp::script::parsePtrDescriptor(target.value);
 
-        if(ptr.block) {
-                free(data->blockData[ptr.block].data);
+        if((ptr.block) && (ptr.block < data->blockDataSize)) {
+                if((!data->blockData[ptr.block].isFree)) free(data->blockData[ptr.block].data);
                 data->blockData[ptr.block].isFree = true;
                 data->blockData[ptr.block].size = 0;
 
@@ -987,12 +1017,12 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
         EVAL_PTRREF(ptr);
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
         
-        if(ptr_dsc.block) {
+        if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
                 nthp::entity::gEntity* entities = (nthp::entity::gEntity*)(data->blockData[ptr_dsc.block].data);
 
                 for(size_t i = 0; i < data->blockData[ptr_dsc.block].sizeSpecial; ++i) { entities[i].clean(); }
 
-                free(data->blockData[ptr_dsc.block].data);
+                if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].size = 0;
 
@@ -1146,7 +1176,7 @@ DEFINE_EXECUTION_BEHAVIOUR(SP_FREE) {
 
         const auto ptr_dsc = nthp::script::parsePtrDescriptor(target.value);
         if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
-                if(data->blockData[ptr_dsc.block].data) free(data->blockData[ptr_dsc.block].data);
+                if(!(data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].data = nullptr;
                 data->blockData[ptr_dsc.block].size = 0;
@@ -1471,9 +1501,9 @@ DEFINE_EXECUTION_BEHAVIOUR(ACTION_BIND) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_CLEAR) {
-        delete[] data->actionList;
-        data->actionListSize = 0;
+        if(data->actionListSize > 0) delete[] data->actionList;
 
+        data->actionListSize = 0;
         return 0;
 }
 

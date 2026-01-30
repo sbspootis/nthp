@@ -1,0 +1,117 @@
+/ Directions /
+ENUM {
+	n	/ 0 /
+	ne	/ 1 /
+	e	/ 2 /
+	se	/ 3 /
+	s	/ 4 /
+	sw	/ 5 /
+	w	/ 6 /
+	nw	/ 7 /
+	
+	noDirection / 8 /
+}
+
+
+
+STRUCT player {
+	health
+	
+	moveSpeed
+	friction
+	xVel
+	yVel
+	maxSpeed
+	direction			/ use Directions ENUM /
+	lastDirection		/ Only used for attacks /
+	
+	
+	attackDamage
+	isAttacking
+	attackDuration
+	attackCooldown
+	attackFrameCounter
+	attackBoxSize
+	
+	dodgeDuration
+	dodgeCooldown
+	isDodging
+	isInvulnerable
+	dodgeVelocity
+	dodgeFrameCounter
+	
+	collisionSizeX
+	collisionSizeY
+	
+	t_playerTexture		/ Target texture sheet /
+	f_playerFrameData	/ Target frame block /
+	
+	e_playerEntity		/ Target entity object /
+	e_playerAttackbox	/ Unrendered attack collision object /
+}
+
+
+FIXED player p_mainPlayer
+SET &p_mainPlayer.health 		100
+SET &p_mainPlayer.moveSpeed 	0.3
+SET &p_mainPlayer.friction 		0.08
+SET &p_mainPlayer.maxSpeed		1.2
+
+SET &p_mainPlayer.lastDirection #noDirection
+
+SET &p_mainPlayer.dodgeVelocity 3
+SET &p_mainPlayer.dodgeDuration 5
+SET &p_mainPlayer.dodgeCooldown 30
+
+SET &p_mainPlayer.attackDamage 	5
+SET &p_mainPlayer.attackDuration 10
+SET &p_mainPlayer.attackCooldown 5
+SET &p_mainPlayer.attackBoxSize 5
+
+STRING s_playerTextureSheet "resource/fluffy.cst"
+TEXTURE_ALLOC 1 &p_mainPlayer.t_playerTexture
+TEXTURE_LOAD $p_mainPlayer.t_playerTexture ~s_playerTextureSheet
+
+
+ENUM {
+	pf_up
+	pf_down
+	pf_left
+	pf_right
+	
+	pfc_count
+}
+
+FRAME_ALLOC #pfc_count &p_mainPlayer.f_playerFrameData
+
+INDEX &p_mainPlayer.f_playerFrameData #pf_up
+FRAME_SET $p_mainPlayer.f_playerFrameData 0 0 20 20 $p_mainPlayer.t_playerTexture
+
+INDEX &p_mainPlayer.f_playerFrameData #pf_down
+FRAME_SET $p_mainPlayer.f_playerFrameData 20 0 20 20 $p_mainPlayer.t_playerTexture
+
+INDEX &p_mainPlayer.f_playerFrameData #pf_left
+FRAME_SET $p_mainPlayer.f_playerFrameData 40 0 20 20 $p_mainPlayer.t_playerTexture
+
+INDEX &p_mainPlayer.f_playerFrameData #pf_right
+FRAME_SET $p_mainPlayer.f_playerFrameData 60 0 20 20 $p_mainPlayer.t_playerTexture
+
+INDEX &p_mainPlayer.f_playerFrameData 0
+
+
+SET &p_mainPlayer.collisionSizeX 5
+SET &p_mainPlayer.collisionSizeY 5
+
+ENT_ALLOC 1 &p_mainPlayer.e_playerEntity
+ENT_SETFRAMERANGE $p_mainPlayer.e_playerEntity $p_mainPlayer.f_playerFrameData 4
+ENT_SETRENDERSIZE $p_mainPlayer.e_playerEntity $p_mainPlayer.collisionSizeX $p_mainPlayer.collisionSizeY
+ENT_SETHITBOXSIZE $p_mainPlayer.e_playerEntity $p_mainPlayer.collisionSizeX $p_mainPlayer.collisionSizeY
+
+
+ENT_ALLOC 1 &p_mainPlayer.e_playerAttackbox
+ENT_SETHITBOXSIZE $p_mainPlayer.e_playerAttackbox $p_mainPlayer.attackBoxSize $p_mainPlayer.attackBoxSize
+ENT_SETHITBOXOFFSET $p_mainPlayer.e_playerAttackbox 0 0
+ENT_SETFRAMERANGE $p_mainPlayer.e_playerAttackbox $p_mainPlayer.f_playerFrameData 1
+ENT_SETRENDERSIZE $p_mainPlayer.e_playerAttackbox $p_mainPlayer.attackBoxSize $p_mainPlayer.attackBoxSize
+
+EXIT

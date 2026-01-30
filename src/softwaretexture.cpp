@@ -92,11 +92,12 @@ int nthp::texture::SoftwareTexture::generateTexture(const char* filename, nthp::
 
 // Uses saved pixeldata to redraw a texture with a given palette. Always safe to use, regardless
 // of the texture already being generated or not. Very slow, look for something better.
-void nthp::texture::SoftwareTexture::regenerateTexture(nthp::texture::Palette* palette, SDL_Renderer* renderer) {
+int nthp::texture::SoftwareTexture::regenerateTexture(nthp::texture::Palette* palette, SDL_Renderer* renderer) {
         if(dataSize != 0) 
                 SDL_DestroyTexture(texture);
         else {
                 PRINT_DEBUG_ERROR("Unable to regenerate software texture [%p]; Texture not loaded.\n", this);
+                return 1;
         }
 
         nthp::texture::rawSurface stSurface(metadata.x, metadata.y);
@@ -108,6 +109,8 @@ void nthp::texture::SoftwareTexture::regenerateTexture(nthp::texture::Palette* p
         texture = SDL_CreateTextureFromSurface(renderer, stSurface.getSurface());
 
         PRINT_DEBUG("Regenerated texture [%p] with palette [%p].\n", this, palette);
+
+        return 0;
 }
 
 

@@ -19,7 +19,7 @@ namespace nthp {
                         SDL_Rect getCharacterRect(const char code);
 
                         SDL_Rect characterMap[96];
-                private:
+                        
                          
                         nthp::texture::gTexture fontSet;
                         unsigned int characterWidth;

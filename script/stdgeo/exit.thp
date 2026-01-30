@@ -3,5 +3,9 @@ DFILE_WRITE $config ~output
 
 FREE $config
 
+IF $stageSize GRT 0
+        FREE $stageObjects
+END
+
 
 EXIT

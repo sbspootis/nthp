@@ -1,0 +1,349 @@
+
+PRIVATE b_applyAMM
+
+MACRO f_playerMovementLogic {
+	%func_playerMovementLogic
+}
+FUNC func_playerMovementLogic {
+	IF $p_mainPlayer.isDodging
+		RETURN
+	END
+	SET &b_applyAMM 0
+	
+	IF $a_mUp
+		ADD -$p_mainPlayer.moveSpeed $p_mainPlayer.yVel &p_mainPlayer.yVel
+		ENT_SETCURRENTFRAME $p_mainPlayer.e_playerEntity #pf_up
+		INC &b_applyAMM
+		
+		SET &p_mainPlayer.direction #n
+	END
+	
+	IF $a_mDown
+		ADD $p_mainPlayer.moveSpeed $p_mainPlayer.yVel &p_mainPlayer.yVel
+		ENT_SETCURRENTFRAME $p_mainPlayer.e_playerEntity #pf_down
+		INC &b_applyAMM
+		
+		SET &p_mainPlayer.direction #s
+	END
+	
+	IF $a_mLeft
+		ADD -$p_mainPlayer.moveSpeed $p_mainPlayer.xVel &p_mainPlayer.xVel
+		ENT_SETCURRENTFRAME $p_mainPlayer.e_playerEntity #pf_left
+		DEC &b_applyAMM
+		
+		IF $p_mainPlayer.direction EQU #n
+			SET &p_mainPlayer.direction #nw
+			SKIP
+		END
+		IF $p_mainPlayer.direction EQU #s
+			SET &p_mainPlayer.direction #sw
+			SKIP
+		END
+		
+		SET &p_mainPlayer.direction #w
+		SKIP
+	END
+	
+	SKIP_END
+	
+	IF $a_mRight
+		ADD $p_mainPlayer.moveSpeed $p_mainPlayer.xVel &p_mainPlayer.xVel
+		ENT_SETCURRENTFRAME $p_mainPlayer.e_playerEntity #pf_right
+		DEC &b_applyAMM
+		
+		IF $p_mainPlayer.direction EQU #n
+			SET &p_mainPlayer.direction #ne
+			SKIP
+		END
+		IF $p_mainPlayer.direction EQU #s
+			SET &p_mainPlayer.direction #se
+			SKIP
+		END
+		
+		SET &p_mainPlayer.direction #e
+		SKIP
+	END
+	
+	SKIP_END
+	
+	IF $p_mainPlayer.direction NOT #noDirection
+		SET &p_mainPlayer.lastDirection $p_mainPlayer.direction
+	END
+	
+	IF $p_mainPlayer.xVel GRT $p_mainPlayer.maxSpeed
+		SET &p_mainPlayer.xVel $p_mainPlayer.maxSpeed
+	ELSE
+		IF $p_mainPlayer.xVel LST -$p_mainPlayer.maxSpeed
+			SET &p_mainPlayer.xVel -$p_mainPlayer.maxSpeed
+		END
+	END
+	
+	IF $p_mainPlayer.yVel GRT $p_mainPlayer.maxSpeed
+		SET &p_mainPlayer.yVel $p_mainPlayer.maxSpeed
+	ELSE
+		IF $p_mainPlayer.yVel LST -$p_mainPlayer.maxSpeed
+			SET &p_mainPlayer.yVel -$p_mainPlayer.maxSpeed
+		END
+	END
+	IF $b_applyAMM EQU 0
+		MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.xVel &mathReg0
+		MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.yVel &mathReg1
+	ELSE
+		SET &mathReg0 $p_mainPlayer.xVel
+		SET &mathReg1 $p_mainPlayer.yVel
+	END
+	
+	ENT_MOVE $p_mainPlayer.e_playerEntity $mathReg0 $mathReg1
+
+	IF $p_mainPlayer.xVel LST 0
+		ADD $p_mainPlayer.xVel $p_mainPlayer.friction &p_mainPlayer.xVel
+		IF $p_mainPlayer.xVel GRT 0
+			SET &p_mainPlayer.xVel 0
+			SKIP
+		END	
+	END
+	IF $p_mainPlayer.xVel GRT 0
+		ADD $p_mainPlayer.xVel -$p_mainPlayer.friction &p_mainPlayer.xVel
+		IF $p_mainPlayer.xVel LST 0
+			SET &p_mainPlayer.xVel 0
+			SKIP
+		END	
+	END
+	
+	SKIP_END
+	
+	IF $p_mainPlayer.yVel LST 0
+		ADD $p_mainPlayer.yVel $p_mainPlayer.friction &p_mainPlayer.yVel
+		IF $p_mainPlayer.yVel GRT 0
+			SET &p_mainPlayer.yVel 0
+			SKIP
+		END
+	END
+
+	IF $p_mainPlayer.yVel GRT 0
+		ADD $p_mainPlayer.yVel -$p_mainPlayer.friction &p_mainPlayer.yVel
+		IF $p_mainPlayer.yVel LST 0
+			SET &p_mainPlayer.yVel 0
+			SKIP
+		END
+	END
+
+	SKIP_END
+
+}
+
+	
+PRIVATE dodge_cooldownTimer
+	
+
+MACRO f_playerDodgeLogic {
+	%func_playerDodgeLogic
+}
+FUNC func_playerDodgeLogic {
+	IF $p_mainPlayer.isDodging
+		INC &p_mainPlayer.dodgeFrameCounter
+		
+		ENT_MOVE $p_mainPlayer.e_playerEntity $p_mainPlayer.xVel $p_mainPlayer.yVel
+		IF $p_mainPlayer.dodgeFrameCounter GRTE $p_mainPlayer.dodgeDuration
+			SET &p_mainPlayer.isDodging 		0
+			SET &p_mainPlayer.isInvulnerable 	0
+			
+			SET &p_mainPlayer.dodgeFrameCounter 0
+			SET &dodge_cooldownTimer $p_mainPlayer.dodgeCooldown
+			
+			RETURN
+		END
+		
+		RETURN
+	END
+	
+	IF $dodge_cooldownTimer GRT 0
+		DEC &dodge_cooldownTimer
+		RETURN
+	END
+	
+	/ The first check ensures the player is NOT dodging at this point. /
+	IF $a_dodge
+		SET &p_mainPlayer.isDodging 		1
+		SET &p_mainPlayer.isInvulnerable 	1
+		SET &p_mainPlayer.dodgeFrameCounter 0
+		
+		IF $p_mainPlayer.direction EQU #n
+			SET &p_mainPlayer.yVel -$p_mainPlayer.dodgeVelocity
+			SKIP
+		END
+		IF $p_mainPlayer.direction EQU #ne
+			MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.dodgeVelocity &mathReg0
+			MUL #ANGLED_MOVEMENT_MODIFIER -$p_mainPlayer.dodgeVelocity &mathReg1
+			
+			SET &p_mainPlayer.xVel $mathReg0
+			SET &p_mainPlayer.yVel $mathReg1
+			
+			SKIP
+		END
+		IF $p_mainPlayer.direction EQU #e
+			SET &p_mainPlayer.xVel $p_mainPlayer.dodgeVelocity
+			SKIP
+		END
+		
+		IF $p_mainPlayer.direction EQU #se
+			MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.dodgeVelocity &mathReg0
+			MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.dodgeVelocity &mathReg1
+			
+			SET &p_mainPlayer.xVel $mathReg0
+			SET &p_mainPlayer.yVel $mathReg1
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.direction EQU #s
+			SET &p_mainPlayer.yVel $p_mainPlayer.dodgeVelocity
+			SKIP
+		END
+		
+		IF $p_mainPlayer.direction EQU #sw
+			MUL #ANGLED_MOVEMENT_MODIFIER -$p_mainPlayer.dodgeVelocity &mathReg0
+			MUL #ANGLED_MOVEMENT_MODIFIER $p_mainPlayer.dodgeVelocity &mathReg1
+			
+			SET &p_mainPlayer.xVel $mathReg0
+			SET &p_mainPlayer.yVel $mathReg1
+			
+			SKIP
+		END
+		IF $p_mainPlayer.direction EQU #w
+			SET &p_mainPlayer.xVel -$p_mainPlayer.dodgeVelocity
+			SKIP
+		END
+		
+		IF $p_mainPlayer.direction EQU #nw
+			MUL #ANGLED_MOVEMENT_MODIFIER -$p_mainPlayer.dodgeVelocity &mathReg0
+			MUL #ANGLED_MOVEMENT_MODIFIER -$p_mainPlayer.dodgeVelocity &mathReg1
+			
+			SET &p_mainPlayer.xVel $mathReg0
+			SET &p_mainPlayer.yVel $mathReg1
+			SKIP
+		END
+		
+		
+		SKIP_END
+		
+	END
+	
+	SET &p_mainPlayer.direction #noDirection
+}
+
+
+
+PRIVATE attack_position_offset_x
+PRIVATE attack_position_offset_y
+
+PRIVATE attack_cooldownTimer
+
+
+MACRO f_playerAttackLogic {
+	%func_playerAttackLogic
+}
+FUNC func_playerAttackLogic {
+	IF $p_mainPlayer.isAttacking
+		IF $p_mainPlayer.attackFrameCounter GRT 0
+			POLL $p_mainPlayer.e_playerEntity POSITION
+			
+			ADD $r_poll1 $attack_position_offset_x &mathReg0
+			ADD $r_poll2 $attack_position_offset_y &mathReg1
+			
+			ENT_SETPOS $p_mainPlayer.e_playerAttackbox $mathReg0 $mathReg1
+			
+			DEC &p_mainPlayer.attackFrameCounter
+			
+			RETURN
+		END
+		
+		SET &p_mainPlayer.isAttacking 0
+		SET &attack_cooldownTimer $p_mainPlayer.attackCooldown
+		
+		RETURN
+	END
+	
+	IF $attack_cooldownTimer
+		DEC &attack_cooldownTimer
+		RETURN
+	END
+	
+	
+	/ The player is not attacking; check for the input. /
+	
+	IF $a_attack
+	
+		IF $p_mainPlayer.lastDirection EQU #n
+			SET &attack_position_offset_x 0
+			SET &attack_position_offset_y -$p_mainPlayer.attackBoxSize
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #ne
+			SET &attack_position_offset_x $p_mainPlayer.collisionSizeX
+			SET &attack_position_offset_y -$p_mainPlayer.attackBoxSize
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #e
+			SET &attack_position_offset_x $p_mainPlayer.collisionSizeX
+			SET &attack_position_offset_y 0
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #se
+			SET &attack_position_offset_x $p_mainPlayer.collisionSizeX
+			SET &attack_position_offset_y $p_mainPlayer.collisionSizeY
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #s
+			SET &attack_position_offset_x 0
+			SET &attack_position_offset_y $p_mainPlayer.collisionSizeY
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #sw
+			SET &attack_position_offset_x -$p_mainPlayer.attackBoxSize
+			SET &attack_position_offset_y $p_mainPlayer.collisionSizeY
+
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #w
+			SET &attack_position_offset_x -$p_mainPlayer.attackBoxSize
+			SET &attack_position_offset_y 0
+			
+			SKIP
+		END
+		
+		IF $p_mainPlayer.lastDirection EQU #nw
+			SET &attack_position_offset_x -$p_mainPlayer.attackBoxSize
+			SET &attack_position_offset_y -$p_mainPlayer.attackBoxSize
+			
+			SKIP
+		END
+	
+		RETURN
+	
+		SKIP_END
+	
+		SET &p_mainPlayer.isAttacking 1
+		SET &p_mainPlayer.attackFrameCounter $p_mainPlayer.attackDuration
+		
+	
+	
+	END
+}
+
+
+
+
+
+EXIT

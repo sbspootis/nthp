@@ -1,6 +1,7 @@
 
-/ Object types are defined here./
+/ Object types are defined here. /
 ENUM {
+        NOTYPE
 	RECT
 	CIRCLE
 }
@@ -23,5 +24,8 @@ VAR stageObjects
 ASSIGN stdgeoObject &stageObjects
 
 VAR stageSize
+
+
+FIXED stdgeoObject workingObject
 
 EXIT

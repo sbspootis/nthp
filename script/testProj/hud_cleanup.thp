@@ -1,0 +1,11 @@
+TEXTURE_FREE $p_hud.t_staticHeadsup
+TEXTURE_FREE $p_hud.t_border
+TEXTURE_FREE $p_hud.t_weaponArea
+
+SP_FREE $p_hud.sp_staticHudElements
+
+ENT_FREE $e_healthBar
+ENT_FREE $e_staminaBar
+ENT_FREE $e_weaponGraphic
+
+EXIT

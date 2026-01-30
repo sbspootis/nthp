@@ -1,0 +1,36 @@
+/ Enemy Init script /
+
+STRUCT enemy {
+	xVel
+	yVel
+	
+	health
+}
+
+VAR t_enemyTextureSheet
+TEXTURE_ALLOC 1 &t_enemyTextureSheet
+STRING enemyTextureSheetFile "resource/target.st"
+TEXTURE_LOAD $t_enemyTextureSheet ~enemyTextureSheetFile
+
+VAR f_enemyTextureFrames
+FRAME_ALLOC 1 &f_enemyTextureFrames
+FRAME_SET $f_enemyTextureFrames 0 0 50 50 $t_enemyTextureSheet
+
+/ Size for collider and render /
+CONST ENEMY_SIZE 3
+
+VAR e_enemyEntities
+
+
+/ entity ref /
+/ Called in enemylogic.thp during the init function. Only assigns texture and size, 
+ position is determined procedurally in enemylogic. /
+MACRO internal_initEnemy {
+	ENT_SETFRAMERANGE #ar0 $f_enemyTextureFrames 1
+	ENT_SETRENDERSIZE #ar0 #ENEMY_SIZE #ENEMY_SIZE
+	ENT_SETHITBOXSIZE #ar0 #ENEMY_SIZE #ENEMY_SIZE
+}
+
+
+
+EXIT

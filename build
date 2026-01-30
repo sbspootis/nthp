@@ -1,0 +1,17 @@
+
+
+BUILD_SYSTEM
+	script/testProj/core_init.thp 		T_INIT
+	script/testProj/player_init.thp  	T_INIT
+	script/testProj/enemy_init.thp		T_INIT
+
+	script/testProj/playerlogic.thp		T_HIDDEN
+	script/testProj/enemylogic.thp		T_HIDDEN
+
+	script/testProj/core_main.thp		T_TICK
+	
+	script/testProj/player_cleanup.thp 	T_EXIT
+END
+
+
+EXIT

@@ -1,0 +1,31 @@
+
+PRIVATE enemies
+@f_createEnemyBlock ( &enemies 10 )
+@f_initEnemyBlock ( $enemies 10 )
+
+ENT_SETPOS $e_enemyEntities.0 60 60
+
+CONST l_mainLoop 1
+	LABEL #l_mainLoop
+	
+	IF $a_break
+		DEBUG_BREAK
+		SET &a_break 0
+		GOTO #l_mainLoop
+	END
+
+	@f_playerMovementLogic
+	@f_playerDodgeLogic
+	@f_playerAttackLogic
+	
+
+	CORE_CLEAR
+	CORE_QRENDER $p_mainPlayer.e_playerEntity
+	CORE_QRENDER $p_mainPlayer.e_playerAttackbox
+	CORE_QRENDER $e_enemyEntities.0
+	CORE_DISPLAY
+
+	SUSPEND
+	GOTO #l_mainLoop
+
+EXIT

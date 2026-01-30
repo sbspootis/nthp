@@ -117,7 +117,7 @@ namespace nthp {
         // but the accuracy increases. The accuracy is automatically adjusted by the preprocessor
         // on compile time. An invalid range (over SCALE / 2) will be overwritten for maximum range
         // (and by extension minimal accuracy).
-        #define FAST_PRODUCT_RANGE              (0)
+        #define FAST_PRODUCT_RANGE              (2)
 #endif
 
 
@@ -127,7 +127,7 @@ namespace nthp {
         // but the accuracy increases. The accuracy is automatically adjusted by the preprocessor
         // on compile time. An invalid range (over FIXED_POINT_SCALE) will be overwritten for maximum range
         // (and by extension minimal accuracy).
-        #define FAST_QUOTIENT_RANGE             (0)
+        #define FAST_QUOTIENT_RANGE             (2)
 
 #endif
 

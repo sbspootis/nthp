@@ -5,11 +5,10 @@ VAR mathReg3
 
 VAR arg0
 VAR arg1
+VAR arg2
 VAR arg3
-VAR arg4
-VAR arg5
-VAR arg6
-VAR arg7
-VAR arg8
+
+CONST ANGLED_MOVEMENT_MODIFIER 0.7071
+
 
 EXIT

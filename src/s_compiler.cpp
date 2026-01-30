@@ -1594,8 +1594,10 @@ DEFINE_COMPILATION_BEHAVIOUR(PREV) {
 DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
         ADD_NODE(INDEX);
 
+        size_t pos;
+
         EVAL_SYMBOL();
-        auto ptr = EVAL_PREF();
+        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
         CHECK_REF(ptr);
 
         EVAL_SYMBOL();
@@ -1604,6 +1606,13 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
 
         ptrRef* block = (ptrRef*)(nodeList[currentNode].access.data);
         stdRef* location = (stdRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+        uint8_t* offsetSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
+
+        if(globalList[pos].isStruct && (!globalList[pos].isFixed)) {
+                *offsetSize = structList[globalList[pos].structID].members.size();
+        }
+        else { *offsetSize = 1; }
+
 
         *block = ptr;
         *location = addr;
@@ -1611,6 +1620,31 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
         PRINT_NODEDATA();
         return 0;
 }
+
+DEFINE_COMPILATION_BEHAVIOUR(LAST) {
+        ADD_NODE(LAST);
+
+        size_t pos;
+
+        EVAL_SYMBOL();
+        auto target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+        uint8_t* offsetSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        if(globalList[pos].isStruct && (!globalList[pos].isFixed)) {
+                *offsetSize = structList[globalList[pos].structID].members.size();
+        }
+        else { *offsetSize = 1; }
+
+
+        *_target = target;
+        PRINT_NODEDATA();
+
+        return 0;
+}
+
 
 DEFINE_COMPILATION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
         ADD_NODE(SET_BLOCKLISTSIZE);
@@ -4024,6 +4058,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(NEXT);
                 CHECK_COMP(PREV);
                 CHECK_COMP(INDEX);
+                CHECK_COMP(LAST);
                 CHECK_COMP(SET_BLOCKLISTSIZE);
                 CHECK_COMP(ALLOC_TARGET);
 

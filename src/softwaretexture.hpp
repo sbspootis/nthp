@@ -19,7 +19,7 @@ namespace nthp {
                         virtual int generateTexture(const char* filename, nthp::texture::Palette* palette, SDL_Renderer* coreRenderer);
                         inline SDL_Texture* getTexture() { return texture; }
 
-                        void regenerateTexture(nthp::texture::Palette* palette, SDL_Renderer* renderer);
+                        int regenerateTexture(nthp::texture::Palette* palette, SDL_Renderer* renderer);
                         
                         static constexpr uint8_t STheaderSignature = 0b11011001;
                         struct software_texture_header {
