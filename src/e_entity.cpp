@@ -5,7 +5,7 @@ nthp::entity::gEntity::gEntity() {
         init();
 }
 
-inline void nthp::entity::gEntity::init() {
+void nthp::entity::gEntity::init() {
         frameData = nullptr;
         frameSize = 0;
         frameDataNative = false;
@@ -107,7 +107,7 @@ void nthp::entity::gEntity::setRenderAngle(const nthp::fixed_t newAngle) {
 }
 
 
-inline void nthp::entity::gEntity::clean() {
+void nthp::entity::gEntity::clean() {
         if(frameDataNative) {
                 free(frameData);
         }

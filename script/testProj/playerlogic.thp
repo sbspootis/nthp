@@ -95,6 +95,10 @@ FUNC func_playerMovementLogic {
 	
 	ENT_MOVE $p_mainPlayer.e_playerEntity $mathReg0 $mathReg1
 
+	POLL $p_mainPlayer.e_playerEntity POSITION
+
+	CORE_SETCAMERAPOSITION $r_poll1 $r_poll2
+
 	IF $p_mainPlayer.xVel LST 0
 		ADD $p_mainPlayer.xVel $p_mainPlayer.friction &p_mainPlayer.xVel
 		IF $p_mainPlayer.xVel GRT 0

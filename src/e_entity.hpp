@@ -11,7 +11,7 @@ namespace nthp {
         class gEntity {
         public:
                 gEntity();
-                inline void init();
+                void init();
 
                 virtual const nthp::RenderPacket getUpdateRenderPacket(nthp::RenderRuleSet* context) final;
                 virtual const nthp::RenderPacket abs_getRenderPacket(nthp::RenderRuleSet* context) final;
@@ -38,7 +38,7 @@ namespace nthp {
                 void setRenderAngle(nthp::fixed_t newAngle);
                 nthp::fixed_t getRenderAngle() { return nthp::doubleToFixed(angle); }
 
-                inline void clean();
+                void clean();
                 ~gEntity();
         protected:
                 

@@ -74,7 +74,7 @@ namespace nthp {
 
                 class SoundChannel {
                 public:
-                        SoundChannel() { soundData = NULL; }
+                        SoundChannel() { soundData = NULL; channel = -1; }
                         SoundChannel(const char* file) {
                                 isAllocated = false;
                                 load(file);
@@ -94,7 +94,14 @@ namespace nthp {
 
                         // Returns -1 on failure.
                         int playSound() {
-                                return Mix_PlayChannel(-1, soundData, 0);
+                                if(channel != -1) {
+                                        if(Mix_Playing(channel)) { return 0; }
+                                        else { channel = Mix_PlayChannel(-1, soundData, 0); }
+                                }
+                                else {
+                                        channel = Mix_PlayChannel(-1, soundData, 0);
+                                }
+                                return 0;
                         }
 
                         void free() {
@@ -109,6 +116,8 @@ namespace nthp {
                         }
                         Mix_Chunk* soundData;
                         bool isAllocated;
+
+                        int channel;
                 };
 
 

@@ -1351,7 +1351,11 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_SP_QRENDER_BLOCK) {
         const auto block = (nthp::entity::staticSetpiece*)data->blockData[block_dsc.block].data;
         const auto length = data->blockData[block_dsc.block].sizeSpecial;
 
-        for(size_t i = 0; i < length; ++i) { nthp::core.render(block[i].compiledPacket); }
+        for(size_t i = 0; i < length; ++i) {
+                if((!(abs(nthp::fixedToInt(block[i].position.x - nthp::core.p_coreDisplay.cameraWorldPosition.x)) > (nthp::core.p_coreDisplay.tunitResolution_x * 2))) || (!(abs(nthp::fixedToInt(block[i].position.y - nthp::core.p_coreDisplay.cameraWorldPosition.y)) > (nthp::core.p_coreDisplay.tunitResolution_y * 2)))) {
+                        nthp::core.render(block[i].compiledPacket); 
+                }
+        }
 
         return 0;
 }
