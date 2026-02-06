@@ -51,8 +51,8 @@ const nthp::RenderPacket nthp::entity::gEntity::abs_getRenderPacket(nthp::Render
                 {
                         (int)pxlPos.x, 
                         (int)pxlPos.y,
-                        (int)nthp::fixedToInt(renderSize.x),
-                        (int)nthp::fixedToInt(renderSize.y)
+                        (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.x, context->scaleFactor.x)),
+                        (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.y, context->scaleFactor.y))
                 }, angle, state);
 }
 

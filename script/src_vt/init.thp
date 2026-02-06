@@ -155,4 +155,12 @@ ACTION_BIND #ai_panDown &a_panDown s
 ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
+
+VAR mathTest
+MUL 4820.6186423 1318.57682 &mathTest
+
+
+
+
+
 EXIT
