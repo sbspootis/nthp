@@ -154,8 +154,8 @@ int nthp::EngineCore::render(nthp::RenderPacket packet) {
                 case nthp::RenderPacket::C_OPERATE::VALID:
                         {
                                 const vectGeneric offset = nthp::generatePixelPosition(nthp::worldPosition(p_coreDisplay.cameraWorldPosition.x, p_coreDisplay.cameraWorldPosition.y), &p_coreDisplay);
-                                packet.dstRect.x += offset.x;
-                                packet.dstRect.y += offset.y;
+                                packet.dstRect.x -= offset.x;
+                                packet.dstRect.y -= offset.y;
                                 return SDL_RenderCopyEx(renderer, packet.texture, packet.srcRect, &packet.dstRect, packet.angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
                         }
                         break;

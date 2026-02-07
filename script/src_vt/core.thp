@@ -25,19 +25,19 @@ LABEL 1
 
 
         IF $a_panUp
-                CORE_MOVECAMERA 0 1
+                CORE_MOVECAMERA 0 -1
         END
 
         IF $a_panDown 
-                CORE_MOVECAMERA 0 -1 
+                CORE_MOVECAMERA 0 1
         END
 
         IF $a_panLeft
-                CORE_MOVECAMERA 1 0
+                CORE_MOVECAMERA -1 0
         END
 
         IF $a_panRight 
-                CORE_MOVECAMERA -1 0
+                CORE_MOVECAMERA 1 0
         END
 
         IF $a_enter

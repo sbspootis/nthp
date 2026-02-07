@@ -1118,6 +1118,36 @@ DEFINE_COMPILATION_BEHAVIOUR(ABS) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(MOD) {
+        ADD_NODE(MOD);
+
+        EVAL_SYMBOL();
+        auto value = EVAL_PREF();
+        CHECK_REF(value);
+
+        EVAL_SYMBOL();
+        auto divisor = EVAL_PREF();
+        CHECK_REF(divisor);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _value = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _divisor = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+
+        *_value = value;
+        *_divisor = divisor;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+
 DEFINE_COMPILATION_BEHAVIOUR(RAND) {
         ADD_NODE(RAND);
 
@@ -4036,6 +4066,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(DIV);
                 CHECK_COMP(SQRT);
                 CHECK_COMP(ABS);
+                CHECK_COMP(MOD);
                 CHECK_COMP(RAND);
                 CHECK_COMP(SIN);
                 CHECK_COMP(COS);

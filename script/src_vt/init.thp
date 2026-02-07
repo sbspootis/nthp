@@ -13,6 +13,7 @@ STRING track "am.wav"
 MUSIC_LOAD 0 ~track
 MUSIC_START 0
 
+CORE_SETCAMERAPOSITION -100 -100
 
 / ================================================================ /
 /                     TEXTURES                                     /
@@ -157,7 +158,7 @@ ACTION_BIND #ai_panRight &a_panRight d
 
 
 VAR mathTest
-MUL 4820.6186423 1318.57682 &mathTest
+MOD 100 21 &mathTest
 
 
 

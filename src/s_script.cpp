@@ -342,6 +342,21 @@ DEFINE_EXECUTION_BEHAVIOUR(ABS) {
         return 0;
 }
 
+
+DEFINE_EXECUTION_BEHAVIOUR(MOD) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef divisor = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_STDREF(divisor);
+        EVAL_PTRREF(output);
+
+        (*target_dsc) = nthp::intToFixed(nthp::fixedToInt(value.value) % nthp::fixedToInt(divisor.value));
+        return 0;
+}
+
+
 DEFINE_EXECUTION_BEHAVIOUR(RAND) {
         stdRef a = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
@@ -1418,7 +1433,7 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_MOVECAMERA) {
         EVAL_STDREF(x);
         EVAL_STDREF(y);
 
-        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(nthp::f_fixedProduct(x.value, nthp::deltaTime), nthp::f_fixedProduct(y.value, nthp::deltaTime));
+        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(x.value, y.value);
         return 0;
 }
 

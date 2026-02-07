@@ -55,6 +55,7 @@ namespace ID {
                 DIV,\
                 SQRT,\
                 ABS,\
+                MOD,\
                 RAND,\
                 SIN,\
                 COS,\
@@ -212,6 +213,7 @@ namespace Size {
                 SQRT = sizeof(stdRef) + sizeof(ptrRef),
                 RAND = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 ABS = sizeof(stdRef) + sizeof(ptrRef),
+                MOD = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 SIN = sizeof(stdRef) + sizeof(ptrRef),
                 COS = sizeof(stdRef) + sizeof(ptrRef),
                 TAN = sizeof(stdRef) + sizeof(ptrRef),
