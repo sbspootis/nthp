@@ -82,9 +82,13 @@ int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool
                 PRINT_DEBUG_ERROR("Unable to initialize audio systems. Disabling audio system until restart.\n");
 
                 // TODO
+                
 
                 return 0;
         }
+
+        // Default channel number when opening a new audio device.
+        audioSystem.channelCount = MIX_CHANNELS;
 
         const size_t deviceCount = SDL_GetNumAudioDevices(0);
         PRINT_DEBUG("Searching for audio devices...");

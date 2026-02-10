@@ -41,8 +41,12 @@ LABEL 1
         END
 
         IF $a_enter
-                MUSIC_SETVOLUME 5
+                SOUND_PLAY 0
                 SET &a_enter 0
+        END
+
+        IF $a_halt
+                SOUND_STOP 0
         END
 
         IF $mouse1

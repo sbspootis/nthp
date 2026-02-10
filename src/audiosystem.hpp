@@ -18,6 +18,7 @@ namespace nthp {
                         }
 
                         int load(const char* file) {
+                                if(musicData != NULL) { Mix_FreeMusic(musicData); }
                                 musicData = Mix_LoadMUS(file);
                                 
                                 if(musicData == NULL) {
@@ -66,6 +67,7 @@ namespace nthp {
                                 }
 
                                 Mix_FreeMusic(musicData);
+                                musicData = NULL;
                         }
 
                         Mix_Music* musicData;
@@ -74,7 +76,7 @@ namespace nthp {
 
                 class SoundChannel {
                 public:
-                        SoundChannel() { soundData = NULL; channel = -1; }
+                        SoundChannel() { soundData = NULL; channel = -1; isAllocated = false; }
                         SoundChannel(const char* file) {
                                 isAllocated = false;
                                 load(file);
@@ -82,6 +84,7 @@ namespace nthp {
                         
                         // Returns 1 on failure.
                         int load(const char* file) {
+                                if(isAllocated) { Mix_FreeChunk(soundData); }
                                 soundData = Mix_LoadWAV(file);
                                 if(soundData == NULL) {
                                         PRINT_DEBUG_ERROR("Unable to load sound [%s].\n", file);
@@ -94,13 +97,14 @@ namespace nthp {
 
                         // Returns -1 on failure.
                         int playSound() {
-                                if(channel != -1) {
-                                        if(Mix_Playing(channel)) { return 0; }
-                                        else { channel = Mix_PlayChannel(-1, soundData, 0); }
-                                }
-                                else {
-                                        channel = Mix_PlayChannel(-1, soundData, 0);
-                                }
+                                channel = Mix_PlayChannel(channel, soundData, 0);
+                                return 0;
+                        }
+
+                        int stopSound() {
+                                if(!(channel < 0))
+                                        Mix_HaltChannel(channel);
+
                                 return 0;
                         }
 
@@ -108,6 +112,7 @@ namespace nthp {
                                 Mix_FreeChunk(soundData);
                                 soundData = NULL;
                                 isAllocated = false;
+                                channel = -1;
                         }
 
 
@@ -128,6 +133,8 @@ namespace nthp {
                         
                         size_t soundSize;
                         size_t musicSize;
+
+                        int channelCount;
                 };
 
 

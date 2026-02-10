@@ -1620,6 +1620,20 @@ DEFINE_EXECUTION_BEHAVIOUR(DRAW_LINE) {
 }
 
 
+DEFINE_EXECUTION_BEHAVIOUR(AUDIOCHANNEL_DEFINE) {
+        stdRef channelCount = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(channelCount);
+
+        // Set the new channel count, then poll for the allocated channel count, in case
+        // something goes wrong.
+        Mix_AllocateChannels(nthp::fixedToInt(channelCount.value));
+        nthp::core.audioSystem.channelCount = Mix_AllocateChannels(-1);
+
+        return 0;
+}
+
+
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_DEFINE) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
@@ -1627,12 +1641,12 @@ DEFINE_EXECUTION_BEHAVIOUR(SOUND_DEFINE) {
 
         nthp::core.audioSystem.soundEffects = new (std::nothrow) nthp::audio::SoundChannel[nthp::fixedToInt(size.value)];
         if(nthp::core.audioSystem.soundEffects == nullptr) {
-                PRINT_DEBUG_ERROR("SOUND_LOAD call failed to allocate sound data.\n");
+                PRINT_DEBUG_ERROR("SOUND_DEFINE call @ [%zu] failed to allocate sound data.\n", data->currentNode);
                 nthp::core.audioSystem.soundSize = 0;
         }
-        else
+        else {
                 nthp::core.audioSystem.soundSize = nthp::fixedToInt(size.value);
-
+        }
 
         return 0;
 }
@@ -1642,6 +1656,7 @@ DEFINE_EXECUTION_BEHAVIOUR(SOUND_CLEAR) {
                 delete[] nthp::core.audioSystem.soundEffects;
 
         nthp::core.audioSystem.soundSize = 0;
+
 
         return 0;
 }
@@ -1705,6 +1720,26 @@ DEFINE_EXECUTION_BEHAVIOUR(SOUND_PLAY) {
         EVAL_STDREF(obj);
 
         nthp::core.audioSystem.soundEffects[nthp::fixedToInt(obj.value)].playSound();
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(SOUND_SETCHANNEL) {
+        stdRef soundID = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef channel = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(soundID);
+        EVAL_STDREF(channel);
+        
+        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(soundID.value)].channel = nthp::fixedToInt(channel.value);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(SOUND_STOP) {
+        stdRef soundID = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(soundID);
+
+        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(soundID.value)].stopSound();
         return 0;
 }
 

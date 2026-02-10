@@ -13,6 +13,14 @@ STRING track "am.wav"
 MUSIC_LOAD 0 ~track
 MUSIC_START 0
 
+MUSIC_SETVOLUME 60
+
+SOUND_DEFINE 1
+STRING footstep "footsteps2.ogg"
+SOUND_LOAD 0 ~footstep
+SOUND_SETCHANNEL 0 0
+
+
 CORE_SETCAMERAPOSITION -100 -100
 
 / ================================================================ /
@@ -128,6 +136,7 @@ ENUM {
         ai_left
         ai_right
         ai_enter
+        ai_halt
         ai_panUp
         ai_panDown
         ai_panLeft
@@ -141,6 +150,7 @@ ACTION_DEFINE #ac_size
 VAR a_left
 VAR a_right
 VAR a_enter
+VAR a_halt
 
 VAR a_panUp
 VAR a_panDown
@@ -150,6 +160,7 @@ VAR a_panRight
 ACTION_BIND #ai_left &a_left LEFT
 ACTION_BIND #ai_right &a_right RIGHT
 ACTION_BIND #ai_enter &a_enter RETURN
+ACTION_BIND #ai_halt &a_halt ESCAPE
 
 ACTION_BIND #ai_panUp &a_panUp w
 ACTION_BIND #ai_panDown &a_panDown s

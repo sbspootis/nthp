@@ -138,6 +138,7 @@ namespace ID {
                 POLL_ENT_ANGLE,\
                 DRAW_SETCOLOR,\
                 DRAW_LINE,\
+                AUDIOCHANNEL_DEFINE,\
                 SOUND_DEFINE,\
                 SOUND_CLEAR,\
                 MUSIC_DEFINE,\
@@ -145,6 +146,8 @@ namespace ID {
                 MUSIC_LOAD,\
                 SOUND_LOAD,\
                 SOUND_PLAY,\
+                SOUND_SETCHANNEL,\
+                SOUND_STOP,\
                 MUSIC_START,\
                 MUSIC_STOP,\
                 MUSIC_PAUSE,\
@@ -309,6 +312,7 @@ namespace Size {
                 DRAW_SETCOLOR = sizeof(stdRef),
                 DRAW_LINE = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef),
                 
+                AUDIOCHANNEL_DEFINE = sizeof(stdRef),
                 SOUND_DEFINE = sizeof(stdRef),
                 SOUND_CLEAR = 0,
                 MUSIC_DEFINE = sizeof(stdRef),
@@ -316,6 +320,8 @@ namespace Size {
                 MUSIC_LOAD = sizeof(stdRef) + sizeof(strRef),
                 SOUND_LOAD = sizeof(stdRef) + sizeof(strRef),
                 SOUND_PLAY = sizeof(stdRef),
+                SOUND_SETCHANNEL = sizeof(stdRef) + sizeof(stdRef),
+                SOUND_STOP = sizeof(stdRef),
                 MUSIC_START = sizeof(stdRef),
                 MUSIC_STOP = 0,
                 MUSIC_PAUSE = 0,

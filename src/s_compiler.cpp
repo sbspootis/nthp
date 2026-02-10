@@ -2815,6 +2815,22 @@ DEFINE_COMPILATION_BEHAVIOUR(DRAW_LINE) {
 }
 
 
+DEFINE_COMPILATION_BEHAVIOUR(AUDIOCHANNEL_DEFINE) {
+        ADD_NODE(AUDIOCHANNEL_DEFINE);
+
+        EVAL_SYMBOL();
+        auto channelCount = EVAL_PREF();
+        CHECK_REF(channelCount);
+
+        stdRef* _channelCount = (stdRef*)(nodeList[currentNode].access.data);
+
+        *_channelCount = channelCount;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
 DEFINE_COMPILATION_BEHAVIOUR(SOUND_DEFINE) {
         ADD_NODE(SOUND_DEFINE);
 
@@ -2832,6 +2848,21 @@ DEFINE_COMPILATION_BEHAVIOUR(SOUND_DEFINE) {
 
 DEFINE_COMPILATION_BEHAVIOUR(SOUND_CLEAR) {
         ADD_NODE(SOUND_CLEAR);
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SOUND_STOP) {
+        ADD_NODE(SOUND_STOP);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        stdRef* _target = (stdRef*)(nodeList[currentNode].access.data);
+
+        *_target = target;
 
         PRINT_NODEDATA();
         return 0;
@@ -2921,6 +2952,27 @@ DEFINE_COMPILATION_BEHAVIOUR(SOUND_PLAY) {
 
         *output = index;
         
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(SOUND_SETCHANNEL) {
+        ADD_NODE(SOUND_SETCHANNEL);
+
+        EVAL_SYMBOL();
+        auto soundID = EVAL_PREF();
+        CHECK_REF(soundID);
+
+        EVAL_SYMBOL();
+        auto channelID = EVAL_PREF();
+        CHECK_REF(channelID);
+
+        stdRef* _sound = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _channel = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_sound = soundID;
+        *_channel = channelID;
+
         PRINT_NODEDATA();
         return 0;
 }
@@ -4152,7 +4204,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(DRAW_SETCOLOR);
                 CHECK_COMP(DRAW_LINE);
 
-
+                CHECK_COMP(AUDIOCHANNEL_DEFINE);
                 CHECK_COMP(SOUND_DEFINE);
                 CHECK_COMP(SOUND_CLEAR);
                 CHECK_COMP(MUSIC_DEFINE);
@@ -4160,6 +4212,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(MUSIC_LOAD);
                 CHECK_COMP(SOUND_LOAD);
                 CHECK_COMP(SOUND_PLAY);
+                CHECK_COMP(SOUND_SETCHANNEL);
+                CHECK_COMP(SOUND_STOP);
                 CHECK_COMP(MUSIC_START);
                 CHECK_COMP(MUSIC_STOP);
                 CHECK_COMP(MUSIC_PAUSE);
