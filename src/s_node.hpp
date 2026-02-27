@@ -39,7 +39,7 @@ namespace script {
                 for(size_t i = 0; i < size; ++i) {
                         if(set[i].access.size) free(set[i].access.data);
                 }
-                delete[] set;
+                if(size) { delete[] set; }
         }
 
         

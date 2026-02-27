@@ -48,18 +48,38 @@ namespace nthp {
                         std::string name;
                         std::string original_expression;
                         nthp::script::instructions::stdRef evaluation;
+
+                        void writeToFile(std::fstream& symbolFile) {
+                                symbolFile << "CONSTEVAL " << name << " " << original_expression << '\n';
+                        }
                 };
 
                 // Compiler-Only; Represents a macro-like substitution.
                 struct CONST_DEF {
                         std::string constName;
                         std::string value;
+
+                        void writeToFile(std::fstream& symbolFile) {
+                                std::string name = constName;
+                                constName.erase(constName.begin());
+                                symbolFile << "CONST " << name << " " << value << '\n';
+                        }
                 };
 
                 // Compiler-Only; Represents a series of macro-like substitutions.
                 struct MACRO_DEF {
                         std::string macroName;
                         std::vector<std::string> macroData;
+
+                        void writeToFile(std::fstream& symbolFile) {
+                                std::string newName = macroName;
+                                newName.erase(newName.begin());
+
+                                symbolFile << "MACRO " << newName << " { ";
+                                for(size_t i = 0; i < macroData.size(); ++i) symbolFile << macroData[i] << ' ';
+
+                                symbolFile << "}\n";
+                        }
                 };
 
 
@@ -89,6 +109,13 @@ namespace nthp {
                 struct STRUCT_DEF {
                         std::string name;
                         std::vector<std::string> members;
+
+                        void writeToFile(std::fstream& symbolFile) {
+                                symbolFile << "STRUCT " << name << " { ";
+                                for(size_t i = 0; i < members.size(); ++i) symbolFile << members[i] << ' ';
+
+                                symbolFile << "}\n";
+                        }
                 };
 
                 // Contrary to how it may seem based on the name, a FUNC is just a cross-script label that's evaluated by the
@@ -98,18 +125,26 @@ namespace nthp {
                 struct FUNC_DEF {
                         std::string name;
                         uint32_t func_start;
+
+                        void writeToFile(std::fstream& symbolFile) {
+                                symbolFile << "FUNC " << name << '\n';
+                        }
                 };
 
 
                 // Takes source script as input, writes compiled script to output.
                 // output file can be NULL, where the compiler won't write anything.
-                int compileSourceFile(const char* inputFile, const char* outputFile, bool buildSystemContext, uint8_t executionFlags, const bool ignoreInstructionData);
+                int compileSourceFile(const char* inputFile, const char* outputFile, bool buildSystemContext, uint8_t executionFlags, const bool ignoreInstructionData, bool createSymbolFile);
                 
                 // Writes stored Node data to the target output file.
                 // Is called by 'compileSourceFile' if the 'outputfile' is non-NULL.
                 int exportToFile(const char* outputFile, std::vector<nthp::script::Node>* nodeList, bool buildSystemContext);
 
                 int compileStageConfig(const char* stageConfigFile, std::vector<std::string>* targetFiles, bool forceBuild, const bool ignoreInstructionData);
+
+                // Compiles a single translation unit as a T_MODULE and creates a symbol file (.sym) for it. Allows pre-compiled code to be imported
+                // to other projects without rebuilding all the source code (using MODULE in a build system).
+                int buildModule(const char* source);
 
                 std::vector<nthp::script::CompilerInstance::CONST_DEF>  constantList;
                 std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF> constevalList;

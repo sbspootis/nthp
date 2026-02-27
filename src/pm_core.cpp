@@ -332,7 +332,7 @@ L_BEGIN:
 						continue;
 					}
 					
-					if(!cc.compileSourceFile(args[2].c_str(), args[3].c_str(), false, (1 << nthp::script::CompilerInstance::TriggerBits::T_TICK), false)) {
+					if(!cc.compileSourceFile(args[2].c_str(), args[3].c_str(), false, (1 << nthp::script::CompilerInstance::TriggerBits::T_TICK), false, false)) {
 					        PM_PRINT("Script, Done. %s > %s\n", args[2].c_str(), args[3].c_str());
                                         }
                                         else {
@@ -379,7 +379,7 @@ L_BEGIN:
                                 continue;
                         }
                         if(args[0] == "build" || args[0] == "bd") {
-                                if(args.size() < 3) { PM_PRINT("Build failure; syntax error. bd [buildsystem] [outputExecutable]\n"); continue; }
+                                if(args.size() < 3) { PM_PRINT_ERROR("Build failure; syntax error. bd [buildsystem] [outputExecutable]\n"); continue; }
 
                                 nthp::script::CompilerInstance cc;
                                 nthp::script::LinkerInstance linker;
@@ -400,6 +400,42 @@ L_BEGIN:
 
                                 continue;
                         }
+                        if(args[0] == "buildmodule") {
+                                if(args.size() < 2) {
+                                        PM_PRINT_ERROR("Compiler requires at least 1 target file.\n");
+                                        continue;
+                                }
+
+                                nthp::script::CompilerInstance cc;
+
+                                std::string mod = args[1];
+                                std::string sym = args[1];
+
+                                {
+                                        auto ext = mod.find_last_of('.');
+                                        if(ext != std::string::npos)
+                                                mod.erase(mod.begin()+ext, mod.end());
+                                        
+                                        mod += ".mod";
+                                }
+                                {
+                                        auto ext = sym.find_last_of('.');
+                                        if(ext != std::string::npos)
+                                                sym.erase(sym.begin()+ext, sym.end());
+                                        
+                                        sym += ".sym";
+                                }
+
+                                if(cc.buildModule(args[1].c_str())) {
+                                        PM_PRINT_ERROR("Failed to build module [%s].\n", args[1].c_str());
+                                }
+                                else {
+                                        PM_PRINT("Module build successfully; output=[%s] [%s].\n", mod.c_str(), sym.c_str());
+                                }
+
+                                continue;
+                        }
+
                         if(args[0] == "debug") {
                                 if(!inHeadlessMode) {
                                         if(debuggingActiveProcess) {

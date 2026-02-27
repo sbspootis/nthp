@@ -1,5 +1,14 @@
 IMPORT script/stdgeo/globals.b
 
+MACRO superTestMacro {
+        ElementA
+        ElementB
+        AmazingElementC
+        IncredibleElementD
+        StupendousElementE
+        FortuitousElementF
+}
+
 
 / STDGEO geometry maker program ; THP 2.03 /
 STRUCT programConfig {

@@ -3274,7 +3274,7 @@ DEFINE_COMPILATION_BEHAVIOUR(DEBUG_BREAK) {
 
 
 
-int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, const char* outputFile, bool buildSystemContext, uint8_t executionFlags, const bool ignoreInstructionData) {
+int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, const char* outputFile, bool buildSystemContext, uint8_t executionFlags, const bool ignoreInstructionData, bool createSymbolFile) {
         NOVERB_PRINT_COMPILER("\n\tCompiling Source File [%s]...\n\n", inputFile);
         
         std::fstream file(inputFile, std::ios::in);
@@ -3298,6 +3298,22 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
         size_t globalAlloc = 0;
 
+        std::fstream symbolFile;
+        if(createSymbolFile) {
+                std::string symbolFileName = outputFile;
+                auto ext = symbolFileName.find_last_of('.');
+
+                if(ext != std::string::npos)
+                        symbolFileName.erase(symbolFileName.begin()+ext, symbolFileName.end());
+                
+                symbolFileName += ".sym";
+
+                symbolFile.open(symbolFileName, std::ios::out);
+                if(symbolFile.fail()) {
+                        PRINT_COMPILER_ERROR("Failed to create symbol file.\n");
+                        return 1;
+                }
+        }
 
         
         std::vector<size_t> ifLocations;
@@ -3358,6 +3374,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         funcList.push_back(newFunc);
 
+                        if(createSymbolFile) { newFunc.writeToFile(symbolFile); }
+
                         if(!ignoreInstructionData) {
                                 ADD_NODE(FUNC_START);
                                 uint32_t* ID = (uint32_t*)nodeList[currentNode].access.data;
@@ -3398,6 +3416,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         EVAL_SYMBOL();
                                 }
 
+                                if(createSymbolFile) { structList.back().writeToFile(symbolFile); }
                                 PRINT_COMPILER("Finished definition of STRUCT [%s].\n", structList.back().name.c_str());
                         }
                         else {
@@ -3449,6 +3468,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         if(invalidDefine) continue;
 
                         PRINT_COMPILER("Defined GLOBAL [%s].\n", fileRead.c_str());
+                        if(createSymbolFile) { symbolFile << "VAR " << fileRead << '\n'; }
 
                         addGlobalDef(fileRead.c_str(), currentFile.c_str());
                         ++globalAlloc;
@@ -3483,6 +3503,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         newCst.evaluation = eval;
                         newCst.original_expression = original;
 
+                        if(createSymbolFile) { newCst.writeToFile(symbolFile); }
+
                         constevalList.push_back(newCst);
 
                         PRINT_COMPILER("Evaluated CONSTEVAL [%s] = %d.\n", name.c_str(), newCst.evaluation.value);
@@ -3506,6 +3528,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                                 return 1;
                                         }
                                         
+                                        if(createSymbolFile) { symbolFile << "ASSIGN " << structList[i].name << " " << fileRead << '\n'; }
                                         
                                         globalList[pos].isStruct = true;
                                         globalList[pos].structID = i;
@@ -3535,6 +3558,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 PRINT_COMPILER_ERROR("UNASSIGN instruction assignment must be a constant ptr_descriptor.\n");
                                 return 1;
                         }
+
+                        if(createSymbolFile) { symbolFile << "UNASSIGN " << fileRead << '\n'; }
 
                         globalList[pos].isStruct = false;
                         globalList[pos].structID = 0;
@@ -3582,6 +3607,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                                 addGlobalDef(globalAdd.c_str(), currentFile.c_str());
                                                 ++globalAlloc;
                                         }
+
+                                        if(createSymbolFile) { symbolFile << "FIXED " << structList[i].name << " " << fileRead << '\n'; }
                                         
                                         validStruct = true;
                                 }
@@ -3618,7 +3645,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         }
                         if(invalidDefine) continue;
  
-
+                        if(createSymbolFile) { symbolFile << "PRIVATE " << fileRead; }
                         PRINT_COMPILER("Defined PRIVATE GLOBAL [%s].\n", fileRead.c_str());
                         
 
@@ -3655,6 +3682,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         EVAL_SYMBOL(); // Substitution
                         newDef.value = fileRead;
 
+                        if(createSymbolFile) { newDef.writeToFile(symbolFile); }
 
                         constantList.push_back(newDef);
                         PRINT_COMPILER("New CONST Definition; n=%s sub=%s\n", newDef.constName.c_str(), newDef.value.c_str());
@@ -3664,6 +3692,9 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 if(fileRead == "UNDEF") {
                         EVAL_SYMBOL();
                         undefConstant(fileRead.c_str(), constantList);
+
+                        if(createSymbolFile) { symbolFile << "UNDEF " << fileRead << '\n'; }
+
                         continue;
                 }
 
@@ -3683,7 +3714,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 tempConst.constName = "#" + fileRead;
                                 tempConst.value = std::to_string(size);
 
-                                if(fileRead != "}") { constantList.push_back(tempConst); }
+                                if(fileRead != "}") { constantList.push_back(tempConst); tempConst.writeToFile(symbolFile); }
                                 else { break; }
 
                                 NOVERB_PRINT_COMPILER("\t%s / %zu,\n", fileRead.c_str(), size);
@@ -3723,6 +3754,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         }
                         newDef.macroData.pop_back(); // Remove the '}'
                         macroList.push_back(newDef);
+
+                        if(createSymbolFile) { newDef.writeToFile(symbolFile); }
 
                         NOVERB_PRINT_COMPILER("\n");
                         PRINT_COMPILER("Added MACRO [%s] to MACRO list.\n", macroList.back().macroName.c_str());
@@ -4244,6 +4277,11 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
         NOVERB_PRINT_COMPILER("\tSuccessfully compiled source file [%s].\n", inputFile);
         file.close();
 
+        if(createSymbolFile) { 
+                symbolFile << "\nEXIT";
+                symbolFile.close();
+        }
+
         if(!ignoreInstructionData) {
 
                 if(ifLocations.size() != endLocations.size()) {
@@ -4412,7 +4450,6 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 }
 
 
-
                 if(outputFile != NULL) {
                         if(buildSystemContext)
                                 return exportToFile(outputFile, &nodeList, buildSystemContext);
@@ -4460,10 +4497,23 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                 return 1;
         }
 
+        clean();
 
         std::string fileRead;
         bool operationComplete = false;
         PRINT_COMPILER("Building Script System [%s]: force=%u ignore=%u\n\n", stageConfigFile, forceBuild, ignoreInstructionData);
+
+        
+        // Add constant runtime globals.
+        addGlobalDef("null",            "predefined");
+        addGlobalDef("deltaTime",       "predefined");
+        addGlobalDef("mouse1",          "predefined");
+        addGlobalDef("mouse2",          "predefined");
+        addGlobalDef("mouse3",          "predefined");
+        addGlobalDef("r_poll1",         "predefined");
+        addGlobalDef("r_poll2",         "predefined");
+        addGlobalDef("r_poll3",         "predefined");
+        addGlobalDef("r_poll4",         "predefined");
 
         while(!operationComplete) {
 
@@ -4472,22 +4522,6 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                 file >> fileRead;
 
                 if(fileRead == "BUILD_SYSTEM") {
-                        globalList.clear();
-
-
-                        
-
-                        // Add constant runtime globals.
-                        addGlobalDef("null",            "predefined");
-                        addGlobalDef("deltaTime",       "predefined");
-                        addGlobalDef("mouse1",          "predefined");
-                        addGlobalDef("mouse2",          "predefined");
-                        addGlobalDef("mouse3",          "predefined");
-                        addGlobalDef("r_poll1",         "predefined");
-                        addGlobalDef("r_poll2",         "predefined");
-                        addGlobalDef("r_poll3",         "predefined");
-                        addGlobalDef("r_poll4",         "predefined");
-
 
                         {
                                 CONST_DEF blockwidth;
@@ -4546,13 +4580,13 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
                                         // Ignore output file of compilation; no instructions to write.
                                         if(ignoreInstructionData) {
-                                                if(compileSourceFile(fileRead.c_str(), NULL, true, execFlags, ignoreInstructionData)) {
+                                                if(compileSourceFile(fileRead.c_str(), NULL, true, execFlags, ignoreInstructionData, false)) {
                                                         PRINT_DEBUG_ERROR("Compiler failure in source file [%s]; aborting.\n", fileRead.c_str());
                                                         return 1;
                                                 }
                                         }
                                         else {
-                                                if(compileSourceFile(fileRead.c_str(), output.c_str(), true, execFlags, false)) {
+                                                if(compileSourceFile(fileRead.c_str(), output.c_str(), true, execFlags, false, false)) {
                                                         if(forceBuild) {
                                                                 PRINT_DEBUG_WARNING("Compiler failure in source file [%s]; forcing continue...\n", fileRead.c_str());
                                                         }
@@ -4571,6 +4605,44 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
 
                 } // if (BUILD_SYSTEM)
+
+                // Include a pre-built translation unit without any symbols. Note that the execution order is defined in the unit,
+                // not the build system.
+                if(fileRead == "INCLUDE") {
+                        READ_FILE();
+                        PRINT_COMPILER("Included unit [%s] into build.\n", fileRead.c_str());
+
+                        targetList->push_back(fileRead);
+                        continue;
+                }
+
+
+                if(fileRead == "MODULE") {
+                        READ_FILE();
+
+                        std::string mod = fileRead;
+                        std::string symbol = fileRead;
+
+                        auto ext = symbol.find_last_of('.');
+                        if(ext != std::string::npos)
+                                symbol.erase(symbol.begin()+ext, symbol.end());
+
+                        symbol += ".sym";
+
+                        PRINT_COMPILER("Importing module [%s]...\n", mod.c_str());
+
+
+                        if(compileSourceFile(symbol.c_str(), NULL, true, 1 << nthp::script::CompilerInstance::TriggerBits::T_NONE, true, false)) {
+                                PRINT_COMPILER_ERROR("Failed to import symbol data for module [%s].\n", symbol.c_str());
+                                return 1;
+                        }
+                        PRINT_COMPILER("Successfully imported symbols.\n");
+
+                        targetList->push_back(mod);
+                        PRINT_COMPILER("Included module unit [%s] into build.\n", mod.c_str());
+
+                        continue;
+                }
 
                 if(fileRead == "CONST") {
                         file >> fileRead;
@@ -4669,6 +4741,40 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
 
         return 0;
 
+}
+
+
+
+
+int nthp::script::CompilerInstance::buildModule(const char* source) {
+        clean();
+
+        std::string outputFile = source;
+        auto ext = outputFile.find_last_of('.');
+        
+        if(ext != std::string::npos)
+                outputFile.erase(outputFile.begin()+ext, outputFile.end());
+
+        outputFile += ".mod";
+
+        // Add constant runtime globals.
+        addGlobalDef("null",            "predefined");
+        addGlobalDef("deltaTime",       "predefined");
+        addGlobalDef("mouse1",          "predefined");
+        addGlobalDef("mouse2",          "predefined");
+        addGlobalDef("mouse3",          "predefined");
+        addGlobalDef("r_poll1",         "predefined");
+        addGlobalDef("r_poll2",         "predefined");
+        addGlobalDef("r_poll3",         "predefined");
+        addGlobalDef("r_poll4",         "predefined");
+
+
+        if(compileSourceFile(source, outputFile.c_str(), true, nthp::script::CompilerInstance::TriggerBits::T_MODULE, false, true)) {
+                PRINT_DEBUG_ERROR("Failed to build module [%s]; compiler failure.\n", source);
+                return 1;
+        }
+
+        return 0;
 }
 
 
