@@ -83,6 +83,7 @@ namespace ID {
                 PREV,\
                 INDEX,\
                 LAST,\
+                GET_BLOCKSIZE,\
                 SET_BLOCKLISTSIZE,\
                 ALLOC_TARGET,\
 		TEXTURE_ALLOC,\
@@ -246,6 +247,7 @@ namespace Size {
                 PREV = sizeof(ptrRef) + sizeof(uint8_t),
                 INDEX = sizeof(ptrRef) + sizeof(stdRef) + sizeof(uint8_t),
                 LAST = sizeof(ptrRef) + sizeof(uint8_t),
+                GET_BLOCKSIZE = sizeof(stdRef) + sizeof(ptrRef),
                 SET_BLOCKLISTSIZE = sizeof(stdRef),
                 ALLOC_TARGET = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
 

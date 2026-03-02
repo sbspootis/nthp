@@ -1,0 +1,7 @@
+/ STDGAME main unit. /
+
+CALL script/stdgame/definitions.b
+CALL script/stdgame/functions.thp
+
+
+EXIT

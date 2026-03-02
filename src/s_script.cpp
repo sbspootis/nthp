@@ -827,6 +827,18 @@ DEFINE_EXECUTION_BEHAVIOUR(LAST) {
         return 0;
 }
 
+
+DEFINE_EXECUTION_BEHAVIOUR(GET_BLOCKSIZE) {
+        stdRef block = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(block);
+        EVAL_PTRREF(output);
+
+        (*target_dsc) = nthp::intToFixed(data->blockData[nthp::script::parsePtrDescriptor(block.value).block].size);
+        return 0;
+}
+
 DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
         stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 

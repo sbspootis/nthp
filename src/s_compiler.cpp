@@ -511,8 +511,11 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                 PRINT_COMPILER("Custom offset of [%u] applied to CONSTEVAL stdref.\n", ref.offset);
                         }
 
-                        if(deref_ptr) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
-                        
+                        if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
+
+                        PRINT_COMPILER("Evaluated CONSTEVAL [%s]: Value = %llu, IR = %u\n", expression.c_str(), ref.value, PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE));
+
+                        if(globalRefIndex != NULL) { *globalRefIndex = 0; }
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
                         return ref;
                 }
@@ -1569,7 +1572,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
         *p = ptr;
 
         if(!PR_METADATA_GET(ptr, nthp::script::flagBits::IS_REFERENCE)) {
-                if(globalList[pos].isStruct) {
+                if(globalList[pos].isStruct && pos != 0) {
                         *structSize = structList[globalList[pos].structID].members.size();
                 }
                 else {
@@ -1603,7 +1606,7 @@ DEFINE_COMPILATION_BEHAVIOUR(PREV) {
         *p = ptr;
 
         if(!PR_METADATA_GET(ptr, nthp::script::flagBits::IS_REFERENCE)) {
-                if(globalList[pos].isStruct) {
+                if(globalList[pos].isStruct && pos != 0) {
                         *structSize = structList[globalList[pos].structID].members.size();
                 }
                 else {
@@ -1638,7 +1641,7 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
         stdRef* location = (stdRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
         uint8_t* offsetSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
 
-        if(globalList[pos].isStruct && (!globalList[pos].isFixed)) {
+        if((globalList[pos].isStruct && (!globalList[pos].isFixed)) && pos != 0) {
                 *offsetSize = structList[globalList[pos].structID].members.size();
         }
         else { *offsetSize = 1; }
@@ -1663,7 +1666,7 @@ DEFINE_COMPILATION_BEHAVIOUR(LAST) {
         ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
         uint8_t* offsetSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef));
 
-        if(globalList[pos].isStruct && (!globalList[pos].isFixed)) {
+        if((globalList[pos].isStruct && (!globalList[pos].isFixed)) && pos != 0) {
                 *offsetSize = structList[globalList[pos].structID].members.size();
         }
         else { *offsetSize = 1; }
@@ -1672,6 +1675,27 @@ DEFINE_COMPILATION_BEHAVIOUR(LAST) {
         *_target = target;
         PRINT_NODEDATA();
 
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(GET_BLOCKSIZE) {
+        ADD_NODE(GET_BLOCKSIZE);
+
+        EVAL_SYMBOL();
+        auto block = EVAL_PREF();
+        CHECK_REF(block);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _block = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_block = block;
+        *_output = output;
+
+        PRINT_NODEDATA();
         return 0;
 }
 
@@ -3505,7 +3529,19 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         if(createSymbolFile) { newCst.writeToFile(symbolFile); }
 
-                        constevalList.push_back(newCst);
+                        bool duplicateDef = false;
+                        for(size_t i = 0; i < constevalList.size(); ++i) {
+                                if(name == constevalList[i].name) {
+                                        PRINT_COMPILER("Redefining CONSTEVAL [%s]...\n", name.c_str());
+
+                                        constevalList[i].original_expression = original;
+                                        constevalList[i].evaluation = eval;
+
+                                        duplicateDef = true;
+                                }
+                        }
+
+                        if(!duplicateDef) constevalList.push_back(newCst);
 
                         PRINT_COMPILER("Evaluated CONSTEVAL [%s] = %d.\n", name.c_str(), newCst.evaluation.value);
                         continue;
@@ -3764,6 +3800,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 }
 
                 if(fileRead == "CALL") {
+                        EVAL_SYMBOL(); //filename 
+
                         callStackObj newFile;
                         newFile.file = currentFile;
                         newFile.pos = file.tellg();
@@ -3771,8 +3809,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         callStack.push_back(newFile);
                         PRINT_COMPILER("Added file [%s] to CallStack.\n", callStack.back().file.c_str());
-
-                        EVAL_SYMBOL(); //filename 
+                        
                         file.close();
 
                         PRINT_COMPILER("Beginning CALL Operation to file [%s]...\n", fileRead.c_str());
@@ -4175,6 +4212,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(PREV);
                 CHECK_COMP(INDEX);
                 CHECK_COMP(LAST);
+                CHECK_COMP(GET_BLOCKSIZE);
                 CHECK_COMP(SET_BLOCKLISTSIZE);
                 CHECK_COMP(ALLOC_TARGET);
 

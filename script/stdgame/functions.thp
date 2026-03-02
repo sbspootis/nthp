@@ -1,0 +1,91 @@
+/ STDGAME standard toolset. /
+
+/ TEXTURES AND ANIMATIONS /
+
+/ Builds a frameset for any given texture and frame dimensions. Generates along X. /
+/ TEXTURE | FRAME_DIMENSIONS (xywh) | NUMBER OF FRAMES | OUTPUT /
+MACRO f_createAnimationX {
+        SET &argReg0 #ar0
+        SET &argReg1 #ar1
+        SET &argReg2 #ar2
+        SET &argReg3 #ar3
+        SET &argReg4 #ar4
+        SET &argReg5 #ar5
+        SET &argReg6 #ar6
+
+        FUNC_CALL stdgame_createAnimationX
+}
+FUNC stdgame_createAnimationX {
+
+        CONSTEVAL texture       &argReg0
+        CONSTEVAL x             &argReg1
+        CONSTEVAL y             &argReg2
+        CONSTEVAL w             &argReg3
+        CONSTEVAL h             &argReg4
+        CONSTEVAL frameCount    &argReg5
+        CONSTEVAL output        &argReg6
+
+        CONSTEVAL counter       &mathReg0
+        CONSTEVAL newAlignment  &mathReg1
+
+        FRAME_ALLOC $frameCount $output
+
+        SET &counter 0
+
+        LABEL 0
+
+                MUL $counter $w &newAlignment
+                INDEX &output $counter
+
+                FRAME_SET $output $newAlignment 0 $w $h $texture
+
+
+                INC &counter
+                IF $counter LST $frameCount
+                        GOTO 0
+                END
+
+}
+
+
+
+
+
+
+/ ALLOCATION FUNCTIONS /
+
+/ TARGET BLOCK | NEW SIZE | OUTPUT /
+MACRO f_reallocBlock {
+        SET &argReg0 #ar0
+        SET &argReg1 #ar1
+        SET &argReg2 #ar2
+        FUNC_CALL stdgame_reallocBlock
+}
+
+FUNC stdgame_reallocBlock {
+
+        CONSTEVAL targetBlock   &argReg0
+        CONSTEVAL size          &argReg1
+        CONSTEVAL output        &argReg2
+
+        CONSTEVAL p_temp        &gpReg0
+        CONSTEVAL oldSize       &gpReg1
+
+        INDEX &targetBlock 0
+
+        ALLOC $size &p_temp
+        GET_BLOCKSIZE $targetBlock &oldSize
+
+        IF $oldSize GRTE $size
+                COPY $targetBlock $size $p_temp
+        END
+
+}
+
+
+
+
+
+
+
+EXIT
