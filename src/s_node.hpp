@@ -146,6 +146,7 @@ namespace script {
                 IS_PTR,          
                 IS_NODE_STRING_PTR,
                 IS_STRING,
+                IS_OFFSET_DYNAMIC,
                 IS_VALID
         } flagBits;
 

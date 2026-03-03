@@ -35,15 +35,23 @@ using namespace nthp::script::instructions;
                                                                         size_t& currentMacroPosition,\
                                                                         size_t& targetMacro,\
                                                                         bool& evaluateMacro,\
-                                                                        const bool& buildSystemContext\
+                                                                        const bool& buildSystemContext,\
+                                                                        uint8_t dynamicOffsetCounter = 0\
                                                                         )
 
-#define currentNode nodeList.size() - (decltype(nodeList.size()))1
+
+const inline size_t __getCurrentNode(std::vector<nthp::script::Node>& nodeList) {
+        if(nodeList.back().access.ID == nthp::script::instructions::ID::DATA) { return nodeList.size() - 2; }
+        else { return nodeList.size() - 1; }
+}
+// Returns the position of the current node. 99% of the time, it's the last (or vector.back()), unless a data
+// node is at the back, then the one before it is returned.
+#define currentNode __getCurrentNode(nodeList)
 
 // Adds node with corresponding instruction ID and allocates node memory.
 #define ADD_NODE(instruction) nodeList.push_back(nthp::script::Node(GET_INSTRUCTION_ID(instruction), GET_INSTRUCTION_SIZE(instruction)));\
-        if(GET_INSTRUCTION_SIZE(instruction) > 0) nodeList[currentNode].access.data = (char*)malloc(GET_INSTRUCTION_SIZE(instruction));\
-        else nodeList[currentNode].access.data = nullptr
+        if(GET_INSTRUCTION_SIZE(instruction) > 0) nodeList.back().access.data = (char*)malloc(GET_INSTRUCTION_SIZE(instruction));\
+        else nodeList.back().access.data = nullptr
 
 #define VECT_END(vect) vect.size() - 1
 
@@ -297,7 +305,8 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
 // Substitues a VAR reference or parses numeral references (for compatibility).
 // Returning REF without the IS_VALID bit set assumes a failure.
-nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF>& constevalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext) {
+// dynamicOffsetCounter should be the optional argument 'dynamicOffsetCounter' defined in every COMPILATION_BEHAVIOUR function. A value of -1 means dynamic offsets are disabled.
+nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::Node>& nodeList, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF>& constevalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext, uint8_t* dynamicOffsetCounter, bool suppressFailure) {
         stdRef ref;
         ref.metadata = 0;
         ref.value = 0;
@@ -307,6 +316,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         bool deref_ptr = false;
         bool get_size = false;
         bool is_fixed_ref = false;
+        bool dynamic_offset = false;
 
         // Binary write; constant value, not converted to fixed point.
         if(expression[0] == '?') {
@@ -472,16 +482,69 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         std::string structAccess;
         bool isStructAccess = false;
 
+        // I've realized I'm being pretty sparse with my comments, and working on dynamic offsets has me scratching my head as to how everything works.
+        // I'm going to try writing more, so I can explain to my future self why something is the way it is.
 
+
+        // Separates the access from the main variable. (variable.access).
         if(PR_METADATA_GET(ref, nthp::script::IS_REFERENCE)) {
-                auto accessCharacter = expression.find('.');
+                auto accessCharacter = expression.find_first_of('.');
                 if(accessCharacter != std::string::npos) {
                         structAccess = expression;
 
                         structAccess.erase(0, accessCharacter + 1);
                         expression.erase(accessCharacter, expression.size() - 1);
-                        isStructAccess = true;
+                        
+                        // Check if the access is another reference; if so, write the reference to an appended data node and set the IS_OFFSET_DYNAMIC flag for the current target reference.
+                        // Prepare a data node if none is present. (a dynamicOffset value of 0 means there is no node present; NULL means dynamic offsets are disabled).
+                        if(dynamicOffsetCounter != NULL) {
+                                auto checkRef = EvaluateReference(structAccess, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, NULL, buildSystemContext, dynamicOffsetCounter, true);
+                                
+                                // An invalid reference is not fatal here; If the reference can't be evaluated, it pushes the evaluation down to the substitution below,
+                                // assuming the reference is a struct memeber. IsStructAccess is the flag that enables it. Make sure it's set to false if the offset
+                                // is evaluated here.
+                                if(PR_METADATA_GET(checkRef, nthp::script::flagBits::IS_REFERENCE) && PR_METADATA_GET(checkRef, nthp::script::flagBits::IS_VALID)) {
+                                        if((*dynamicOffsetCounter) > 0) {
 
+                                                // Use +1 here instead of an increment; Allows for a failure without incorrectly increasing the counter.
+                                                auto temp = (char*)realloc(nodeList.back().access.data, (sizeof(stdRef) * ((*dynamicOffsetCounter) + 1)));
+                                                if(temp == NULL) { PRINT_COMPILER_ERROR("Failed to resize data node for dynamic offset @ [%zu].\n", currentNode); return ref; }
+
+                                                nodeList.back().access.data = temp;
+
+                                                dynamic_offset = true;
+                                                stdRef* output = (stdRef*)(nodeList.back().access.data + (sizeof(stdRef) * (*dynamicOffsetCounter)));
+                                                *output = checkRef;
+                                                nodeList.back().access.size = (sizeof(stdRef) * (*dynamicOffsetCounter + 1));
+                                                ref.offset = (*dynamicOffsetCounter);
+
+                                                ++(*dynamicOffsetCounter);
+                                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_OFFSET_DYNAMIC);
+
+                                        }
+                                        else {
+                                                ADD_NODE(DATA); // Add a new data node. Now, 'currentNode' will point to whatever instruction this evalutation is targeting, not this data node.
+                                                nodeList.back().access.data = (char*)malloc(sizeof(stdRef));
+                                                if(nodeList.back().access.data == NULL) { PRINT_COMPILER_ERROR("Failed to resize data node for dynamic offset @ [%zu].\n", currentNode); return ref; }
+
+                                                stdRef* output = (stdRef*)(nodeList.back().access.data);
+                                                dynamic_offset = true;
+
+                                                *output = checkRef;
+                                                nodeList.back().access.size = (sizeof(stdRef));
+                                                ref.offset = (*dynamicOffsetCounter);
+
+                                                ++(*dynamicOffsetCounter);
+                                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_OFFSET_DYNAMIC);
+                                        }
+                                }
+                                else { // IS_REFERENCE is false or IS_VALID is false
+                                        isStructAccess = true;
+                                }
+                        }
+                        else { // dynamicOffsetCounter == NULL
+                                isStructAccess = true;
+                        }
                 }
         }
 
@@ -490,9 +553,10 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         ref.value = constevalList[i].evaluation.value;
                         
                         // Cannot offset by a structure type, because structures cannot be assigned to constevals.
+                        // Cannot be offset by dynamic reference.
                         if(isStructAccess) {
                                 nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList);
-                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
+                                auto offsetExpression = EvaluateReference(structAccess, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext, NULL, false);
                                 if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
                                 if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
                                         PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
@@ -524,16 +588,19 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         // Evaluate Var.
         // If no VARNAME is referenced, assumes numeral reference type (instead of $VARNAME or >VARNAME, $2 or >2), or constant. Throws
         // Invalid argument if otherwise.
+        
+        // The above comments are almost 2 years old. The 'numeral reference type' specified predates the variable system; a relic of THP, this project's progenitor.
+        // In theory they should still work, but I don't feel like testing it. Don't want to delete this artifact comment.
         if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) {
                 bool validReference = false;
 
                 for(size_t i = 0; i < globalList.size(); ++i) {
                         if(expression == globalList[i].varName) {
-                                if(globalRefIndex != NULL) { *globalRefIndex = i; }
-
                                 if(globalList[i].isPrivate && (globalList[i].definedIn != currentFile)) {
                                         continue;
                                 }
+                                if(globalRefIndex != NULL) { *globalRefIndex = i; }
+
                                 if(isStructAccess) {
                                         if(globalList[i].isStruct) {
                                         
@@ -564,7 +631,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                                 if(structAccess[0] == '#') { nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList); }
                                                 
                                                 // I use evalRef here because it's safe and has all the error-checking and handling built in. Much easier than try-ing here.
-                                                auto offsetExpression = EvaluateReference(structAccess, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext);
+                                                auto offsetExpression = EvaluateReference(structAccess, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext, NULL, false);
                                                 if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
                                                 if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
                                                         PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
@@ -620,7 +687,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
         }
         catch(std::invalid_argument) {
-                PRINT_COMPILER_ERROR("Caught; Unable to evaluate reference [%s]; Invalid Argument.\n", expression.c_str());
+                if(!suppressFailure) PRINT_COMPILER_ERROR("Caught; Unable to evaluate reference [%s]; Invalid Argument.\n", expression.c_str());
                 return ref;
         }
  
@@ -650,7 +717,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 // Generic conviencence macro to evaluate the next symbol in the stream. Automatically pulls the next
 // symbol from a macro or source file into 'fileRead'
 #define EVAL_SYMBOL() ____S_EVAL(file, fileRead, constantList, macroList, currentMacroPosition, targetMacro, evaluateMacro)
-#define EVAL_PREF() EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, NULL, buildSystemContext)
+#define EVAL_PREF() EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, NULL, buildSystemContext, &dynamicOffsetCounter, false)
 
 #define CHECK_REF(ref) if(!PR_METADATA_GET(ref, nthp::script::flagBits::IS_VALID)) return 1 
 
@@ -1484,7 +1551,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEW) {
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto storage_ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto storage_ptr = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, &dynamicOffsetCounter, false);
                         CHECK_REF(storage_ptr);
 
                         // Auto-assign the structure.
@@ -1563,7 +1630,7 @@ DEFINE_COMPILATION_BEHAVIOUR(NEXT) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, &dynamicOffsetCounter, false);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -1597,7 +1664,7 @@ DEFINE_COMPILATION_BEHAVIOUR(PREV) {
         size_t pos = 0;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, &dynamicOffsetCounter, false);
         CHECK_REF(ptr);
 
         ptrRef* p = (ptrRef*)(nodeList[currentNode].access.data);
@@ -1630,7 +1697,7 @@ DEFINE_COMPILATION_BEHAVIOUR(INDEX) {
         size_t pos;
 
         EVAL_SYMBOL();
-        auto ptr = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto ptr = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, &dynamicOffsetCounter, false);
         CHECK_REF(ptr);
 
         EVAL_SYMBOL();
@@ -1660,7 +1727,7 @@ DEFINE_COMPILATION_BEHAVIOUR(LAST) {
         size_t pos;
 
         EVAL_SYMBOL();
-        auto target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+        auto target = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, &dynamicOffsetCounter, false);
         CHECK_REF(target);
 
         ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
@@ -3505,7 +3572,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                         EVAL_SYMBOL();
                         std::string original = fileRead;
-                        auto eval = EVAL_PREF();
+                        auto eval = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, NULL, buildSystemContext, NULL, false);
 
                         if(PR_METADATA_GET(eval, nthp::script::flagBits::IS_REFERENCE)) {
                                 PRINT_COMPILER_ERROR("CONSTEVAL expression cannot be a reference; [%s] references writable memory.\n", original.c_str());
@@ -3556,7 +3623,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                         size_t pos = 0;
 
                                         EVAL_SYMBOL();
-                                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+                                        auto eval_target = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, NULL, false);
                                         CHECK_REF(eval_target);
 
                                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {
@@ -3587,7 +3654,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         size_t pos = 0;
 
                         EVAL_SYMBOL();
-                        auto eval_target = EvaluateReference(fileRead, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext);
+                        auto eval_target = EvaluateReference(fileRead, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, &pos, buildSystemContext, NULL, false);
                         CHECK_REF(eval_target);
 
                         if(PR_METADATA_GET(eval_target, nthp::script::flagBits::IS_REFERENCE)) {

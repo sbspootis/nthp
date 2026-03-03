@@ -22,22 +22,23 @@ LABEL 1
         IF $currentIndex GRT 3
                 SET &currentIndex 0
         END
+        
 
 
         IF $a_panUp
-                CORE_MOVECAMERA 0 -1
+                DEC $testBlock.$counter2
         END
 
         IF $a_panDown 
-                CORE_MOVECAMERA 0 1
+                INC $testBlock.$counter2
         END
 
         IF $a_panLeft
-                CORE_MOVECAMERA -1 0
+                DEC $testBlock.$counter
         END
 
         IF $a_panRight 
-                CORE_MOVECAMERA 1 0
+                INC $testBlock.$counter
         END
 
         IF $a_enter
@@ -53,6 +54,8 @@ LABEL 1
                 RAND 50 100 &randOutput
                 PRINT $randOutput
         END
+
+        CORE_SETCAMERAPOSITION *testBlock.$counter *testBlock.$counter2
 
         INDEX &ep_entities $currentIndex
 

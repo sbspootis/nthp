@@ -168,11 +168,19 @@ ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
 
-VAR mathTest
-MOD 100 21 &mathTest
+VAR testBlock
+ALLOC 10 &testBlock
 
+VAR counter
+SET &counter 4
 
+VAR counter2
+SET &counter2 5
 
+SET $testBlock.$counter 200.33
+SET $testBlock.$counter2 186.4
+
+CORE_SETCAMERAPOSITION *testBlock.$counter *testBlock.$counter2
 
 
 EXIT

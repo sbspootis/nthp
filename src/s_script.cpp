@@ -21,6 +21,16 @@ static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet*
                 #endif
                         ref.value = data->blockData[ptr.block].data[ptr.address];
                 }
+
+
+                if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_OFFSET_DYNAMIC)) {
+                        stdRef offsetEval = *(stdRef*)(data->nodeSet[data->currentNode + 1].access.data + (sizeof(stdRef) * ref.offset));
+                        ____eval_std(offsetEval, data);
+
+                        ref.offset = nthp::fixedToInt(offsetEval.value);
+                }
+
+
                 // This is okay because the compiler simplifies ptr_descriptor call dereferences.
                 // Technically *&var is syntaxically correct and will evaluate correctly, but will take much longer.
                 // The compiler therefore simplifies constant ptr_descriptor dereferences to a simple reference '$'.
