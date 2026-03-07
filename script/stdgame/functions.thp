@@ -35,10 +35,8 @@ FUNC stdgame_createAnimationX {
         LABEL 0
 
                 MUL $counter $w &newAlignment
-                INDEX &output $counter
 
-                FRAME_SET $output $newAlignment 0 $w $h $texture
-
+                FRAME_SET $output.$counter $newAlignment 0 $w $h $texture
 
                 INC &counter
                 IF $counter LST $frameCount
@@ -71,15 +69,19 @@ FUNC stdgame_reallocBlock {
         CONSTEVAL p_temp        &gpReg0
         CONSTEVAL oldSize       &gpReg1
 
-        INDEX &targetBlock 0
-
         ALLOC $size &p_temp
+        
         GET_BLOCKSIZE $targetBlock &oldSize
 
         IF $oldSize GRTE $size
                 COPY $targetBlock $size $p_temp
+        ELSE
+                COPY $targetBlock $oldSize $p_temp
         END
 
+        SET $output $p_temp 
+
+        FREE $targetBlock
 }
 
 

@@ -430,7 +430,7 @@ L_BEGIN:
                                         PM_PRINT_ERROR("Failed to build module [%s].\n", args[1].c_str());
                                 }
                                 else {
-                                        PM_PRINT("Module build successfully; output=[%s] [%s].\n", mod.c_str(), sym.c_str());
+                                        PM_PRINT("Module build successful; output=[%s] [%s].\n", mod.c_str(), sym.c_str());
                                 }
 
                                 continue;

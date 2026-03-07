@@ -38,6 +38,8 @@ void PRINT_DEBUG(const char* format, ...) {
 
 
 	va_end(ap);
+
+        fflush(NTHP_debug_output);
 }
 
 void PRINT_DEBUG_ERROR(const char* format, ...) {
@@ -60,6 +62,8 @@ void PRINT_DEBUG_ERROR(const char* format, ...) {
 #endif
 
 	va_end(ap);
+
+        fflush(NTHP_debug_output);
 }
 
 void PRINT_DEBUG_WARNING(const char* format, ...) {
@@ -83,6 +87,7 @@ void PRINT_DEBUG_WARNING(const char* format, ...) {
 #endif
 
 	va_end(ap);
+        fflush(NTHP_debug_output);
 }
 
 

@@ -170,6 +170,13 @@ ACTION_BIND #ai_panRight &a_panRight d
 
 VAR testBlock
 ALLOC 10 &testBlock
+SET $testBlock.0 100
+SET $testBlock.1 200
+SET $testBlock.2 300
+SET $testBlock.3 400
+SET $testBlock.4 500
+
+@f_reallocBlock ( $testBlock 15 &testBlock )
 
 VAR counter
 SET &counter 4

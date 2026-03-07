@@ -107,6 +107,8 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
 
                                 
                                         if((*callID) == (*startID)) {
+                                                PRINT_COMPILER("Linker Matched FUNC_CALL @ [%u] to FUNC @ [%u]; ID=%u\n", i, j, *callID);
+
                                                 // Matched! Set the absolute position (j) in callID!
                                                 // The -1 allows the FUNC_START node to be executed, which sets up
                                                 // the new header location.

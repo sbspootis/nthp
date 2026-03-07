@@ -7,6 +7,8 @@ MACRO init_flags {
         #win_x  #win_y  #win_x  #win_y  0       0       0       0
 }
 
+MODULE script/stdgame/stdgame.mod
+
 BUILD_SYSTEM
         script/src_vt/init.thp  T_INIT
         script/src_vt/core.thp  T_TICK

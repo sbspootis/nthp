@@ -74,6 +74,7 @@ void PRINT_COMPILER(const char* format, ...) {
 
 
 	va_end(ap);
+        fflush(NTHP_debug_output);
 }
 
 void PRINT_COMPILER_ERROR(const char* format, ...) {
@@ -96,6 +97,7 @@ void PRINT_COMPILER_ERROR(const char* format, ...) {
 #endif
 
 	va_end(ap);
+        fflush(NTHP_debug_output);
 }
 
 void PRINT_COMPILER_WARNING(const char* format, ...) {
@@ -118,6 +120,7 @@ void PRINT_COMPILER_WARNING(const char* format, ...) {
 #endif
 
 	va_end(ap);
+        fflush(NTHP_debug_output);
 }
 
 void PRINT_COMPILER_DEPEND_ERROR(const char* format, ...) {
@@ -140,6 +143,7 @@ void PRINT_COMPILER_DEPEND_ERROR(const char* format, ...) {
 #endif
 
 	va_end(ap);
+        fflush(NTHP_debug_output);
 }
 
 #endif
@@ -4717,7 +4721,7 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                         READ_FILE();
                         PRINT_COMPILER("Included unit [%s] into build.\n", fileRead.c_str());
 
-                        targetList->push_back(fileRead);
+                        if(targetList != NULL) targetList->push_back(fileRead);
                         continue;
                 }
 
@@ -4743,8 +4747,10 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                         }
                         PRINT_COMPILER("Successfully imported symbols.\n");
 
-                        targetList->push_back(mod);
-                        PRINT_COMPILER("Included module unit [%s] into build.\n", mod.c_str());
+                        if(targetList != NULL ) {
+                                targetList->push_back(mod);
+                                PRINT_COMPILER("Included module unit [%s] into build.\n", mod.c_str());
+                        }
 
                         continue;
                 }
@@ -4874,7 +4880,7 @@ int nthp::script::CompilerInstance::buildModule(const char* source) {
         addGlobalDef("r_poll4",         "predefined");
 
 
-        if(compileSourceFile(source, outputFile.c_str(), true, nthp::script::CompilerInstance::TriggerBits::T_MODULE, false, true)) {
+        if(compileSourceFile(source, outputFile.c_str(), true, 1 << nthp::script::CompilerInstance::TriggerBits::T_MODULE, false, true)) {
                 PRINT_DEBUG_ERROR("Failed to build module [%s]; compiler failure.\n", source);
                 return 1;
         }
