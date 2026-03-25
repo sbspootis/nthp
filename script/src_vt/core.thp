@@ -4,7 +4,16 @@ SET &currentIndex 0
 
 PRIVATE randOutput
 
+CONSTEVAL cam_speed 0.3
+CONSTEVAL camCalc       &gpReg0
+CONSTEVAL fps           &gpReg1
+
+SET &camCalc 0
+
+SET &fps 60
+
 LABEL 1
+
 
         IF $a_left
                 IF $currentIndex NOT 0
@@ -23,48 +32,39 @@ LABEL 1
                 SET &currentIndex 0
         END
         
+        IF $a_panLeft
+                CORE_SETCAMERAPOSITION 0 0
+                SET &a_panLeft 0
+        END
+
 
 
         IF $a_panUp
-                DEC $testBlock.$counter2
+                ADD $fps 30 &fps
+                SET &a_panUp 0
         END
 
-        IF $a_panDown 
-                INC $testBlock.$counter2
+        IF $a_panDown
+                SUB $fps 30 &fps
+                SET &a_panDown 0
         END
 
-        IF $a_panLeft
-                DEC $testBlock.$counter
-        END
+        CORE_SETMAXFPS $fps
 
-        IF $a_panRight 
-                INC $testBlock.$counter
-        END
+        PRINT $deltaTime
+        MUL $deltaTime cam_speed &camCalc
+        CORE_MOVECAMERA -$camCalc 0
 
-        IF $a_enter
-                SOUND_PLAY 0
-                SET &a_enter 0
-        END
 
-        IF $a_halt
-                SOUND_STOP 0
-        END
-
-        IF $mouse1
-                RAND 50 100 &randOutput
-                PRINT $randOutput
-        END
-
-        CORE_SETCAMERAPOSITION *testBlock.$counter *testBlock.$counter2
+        CORE_MOVECAMERA $mathReg0 $mathReg1
+        SET &mathReg0 0
+        SET &mathReg1 0
 
         INDEX &ep_entities $currentIndex
 
 
         CORE_CLEAR
                 CORE_QRENDER $ep_entities
-                CORE_SP_QRENDER $sp_mainHud
-                CORE_ABS_QRENDER $ep_statusBars.#ei_health
-                CORE_ABS_QRENDER $ep_statusBars.#ei_stamina
         CORE_DISPLAY
 
 

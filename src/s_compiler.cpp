@@ -580,6 +580,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         }
 
                         if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
+                        if((!PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) && PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) { ref.value = -ref.value; }
 
                         PRINT_COMPILER("Evaluated CONSTEVAL [%s]: Value = %llu, IR = %u\n", expression.c_str(), ref.value, PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE));
 

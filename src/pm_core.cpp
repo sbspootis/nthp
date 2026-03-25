@@ -31,9 +31,12 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
         std::mutex g_access;
 
         { // The entire engine debug context.
-                auto frameStart = SDL_GetTicks();
+                std::chrono::steady_clock tickTimer;
+                auto frameStart = tickTimer.now();
+                std::chrono::microseconds frameTime;
+                nthp::deltaTime = 1;
 
-
+                
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {
                         if(mainRuntime.importExecutable(target.c_str())) return 1;
@@ -67,7 +70,7 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                         g_access.unlock();
 
                         while((nthp::core.isRunning()) && debuggingActiveProcess) {
-                                frameStart = SDL_GetTicks();
+                                frameStart = tickTimer.now();
                                 
                                 mainRuntime.handleEvents();
 
@@ -89,11 +92,11 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                                         return 1;
                                 }
 
-                                deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
-                        
+                                frameTime = std::chrono::duration_cast<std::chrono::microseconds>(tickTimer.now() - frameStart);
+                                nthp::deltaTime =  nthp::f_fixedProduct(nthp::deltaTime + nthp::f_fixedProduct(nthp::intToFixed(frameTime.count()), (nthp::doubleToFixed(0.001)-1)), nthp::doubleToFixed(0.5));
                                 if(nthp::deltaTime < nthp::frameDelay) {
-                                        SDL_Delay(nthp::fixedToInt(nthp::frameDelay - nthp::deltaTime));
-                                        nthp::deltaTime = nthp::getFixedInteger(nthp::frameDelay);
+                                        std::this_thread::sleep_for(frameDelayMicroSecond - frameTime);
+                                        nthp::deltaTime = nthp::frameDelay;
                                 }
                                 
                                 g_access.lock();

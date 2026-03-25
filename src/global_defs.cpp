@@ -13,6 +13,7 @@
 
 nthp::fixed_t nthp::deltaTime = 0;
 nthp::fixed_t nthp::frameDelay = 0;
+std::chrono::microseconds nthp::frameDelayMicroSecond;
 
 nthp::vectFixed nthp::mousePosition;
 

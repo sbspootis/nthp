@@ -131,12 +131,17 @@ namespace nthp {
 
         // The maximum time a frame can take in milliseconds. Set to -1 to disable.
         extern fixed_t frameDelay;
+        extern std::chrono::microseconds frameDelayMicroSecond;
 
         // The mouse's current WorldPosition (not pixel position, be careful) relative to the active window
         extern vectFixed mousePosition;
 
         // Sets the max framerate in FPS to nthp::frameDelay
-        inline void setMaxFPS(const FIXED_TYPE fps) { nthp::frameDelay = nthp::f_fixedQuotient(nthp::intToFixed(1000), nthp::intToFixed(fps)); }
+        inline void setMaxFPS(const FIXED_TYPE fps) {
+                if(!fps) { nthp::frameDelay = nthp::intToFixed(-1); return; }
+                nthp::frameDelay = nthp::f_fixedQuotient(nthp::intToFixed(1000), nthp::intToFixed(fps));
+                nthp::frameDelayMicroSecond = std::chrono::microseconds(nthp::fixedToInt(nthp::f_fixedProduct(nthp::frameDelay, nthp::intToFixed(1000))));
+        }
 
 
 

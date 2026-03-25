@@ -14,21 +14,29 @@
 nthp::EngineCore nthp::core;
 nthp::script::Runtime mainRuntime;
 
+
+
+
+
+
+
+
+
+
 int nthp::runtimeBehaviour(int argv, char** argc) {
         // The DEBUG_INIT is called at the start of main, and DEBUG_CLOSE
         // is called after the destruction of the main core.
 
         
 
-
 #ifdef DEBUG
         NTHP_GEN_DEBUG_INIT(stdout);
        //NTHP_GEN_DEBUG_INIT(fopen("debug.log", "w+"));
 #endif
         { // The entire engine debug context.
-               
-                auto frameStart = SDL_GetTicks();
-
+                std::chrono::steady_clock tickTimer;
+                std::chrono::microseconds frameTime;
+                auto frameStart = tickTimer.now();
 
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {
@@ -39,7 +47,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
                         
                         while(nthp::core.isRunning()) {
-                                frameStart = SDL_GetTicks();
+                                frameStart = tickTimer.now();
 
                                 mainRuntime.handleEvents();
 
@@ -47,10 +55,11 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                                 mainRuntime.execTick();
 
 
-                                nthp::deltaTime = nthp::intToFixed(SDL_GetTicks() - frameStart);
+                                frameTime = std::chrono::duration_cast<std::chrono::microseconds>(tickTimer.now() - frameStart);
+                                nthp::deltaTime =  nthp::f_fixedProduct(nthp::deltaTime + nthp::f_fixedProduct(nthp::intToFixed(frameTime.count()), (nthp::doubleToFixed(0.001)-1)), nthp::doubleToFixed(0.5));
                                 if(nthp::deltaTime < nthp::frameDelay) {
-                                        SDL_Delay(nthp::fixedToInt(nthp::frameDelay - nthp::deltaTime));
-                                        nthp::deltaTime = nthp::getFixedInteger(nthp::frameDelay);
+                                        std::this_thread::sleep_for(frameDelayMicroSecond - frameTime);
+                                        nthp::deltaTime = nthp::frameDelay;
                                 }
                                 mainRuntime.data.blockData[0].data[nthp::script::predefined_globals::DELTATIME_GLOBAL_INDEX] = nthp::deltaTime;
                         }
