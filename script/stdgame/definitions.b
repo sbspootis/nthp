@@ -13,6 +13,8 @@ VAR gpReg0
 VAR gpReg1
 VAR gpReg2
 
+CONSTEVAL pi 3.14159265
+
 STRUCT obj {
         pos_x           / world position /
         pos_y           
@@ -23,6 +25,11 @@ STRUCT obj {
         flags           / Defined by user /
 }
 
+
+STRUCT vector {
+        x
+        y
+}
 
 
 

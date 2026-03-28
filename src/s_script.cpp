@@ -339,6 +339,22 @@ DEFINE_EXECUTION_BEHAVIOUR(SQRT) {
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(POW) {
+        stdRef base = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef exponent = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        ptrRef output = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        EVAL_STDREF(base);
+        EVAL_STDREF(exponent);
+        EVAL_PTRREF(output);
+
+        nthp::script::stdVarWidth math = base.value;
+        for(int i = 1; i < nthp::fixedToInt(exponent.value); ++i) { math = nthp::f_fixedProduct(math, base.value); }
+        
+        (*target_dsc) = math;
+        return 0;
+}
+
 DEFINE_EXECUTION_BEHAVIOUR(ABS) {
         stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));

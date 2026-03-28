@@ -4,7 +4,7 @@
 
 / Builds a frameset for any given texture and frame dimensions. Generates along X. /
 / TEXTURE | FRAME_DIMENSIONS (xywh) | NUMBER OF FRAMES | OUTPUT /
-MACRO f_createAnimationX {
+MACRO gamef_createAnimationX {
         SET &argReg0 #ar0
         SET &argReg1 #ar1
         SET &argReg2 #ar2
@@ -53,7 +53,7 @@ FUNC stdgame_createAnimationX {
 / ALLOCATION FUNCTIONS /
 
 / TARGET BLOCK | NEW SIZE | OUTPUT /
-MACRO f_reallocBlock {
+MACRO gamef_reallocBlock {
         SET &argReg0 #ar0
         SET &argReg1 #ar1
         SET &argReg2 #ar2
@@ -84,9 +84,67 @@ FUNC stdgame_reallocBlock {
         FREE $targetBlock
 }
 
+/       MAGNITUDE     |       DIRECTION       |         OUTPUT  /
+MACRO gamef_getNormalVector {
+        SET &argReg0 #ar0
+        SET &argReg1 #ar1
+        SET &argReg2 #ar2
+        FUNC_CALL stdgame_getNormalVector
+}
 
 
+FUNC stdgame_getNormalVector {
+        CONSTEVAL magnitude     &argReg0
+        CONSTEVAL angle         &argReg1
+        CONSTEVAL output        &argReg2
 
+        CONSTEVAL y_angle       &gpReg0
+        CONSTEVAL x_angle       &gpReg1
+
+        ASSIGN vector &argReg2
+
+        MUL pi $angle &mathReg0
+        DIV $mathReg0 180 &mathReg0
+
+
+        SIN $mathReg0 &y_angle
+        MUL $y_angle -$magnitude $argReg2.y      / Negate the magnitude because up is actually down /
+        
+        COS $mathReg0 &x_angle
+        MUL $x_angle $magnitude $argReg2.x
+
+        UNASSIGN &argReg2
+}
+
+
+/       VECTOR OBJECT   |       OUTPUT          /
+MACRO gamef_getVectorAngle {
+        SET &argReg0 #ar0
+        SET &argReg1 #ar1
+
+        FUNC_CALL stdgame_getVectorAngle
+}
+
+
+FUNC stdgame_getVectorAngle {
+        CONSTEVAL vectorObject  &argReg0
+        CONSTEVAL output        &argReg1
+        PRINT $argReg1
+        
+        CONSTEVAL initital_angle &mathReg0
+        CONSTEVAL calculatedAngle &mathReg1
+
+        ASSIGN vector &argReg0
+        DIV -*vectorObject.y *vectorObject.x &initital_angle
+        ATAN $initital_angle &calculatedAngle
+        PRINT $calculatedAngle
+
+        MUL $calculatedAngle 180 &calculatedAngle
+        DIV $calculatedAngle pi &calculatedAngle
+
+        SET *argReg1 $calculatedAngle
+        UNASSIGN &argReg0
+}
 
 
 

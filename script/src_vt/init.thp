@@ -125,6 +125,17 @@ ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
 
+PRIVATE coolVector
+NEW vector 1 &coolVector
+@gamef_getNormalVector ( 6 108 $coolVector )
+
+PRIVATE angle
+
+@gamef_getVectorAngle ( $coolVector &angle )
+
+
+PRIVATE powerTest
+POW 2 8 &powerTest
 
 
 EXIT

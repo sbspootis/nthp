@@ -51,7 +51,6 @@ LABEL 1
 
         CORE_SETMAXFPS $fps
 
-        PRINT $deltaTime
         MUL $deltaTime cam_speed &camCalc
         CORE_MOVECAMERA -$camCalc 0
 

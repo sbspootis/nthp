@@ -1169,6 +1169,34 @@ DEFINE_COMPILATION_BEHAVIOUR(SQRT) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(POW) {
+        ADD_NODE(POW);
+
+        EVAL_SYMBOL();
+        auto base = EVAL_PREF();
+        CHECK_REF(base);
+
+        EVAL_SYMBOL();
+        auto exponent = EVAL_PREF();
+        CHECK_REF(exponent);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _base = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _exponent = (stdRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+
+        *_base = base;
+        *_exponent = exponent;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
 DEFINE_COMPILATION_BEHAVIOUR(ABS) {
         ADD_NODE(ABS);
 
@@ -4259,6 +4287,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(MUL);
                 CHECK_COMP(DIV);
                 CHECK_COMP(SQRT);
+                CHECK_COMP(POW);
                 CHECK_COMP(ABS);
                 CHECK_COMP(MOD);
                 CHECK_COMP(RAND);
@@ -4632,32 +4661,6 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
                 file >> fileRead;
 
                 if(fileRead == "BUILD_SYSTEM") {
-
-                        {
-                                CONST_DEF blockwidth;
-                                blockwidth.constName = "#blockWidth";
-                                blockwidth.value = std::to_string(sizeof(stdVarWidth));
-
-                                constantList.push_back(blockwidth);
-                        }
-                        {
-                                CONST_DEF valuePi;
-                                valuePi.constName = "#pi";
-                                valuePi.value = std::to_string(M_PI);
-
-                                constantList.push_back(valuePi);
-                        }
-
-                        {
-                                STRUCT_DEF ray;
-                                ray.name = "ray";
-                                ray.members.push_back("x1");
-                                ray.members.push_back("y1");
-                                ray.members.push_back("x2");
-                                ray.members.push_back("y2");
-
-                                structList.push_back(ray);
-                        }
 
 
                         while(!file.eof()) {

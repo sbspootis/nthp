@@ -54,6 +54,7 @@ namespace ID {
                 MUL,\
                 DIV,\
                 SQRT,\
+                POW,\
                 ABS,\
                 MOD,\
                 RAND,\
@@ -215,6 +216,7 @@ namespace Size {
                 MUL = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 DIV = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 SQRT = sizeof(stdRef) + sizeof(ptrRef),
+                POW = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 RAND = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
                 ABS = sizeof(stdRef) + sizeof(ptrRef),
                 MOD = sizeof(stdRef) + sizeof(stdRef) + sizeof(ptrRef),
