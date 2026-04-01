@@ -1,6 +1,6 @@
 
-CONST win_x     600
-CONST win_y     400
+CONST win_x     800
+CONST win_y     800
 
 MACRO init_flags { 
 /       x       y       tx      ty      cx      cy      fs      sr     /

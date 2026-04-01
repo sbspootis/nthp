@@ -28,18 +28,18 @@ FUNC stdgame_createAnimationX {
         CONSTEVAL counter       &mathReg0
         CONSTEVAL newAlignment  &mathReg1
 
-        FRAME_ALLOC $frameCount $output
+        FRAME_ALLOC ^$frameCount ^$output
 
-        SET &counter 0
+        SET ^&counter 0
 
         LABEL 0
 
-                MUL $counter $w &newAlignment
+                MUL ^$counter ^$w ^&newAlignment
 
-                FRAME_SET $output.$counter $newAlignment 0 $w $h $texture
+                FRAME_SET ^$output.^$counter ^$newAlignment 0 ^$w ^$h ^$texture
 
-                INC &counter
-                IF $counter LST $frameCount
+                INC ^&counter
+                IF ^$counter LST ^$frameCount
                         GOTO 0
                 END
 
@@ -69,19 +69,19 @@ FUNC stdgame_reallocBlock {
         CONSTEVAL p_temp        &gpReg0
         CONSTEVAL oldSize       &gpReg1
 
-        ALLOC $size &p_temp
+        ALLOC ^$size ^&p_temp
         
-        GET_BLOCKSIZE $targetBlock &oldSize
+        GET_BLOCKSIZE ^$targetBlock ^&oldSize
 
-        IF $oldSize GRTE $size
-                COPY $targetBlock $size $p_temp
+        IF ^$oldSize GRTE ^$size
+                COPY ^$targetBlock ^$size ^$p_temp
         ELSE
-                COPY $targetBlock $oldSize $p_temp
+                COPY ^$targetBlock ^$oldSize ^$p_temp
         END
 
-        SET $output $p_temp 
+        SET ^$output ^$p_temp 
 
-        FREE $targetBlock
+        FREE ^$targetBlock
 }
 
 /       MAGNITUDE     |       DIRECTION       |         OUTPUT  /
@@ -103,15 +103,15 @@ FUNC stdgame_getNormalVector {
 
         ASSIGN vector &argReg2
 
-        MUL pi $angle &mathReg0
+        MUL ^pi ^$angle &mathReg0
         DIV $mathReg0 180 &mathReg0
 
 
-        SIN $mathReg0 &y_angle
-        MUL $y_angle -$magnitude $argReg2.y      / Negate the magnitude because up is actually down /
+        SIN $mathReg0 ^&y_angle
+        MUL ^$y_angle ^-$magnitude $argReg2.y      / Negate the magnitude because up is actually down /
         
-        COS $mathReg0 &x_angle
-        MUL $x_angle $magnitude $argReg2.x
+        COS $mathReg0 ^&x_angle
+        MUL ^$x_angle ^$magnitude $argReg2.x
 
         UNASSIGN &argReg2
 }
@@ -129,20 +129,18 @@ MACRO gamef_getVectorAngle {
 FUNC stdgame_getVectorAngle {
         CONSTEVAL vectorObject  &argReg0
         CONSTEVAL output        &argReg1
-        PRINT $argReg1
         
         CONSTEVAL initital_angle &mathReg0
         CONSTEVAL calculatedAngle &mathReg1
 
         ASSIGN vector &argReg0
-        DIV -*vectorObject.y *vectorObject.x &initital_angle
-        ATAN $initital_angle &calculatedAngle
-        PRINT $calculatedAngle
+        DIV ^-*argReg0.y ^*argReg0.x ^&initital_angle
+        ATAN ^$initital_angle ^&calculatedAngle
 
-        MUL $calculatedAngle 180 &calculatedAngle
-        DIV $calculatedAngle pi &calculatedAngle
+        MUL ^$calculatedAngle 180 ^&calculatedAngle
+        DIV ^$calculatedAngle ^pi ^&calculatedAngle
 
-        SET *argReg1 $calculatedAngle
+        SET $argReg1 ^$calculatedAngle
         UNASSIGN &argReg0
 }
 

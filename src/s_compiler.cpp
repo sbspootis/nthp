@@ -321,6 +321,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         bool get_size = false;
         bool is_fixed_ref = false;
         bool dynamic_offset = false;
+        bool isConsteval = false;
 
         // Binary write; constant value, not converted to fixed point.
         if(expression[0] == '?') {
@@ -371,6 +372,11 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
                 PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
                 return ref;
+        }
+
+        if(expression[0] == '^') {
+                isConsteval = true;
+                expression.erase(expression.begin());
         }
 
 
@@ -552,41 +558,43 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 }
         }
 
-        for(size_t i = 0; i < constevalList.size(); ++i) {
-                if(expression == constevalList[i].name) {
-                        ref.value = constevalList[i].evaluation.value;
-                        
-                        // Cannot offset by a structure type, because structures cannot be assigned to constevals.
-                        // Cannot be offset by dynamic reference.
-                        if(isStructAccess) {
-                                nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList);
-                                auto offsetExpression = EvaluateReference(structAccess, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext, NULL, false);
-                                if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
-                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
-                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
-                                        return ref;
-                                }
-                                if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_STRING)) {
-                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a string reference.\n");
-                                        return ref;
-                                }
-                                if(nthp::fixedToInt(offsetExpression.value) > UINT8_MAX) {
-                                        PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 255.\n");
-                                        return ref;
+        if(isConsteval) {
+                for(size_t i = 0; i < constevalList.size(); ++i) {
+                        if(expression == constevalList[i].name) {
+                                ref.value = constevalList[i].evaluation.value;
+                                
+                                // Cannot offset by a structure type, because structures cannot be assigned to constevals.
+                                // Cannot be offset by dynamic reference.
+                                if(isStructAccess) {
+                                        nthp::script::CompilerInstance::portable_evalConst(structAccess, constantList);
+                                        auto offsetExpression = EvaluateReference(structAccess, nodeList, constantList, globalList, constevalList, strList, structList, currentFile, globalRefIndex, buildSystemContext, NULL, false);
+                                        if(!PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_VALID)) { return ref; }
+                                        if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_REFERENCE)) {
+                                                PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a reference.\n");
+                                                return ref;
+                                        }
+                                        if(PR_METADATA_GET(offsetExpression, nthp::script::flagBits::IS_STRING)) {
+                                                PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be a string reference.\n");
+                                                return ref;
+                                        }
+                                        if(nthp::fixedToInt(offsetExpression.value) > UINT8_MAX) {
+                                                PRINT_COMPILER_ERROR("Custom offset to unassigned object cannot be greater than 255.\n");
+                                                return ref;
+                                        }
+
+                                        ref.offset = nthp::fixedToInt(offsetExpression.value);
+                                        PRINT_COMPILER("Custom offset of [%u] applied to CONSTEVAL stdref.\n", ref.offset);
                                 }
 
-                                ref.offset = nthp::fixedToInt(offsetExpression.value);
-                                PRINT_COMPILER("Custom offset of [%u] applied to CONSTEVAL stdref.\n", ref.offset);
+                                if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
+                                if((!PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) && PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) { ref.value = -ref.value; }
+
+                                PRINT_COMPILER("Evaluated CONSTEVAL [%s]: Value = %llu, IR = %u\n", expression.c_str(), ref.value, PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE));
+
+                                if(globalRefIndex != NULL) { *globalRefIndex = 0; }
+                                PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
+                                return ref;
                         }
-
-                        if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
-                        if((!PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE)) && PR_METADATA_GET(ref, nthp::script::flagBits::IS_NEGATED)) { ref.value = -ref.value; }
-
-                        PRINT_COMPILER("Evaluated CONSTEVAL [%s]: Value = %llu, IR = %u\n", expression.c_str(), ref.value, PR_METADATA_GET(ref, nthp::script::flagBits::IS_REFERENCE));
-
-                        if(globalRefIndex != NULL) { *globalRefIndex = 0; }
-                        PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
-                        return ref;
                 }
         }
         

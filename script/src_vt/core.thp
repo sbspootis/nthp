@@ -8,9 +8,9 @@ CONSTEVAL cam_speed 0.3
 CONSTEVAL camCalc       &gpReg0
 CONSTEVAL fps           &gpReg1
 
-SET &camCalc 0
+SET ^&camCalc 0
 
-SET &fps 60
+SET ^&fps 60
 
 LABEL 1
 
@@ -40,19 +40,19 @@ LABEL 1
 
 
         IF $a_panUp
-                ADD $fps 30 &fps
+                ADD ^$fps 30 ^&fps
                 SET &a_panUp 0
         END
 
         IF $a_panDown
-                SUB $fps 30 &fps
+                SUB ^$fps 30 ^&fps
                 SET &a_panDown 0
         END
 
-        CORE_SETMAXFPS $fps
+        CORE_SETMAXFPS ^$fps
 
-        MUL $deltaTime cam_speed &camCalc
-        CORE_MOVECAMERA -$camCalc 0
+        MUL $deltaTime ^cam_speed ^&camCalc
+        CORE_MOVECAMERA ^-$camCalc 0
 
 
         CORE_MOVECAMERA $mathReg0 $mathReg1
