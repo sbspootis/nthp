@@ -3,7 +3,7 @@
 / TEXTURES AND ANIMATIONS /
 
 / Builds a frameset for any given texture and frame dimensions. Generates along X. /
-/ TEXTURE | FRAME_DIMENSIONS (xywh) | NUMBER OF FRAMES | OUTPUT /
+/ TEXTURE | FRAME_DIMENSIONS (ywh) | NUMBER OF FRAMES | OUTPUT /
 MACRO gamef_createAnimationX {
         SET &argReg0 #ar0
         SET &argReg1 #ar1
@@ -11,19 +11,17 @@ MACRO gamef_createAnimationX {
         SET &argReg3 #ar3
         SET &argReg4 #ar4
         SET &argReg5 #ar5
-        SET &argReg6 #ar6
 
         FUNC_CALL stdgame_createAnimationX
 }
 FUNC stdgame_createAnimationX {
 
         CONSTEVAL texture       &argReg0
-        CONSTEVAL x             &argReg1
-        CONSTEVAL y             &argReg2
-        CONSTEVAL w             &argReg3
-        CONSTEVAL h             &argReg4
-        CONSTEVAL frameCount    &argReg5
-        CONSTEVAL output        &argReg6
+        CONSTEVAL y             &argReg1
+        CONSTEVAL w             &argReg2
+        CONSTEVAL h             &argReg3
+        CONSTEVAL frameCount    &argReg4
+        CONSTEVAL output        &argReg5
 
         CONSTEVAL counter       &mathReg0
         CONSTEVAL newAlignment  &mathReg1
@@ -36,7 +34,7 @@ FUNC stdgame_createAnimationX {
 
                 MUL ^$counter ^$w ^&newAlignment
 
-                FRAME_SET ^$output.^$counter ^$newAlignment 0 ^$w ^$h ^$texture
+                FRAME_SET ^$output.^$counter ^$newAlignment ^y ^$w ^$h ^$texture
 
                 INC ^&counter
                 IF ^$counter LST ^$frameCount
@@ -133,16 +131,63 @@ FUNC stdgame_getVectorAngle {
         CONSTEVAL initital_angle &mathReg0
         CONSTEVAL calculatedAngle &mathReg1
 
+        CONSTEVAL offsetModifier &mathReg2
+
         ASSIGN vector &argReg0
+        IF ^*argReg0.x GRT 0
+                IF ^*argReg0.y GRT 0
+                        SET ^&offsetModifier 360
+                ELSE
+                        SET ^&offsetModifier 0
+                END
+        ELSE
+                IF ^*argReg0.x LST 0
+                        SET ^&offsetModifier 180
+                ELSE
+                        IF ^*argReg0.y GRT 0
+                                SET $argReg1 270
+                                RETURN
+                        END
+                        IF ^*argReg0.y LST 0
+                                SET $argReg1 90
+                                RETURN
+                        END
+                END
+        END
+
+
+
+        IF ^*argReg0.x EQU 0
+                IF ^*argReg0.y GRT 0
+                        SET $argReg1 270
+                        RETURN
+                END
+                IF ^*argReg0.y LST 0
+                        SET $argReg1 90
+                        RETURN
+                END
+        END
+
+
         DIV ^-*argReg0.y ^*argReg0.x ^&initital_angle
         ATAN ^$initital_angle ^&calculatedAngle
 
         MUL ^$calculatedAngle 180 ^&calculatedAngle
         DIV ^$calculatedAngle ^pi ^&calculatedAngle
+        ADD ^$calculatedAngle ^$offsetModifier ^&calculatedAngle
 
         SET $argReg1 ^$calculatedAngle
         UNASSIGN &argReg0
 }
+
+
+
+/       VALUE   |       OUTPUT  /
+MACRO gamef_factorDeltatime {
+        MUL #ar0 $deltatime #ar1
+}
+
+
 
 
 

@@ -7,21 +7,21 @@ VAR argReg5
 VAR argReg6
 VAR mathReg0
 VAR mathReg1
+VAR mathReg2
 VAR gpReg0
 VAR gpReg1
 VAR gpReg2
 CONSTEVAL pi 3.14159265
 STRUCT obj { pos_x pos_y gameObj flags }
 STRUCT vector { x y }
-MACRO gamef_createAnimationX { SET &argReg0 #ar0 SET &argReg1 #ar1 SET &argReg2 #ar2 SET &argReg3 #ar3 SET &argReg4 #ar4 SET &argReg5 #ar5 SET &argReg6 #ar6 FUNC_CALL stdgame_createAnimationX }
+MACRO gamef_createAnimationX { SET &argReg0 #ar0 SET &argReg1 #ar1 SET &argReg2 #ar2 SET &argReg3 #ar3 SET &argReg4 #ar4 SET &argReg5 #ar5 FUNC_CALL stdgame_createAnimationX }
 FUNC stdgame_createAnimationX
 CONSTEVAL texture &argReg0
-CONSTEVAL x &argReg1
-CONSTEVAL y &argReg2
-CONSTEVAL w &argReg3
-CONSTEVAL h &argReg4
-CONSTEVAL frameCount &argReg5
-CONSTEVAL output &argReg6
+CONSTEVAL y &argReg1
+CONSTEVAL w &argReg2
+CONSTEVAL h &argReg3
+CONSTEVAL frameCount &argReg4
+CONSTEVAL output &argReg5
 CONSTEVAL counter &mathReg0
 CONSTEVAL newAlignment &mathReg1
 MACRO gamef_reallocBlock { SET &argReg0 #ar0 SET &argReg1 #ar1 SET &argReg2 #ar2 FUNC_CALL stdgame_reallocBlock }
@@ -46,7 +46,9 @@ CONSTEVAL vectorObject &argReg0
 CONSTEVAL output &argReg1
 CONSTEVAL initital_angle &mathReg0
 CONSTEVAL calculatedAngle &mathReg1
+CONSTEVAL offsetModifier &mathReg2
 ASSIGN vector &argReg0
 UNASSIGN &argReg0
+MACRO gamef_factorDeltatime { MUL #ar0 $deltatime #ar1 }
 
 EXIT

@@ -2,18 +2,33 @@
 PRIVATE currentIndex
 SET &currentIndex 0
 
-PRIVATE randOutput
+FIXED vector mouseVector
+FIXED vector mousePosition
+FIXED vector normalVector
 
-CONSTEVAL cam_speed 0.3
-CONSTEVAL camCalc       &gpReg0
-CONSTEVAL fps           &gpReg1
+PRIVATE angle
 
-SET ^&camCalc 0
-
-SET ^&fps 60
+PRIVATE count
+SET &count 0
 
 LABEL 1
+        INC &count
+        IF $count GRT 4095
+                SET &count 0
+        END
 
+        
+
+
+        CORE_GETMOUSEPOSITION &mousePosition.x &mousePosition.y
+        SUB $mousePosition.x 400 &mouseVector.x
+        SUB $mousePosition.y 400 &mouseVector.y
+
+        @gamef_getVectorAngle ( &mouseVector &angle )
+        @gamef_getNormalVector ( 5 $angle &normalVector )
+
+        PRINT $normalVector.x
+        PRINT $normalVector.y
 
         IF $a_left
                 IF $currentIndex NOT 0
@@ -32,37 +47,14 @@ LABEL 1
                 SET &currentIndex 0
         END
         
-        IF $a_panLeft
-                CORE_SETCAMERAPOSITION 0 0
-                SET &a_panLeft 0
-        END
-
-
-
-        IF $a_panUp
-                ADD ^$fps 30 ^&fps
-                SET &a_panUp 0
-        END
-
-        IF $a_panDown
-                SUB ^$fps 30 ^&fps
-                SET &a_panDown 0
-        END
-
-        CORE_SETMAXFPS ^$fps
-
-        MUL $deltaTime ^cam_speed ^&camCalc
-        CORE_MOVECAMERA ^-$camCalc 0
-
-
-        CORE_MOVECAMERA $mathReg0 $mathReg1
-        SET &mathReg0 0
-        SET &mathReg1 0
 
         INDEX &ep_entities $currentIndex
 
 
         CORE_CLEAR
+                DRAW_SETCOLOR $count
+                DRAW_LINE 400 400 $mousePosition.x $mousePosition.y
+                
                 CORE_QRENDER $ep_entities
         CORE_DISPLAY
 

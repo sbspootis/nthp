@@ -18,10 +18,12 @@ STRING footstep "footsteps2.ogg"
 SOUND_LOAD 0 ~footstep
 SOUND_SETCHANNEL 0 0
 
-
+CORE_SETMAXFPS 60
+SET_BLOCKLISTSIZE 10
 
 / ================================================================ /
 /                     TEXTURES                                     /
+
 
 
 VAR tp_textures

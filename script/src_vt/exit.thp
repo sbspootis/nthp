@@ -4,9 +4,4 @@ FRAME_FREE $fp_frames
 ENT_FREE $ep_entities
 
 
-MUSIC_STOP
-MUSIC_CLEAR
-
-SOUND_CLEAR
-
 EXIT

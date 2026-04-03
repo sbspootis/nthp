@@ -8,6 +8,7 @@ VAR argReg6
 
 VAR mathReg0
 VAR mathReg1
+VAR mathReg2
 
 VAR gpReg0
 VAR gpReg1
