@@ -6,17 +6,6 @@ STRING paletteFile "resource/genericPalette.pal"
 SET_ACTIVE_PALETTE ~paletteFile
 
 
-MUSIC_DEFINE 1
-STRING track "am.wav"
-MUSIC_LOAD 0 ~track
-MUSIC_START 0
-
-MUSIC_SETVOLUME 60
-
-SOUND_DEFINE 1
-STRING footstep "footsteps2.ogg"
-SOUND_LOAD 0 ~footstep
-SOUND_SETCHANNEL 0 0
 
 CORE_SETMAXFPS 60
 SET_BLOCKLISTSIZE 10

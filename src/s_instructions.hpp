@@ -169,7 +169,8 @@ namespace ID {
                 TEXTINPUT_STOP,\
                 FUNC_START,\
                 FUNC_CALL,\
-                DEBUG_BREAK\
+                DEBUG_BREAK,\
+                ERROR_CLEAR\
         )
 
         INSTRUCTION_LIST( INSTRUCTION_TOKENS(), numberOfInstructions);
@@ -349,7 +350,8 @@ namespace Size {
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
                 FUNC_CALL = sizeof(uint32_t), // Func ID, to be matched to a FUNC_START by the linker.
 
-                DEBUG_BREAK = 0
+                DEBUG_BREAK = 0,
+                ERROR_CLEAR = 0;
         );
 }
 

@@ -2047,6 +2047,12 @@ std::mutex access;
         return 0;
 }
 
+DEFINE_EXECUTION_BEHAVIOUR(ERROR_CLEAR) {
+        data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 0;
+
+        return 0;
+}
+
 // Instruction execution behaviour functions. Use DEFINE_EXECUTION_BEHAVIOUR followed by a matching token from INSTRUCTION_TOKENS (s_instructions.hpp)
 // to define what happens for every instruction. Due to using INSTRUCTION_TOKENS as the initializer (see below), the ID of an intruction will match
 // that instruction's execution behaviour function in this array.

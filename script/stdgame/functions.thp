@@ -184,7 +184,7 @@ FUNC stdgame_getVectorAngle {
 
 /       VALUE   |       OUTPUT  /
 MACRO gamef_factorDeltatime {
-        MUL #ar0 $deltatime #ar1
+        MUL #ar0 $deltaTime #ar1
 }
 
 
