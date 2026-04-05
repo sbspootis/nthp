@@ -14,6 +14,7 @@ nthp::script::CompilerInstance symbolData;
 std::string testTarget;
 
 bool debuggingActiveProcess = false;
+bool autobreak = true;
 
 
 
@@ -61,13 +62,16 @@ int nthp::debuggerBehaviour(std::string target, FILE* debugOutputTarget) {
                                 
                                 return 1;
                         }
-                        g_access.lock();
+                        
+                        if(autobreak) {
+                                g_access.lock();
 
-                        nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
-                        nthp::script::debug::suspendExecution = true;
-                        PM_PRINT("Ready. Waiting for continue (c)...\n");
+                                nthp::script::debug::debugInstructionCall.x = nthp::script::debug::DEBUG_CALLS::BREAK;
+                                nthp::script::debug::suspendExecution = true;
+                                PM_PRINT("Ready. Waiting for continue (c)...\n");
 
-                        g_access.unlock();
+                                g_access.unlock();
+                        }
 
                         while((nthp::core.isRunning()) && debuggingActiveProcess) {
                                 frameStart = tickTimer.now();
@@ -522,6 +526,27 @@ L_BEGIN:
 
                                 g_access.unlock();
 
+                                continue;
+                        }
+                        if(args[0] == "autobreak") {
+                                if(args.size() < 2) {
+                                        PM_PRINT("Autobreak = ");
+                                        autobreak ? PM_PRINT("enabled\n") : PM_PRINT("disabled\n");
+                                        continue;
+                                }
+
+                                if(args[1] == "enable") {
+                                        autobreak = true;
+                                        PM_PRINT("Enabled autobreak after init phase.\n");
+                                        continue;
+                                }
+                                if(args[1] == "disable") {
+                                        autobreak = false;
+                                        PM_PRINT("Disabled autobreak after init phase.\n");
+                                        continue;
+                                }
+
+                                PM_PRINT_ERROR("Invalid parameter; [enable] [disable]\n");
                                 continue;
                         }
 
