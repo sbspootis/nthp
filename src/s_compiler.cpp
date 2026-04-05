@@ -2519,23 +2519,12 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_INIT) {
 
 
         EVAL_SYMBOL();
-        uint8_t initFlags = 0;
-        try {
-                unsigned int fullscreen = std::stoul(fileRead);
-                if(fullscreen > 0) fullscreen = 1;
-                
-                EVAL_SYMBOL();
-                unsigned int softwareRender = std::stoul(fileRead);
-                if(softwareRender > 0) softwareRender = 1;
+        auto fullscreen = EVAL_PREF();
+        CHECK_REF(fullscreen);
 
-                initFlags |= (fullscreen << ((int)NTHP_CORE_INIT_FULLSCREEN));
-                initFlags |= (softwareRender << ((int)NTHP_CORE_INIT_SOFTWARE_RENDERING));
-                
-        }
-        catch(std::invalid_argument) {
-                PRINT_COMPILER_ERROR("Unable to evaluate boolean [%s]; Invalid Argument.\n", fileRead.c_str());
-                return 1;
-        }
+        EVAL_SYMBOL();
+        auto softwareRender = EVAL_PREF();
+        CHECK_REF(softwareRender);
 
         EVAL_SYMBOL();
         auto titleString = EVAL_PREF();
@@ -2548,8 +2537,9 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_INIT) {
         stdRef* ty = (decltype(ty))(nodeList[currentNode].access.data + (sizeof(stdRef) * 3));
         stdRef* cx = (decltype(cx))(nodeList[currentNode].access.data + (sizeof(stdRef) * 4));
         stdRef* cy = (decltype(cy))(nodeList[currentNode].access.data + (sizeof(stdRef) * 5));
-        uint8_t* flags = (decltype(flags))(nodeList[currentNode].access.data + (sizeof(stdRef) * 6));
-        strRef* _title = (decltype(_title))(nodeList[currentNode].access.data + (sizeof(stdRef) * 6) + sizeof(uint8_t));
+        stdRef* fs = (decltype(fs))(nodeList[currentNode].access.data + (sizeof(stdRef) * 6));
+        stdRef* sr = (decltype(fs))(nodeList[currentNode].access.data + (sizeof(stdRef) * 7));
+        strRef* _title = (decltype(_title))(nodeList[currentNode].access.data + (sizeof(stdRef) * 8));
 
         *px = spx;
         *py = spy;
@@ -2557,7 +2547,8 @@ DEFINE_COMPILATION_BEHAVIOUR(CORE_INIT) {
         *ty = sty;
         *cx = scx;
         *cy = scy;
-        *flags = initFlags;
+        *fs = fullscreen;
+        *sr = softwareRender;
         *_title = titleString;
 
 

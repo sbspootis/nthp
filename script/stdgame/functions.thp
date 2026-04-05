@@ -134,6 +134,14 @@ FUNC stdgame_getVectorAngle {
         CONSTEVAL offsetModifier &mathReg2
 
         ASSIGN vector &argReg0
+		IF ^*argReg0.x EQU 0
+			IF ^*argReg0.y EQU 0
+				SET $argReg1 0
+				RETURN
+			END
+		END
+		
+		
         IF ^*argReg0.x GRT 0
                 IF ^*argReg0.y GRT 0
                         SET ^&offsetModifier 360

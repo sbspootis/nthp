@@ -288,7 +288,7 @@ namespace Size {
                 SP_COMPILE = sizeof(ptrRef),
                 SP_ABS_COMPILE = sizeof(ptrRef),
 
-                CORE_INIT = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(uint8_t) + sizeof(strRef),
+                CORE_INIT = sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef) + sizeof(strRef),
                 CORE_QRENDER = sizeof(entRef),
                 CORE_ABS_QRENDER = sizeof(entRef),
                 CORE_SP_QRENDER = sizeof(setpieceRef),

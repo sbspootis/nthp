@@ -49,6 +49,6 @@ CONSTEVAL calculatedAngle &mathReg1
 CONSTEVAL offsetModifier &mathReg2
 ASSIGN vector &argReg0
 UNASSIGN &argReg0
-MACRO gamef_factorDeltatime { MUL #ar0 $deltatime #ar1 }
+MACRO gamef_factorDeltatime { MUL #ar0 $deltaTime #ar1 }
 
 EXIT

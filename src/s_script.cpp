@@ -1343,8 +1343,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
         stdRef ty = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));
         stdRef cx = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));
         stdRef cy = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));
-        const uint8_t flags = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 6));
-        strRef title = *(strRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 6) + sizeof(uint8_t));
+        stdRef fs = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 6));
+        stdRef sr = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 7));
+        strRef title = *(strRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 8));
 
         EVAL_STDREF(px);
         EVAL_STDREF(py);
@@ -1352,10 +1353,12 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
         EVAL_STDREF(ty);
         EVAL_STDREF(cx);
         EVAL_STDREF(cy);
+        EVAL_STDREF(fs);
+        EVAL_STDREF(sr);
         auto titleString = EVAL_STRREF(title);
 
 
-        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(px.value), nthp::fixedToInt(py.value), tx.value, ty.value, nthp::vectFixed(cx.value, cy.value)), titleString, (flags >> NTHP_CORE_INIT_FULLSCREEN) & 1, (flags >> NTHP_CORE_INIT_SOFTWARE_RENDERING) & 1);
+        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(px.value), nthp::fixedToInt(py.value), tx.value, ty.value, nthp::vectFixed(cx.value, cy.value)), titleString, nthp::fixedToInt(fs.value) & 1, nthp::fixedToInt(sr.value) & 1);
 
 
         return 0;
