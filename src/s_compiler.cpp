@@ -323,6 +323,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         bool dynamic_offset = false;
         bool isConsteval = false;
 
+
         // Binary write; constant value, not converted to fixed point.
         if(expression[0] == '?') {
                 expression.erase(expression.begin());
@@ -424,6 +425,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         
                         // If no node can be matched, assume the reference is to a string inside a block.
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_STRING);
+                        continue;
                 }
                 
                 if(expression[0] == '-') {
@@ -434,7 +436,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                                 
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_NEGATED);
                         expression.erase(expression.begin());
-
+                        continue;
                 }
 
                 if(expression[0] == '*') {
@@ -443,6 +445,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
                         deref_ptr = true;
                         expression.erase(expression.begin());
+                        continue;
                 }
 
                 if(expression[0] == '&') {
@@ -459,7 +462,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         }
                         
                         expression.erase(expression.begin());
-                        break;
+                        continue;
                 }
 
                 
@@ -469,10 +472,11 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         PR_METADATA_SET (ref, nthp::script::flagBits::IS_REFERENCE);
 
                         expression.erase(expression.begin());
-                        break;
+                        continue;
                 }
 
-        } while(0);
+                break;
+        } while(true);
 
         if(get_size) {
                 for(size_t i = 0; i < structList.size(); ++i) {
@@ -488,7 +492,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                 return ref;
         }
 
-
+                
         std::string structAccess;
         bool isStructAccess = false;
 
