@@ -169,18 +169,11 @@ DEFINE_EXECUTION_BEHAVIOUR(GOTO) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(JUMP) {
-        stdRef label = *(stdRef*)data->nodeSet[data->currentNode].access.data;
-        uint32_t static_label = nthp::fixedToInt(label.value);
+        stdRef instruction = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(label);
+        EVAL_STDREF(instruction);
 
-        for(uint32_t i = 0; i < data->currentLabelBlockSize; ++i) {
-                if(data->currentLabelBlock[i + i] == static_label) {
-                        data->currentNode = data->currentLabelBlock[i + i + 1] + data->currentScriptHeaderLocation;
-                        break;
-                }
-        }
-        
+        data->currentNode = nthp::fixedToInt(instruction.value);
         return 0;
 }
 

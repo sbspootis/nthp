@@ -56,7 +56,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
 
 
                                 frameTime = std::chrono::duration_cast<std::chrono::microseconds>(tickTimer.now() - frameStart);
-                                nthp::deltaTime =  nthp::f_fixedProduct(nthp::deltaTime + nthp::f_fixedProduct(nthp::intToFixed(frameTime.count()), (nthp::doubleToFixed(0.001)-1)), nthp::doubleToFixed(0.5));
+                                nthp::deltaTime =  nthp::f_fixedProduct(nthp::deltaTime + nthp::f_fixedProduct(nthp::intToFixed(frameTime.count()), (nthp::doubleToFixed(0.001))), nthp::doubleToFixed(0.5));
                                 if(nthp::deltaTime < nthp::frameDelay) {
                                         std::this_thread::sleep_for(frameDelayMicroSecond - frameTime);
                                         nthp::deltaTime = nthp::frameDelay;

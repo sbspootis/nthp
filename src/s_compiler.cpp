@@ -210,8 +210,8 @@ int EvaluateMacro(std::fstream& file, std::string& expression, std::vector<nthp:
                                                 nthp::script::CompilerInstance::portable_evalConst(expression, constantList);
                                                 if(expression != ")") {        
                                                         ++argumentsFound;
-                                                        if(argumentsFound > 500) {
-                                                                PRINT_COMPILER_ERROR("Macro Argument data is too large; no ARG_END character found.\n");
+                                                        if(argumentsFound > 255) { // Was at 500, thought that was too big. When are you going to have more than 255 arguments in a function?
+                                                                PRINT_COMPILER_ERROR("Macro Argument data is too large; no ARG_END ')' character found.\n");
                                                                 return 1;
                                                         }
 
@@ -309,7 +309,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
 
 // Substitues a VAR reference or parses numeral references (for compatibility).
 // Returning REF without the IS_VALID bit set assumes a failure.
-// dynamicOffsetCounter should be the optional argument 'dynamicOffsetCounter' defined in every COMPILATION_BEHAVIOUR function. A value of -1 means dynamic offsets are disabled.
+// dynamicOffsetCounter should be the optional argument 'dynamicOffsetCounter' defined in every COMPILATION_BEHAVIOUR function. A dynamicOffsetCounter value of -1 means dynamic offsets are disabled.
 nthp::script::instructions::stdRef EvaluateReference(std::string expression, std::vector<nthp::script::Node>& nodeList, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>& globalList, std::vector<nthp::script::CompilerInstance::CONSTEVAL_DEF>& constevalList, std::vector<nthp::script::CompilerInstance::STR_DEF>& strList, std::vector<nthp::script::CompilerInstance::STRUCT_DEF>& structList,std::string& currentFile, size_t* globalRefIndex, bool buildSystemContext, uint8_t* dynamicOffsetCounter, bool suppressFailure) {
         stdRef ref;
         ref.metadata = 0;
@@ -356,7 +356,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
                         ref.value = nthp::script::constructPtrDescriptor(ptr.block, ptr.address);
                         PR_METADATA_SET(ref, nthp::script::flagBits::IS_VALID);
 
-                        PRINT_COMPILER("Constructed constant ptr_descriptor [b%da%d] and assigned to ref.\n", ptr.block, ptr.address);
+                        PRINT_COMPILER("Constructed constant ptr_descriptor [b%da%d].\n", ptr.block, ptr.address);
 
                         return ref;
                 }
@@ -845,17 +845,12 @@ DEFINE_COMPILATION_BEHAVIOUR(JUMP) {
 
 
         EVAL_SYMBOL();
-        auto static_label = EVAL_PREF();
-        CHECK_REF(static_label);
+        auto instruction = EVAL_PREF();
+        CHECK_REF(instruction);
 
-        if(!PR_METADATA_GET(static_label, nthp::script::flagBits::IS_REFERENCE)) {
-                PRINT_COMPILER_WARNING("JUMP Node at [%zu] uses constant expression as label reference; Consider using GOTO instead.\n", currentNode);
-        }
+       stdRef* _position = (stdRef*)(nodeList[currentNode].access.data);
 
-        stdRef* labelID = decltype(labelID)(nodeList[currentNode].access.data);
-        *labelID = static_label;
-
-        NOVERB_PRINT_COMPILER("[%zu] JUMP Node evaluated: ID = %lld\n", currentNode, nthp::fixedToInt(labelID->value));
+       *_position = instruction;
 
         PRINT_NODEDATA();
         return 0;

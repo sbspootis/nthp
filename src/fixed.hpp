@@ -17,7 +17,7 @@ namespace nthp {
 
 #ifndef FIXED_POINT_SCALE
                 // The fixed-point scale factor as a whole-number power of 2
-#define         FIXED_POINT_SCALE       16
+#define         FIXED_POINT_SCALE       10
 
 #endif
 
@@ -28,7 +28,7 @@ namespace nthp {
 
 
         // Size of a fixed point number in bits; Must be a standard width (8,16,32,64).
-#define         FIXED_POINT_WIDTH       64
+#define         FIXED_POINT_WIDTH       32
 
 #endif
 
@@ -117,7 +117,7 @@ namespace nthp {
         // but the accuracy increases. The accuracy is automatically adjusted by the preprocessor
         // on compile time. An invalid range (over SCALE / 2) will be overwritten for maximum range
         // (and by extension minimal accuracy).
-        #define FAST_PRODUCT_RANGE              (1)
+        #define FAST_PRODUCT_RANGE              (0)
 #endif
 
 

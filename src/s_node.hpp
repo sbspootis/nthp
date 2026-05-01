@@ -44,7 +44,9 @@ namespace script {
 
         
                         // Use this to work with script triggers, but read and write from files with the
-                        // 'trigger_w' 
+                        // 'trigger_w'
+
+                        // This is no longer in use. The stage system has been completely scrapped.
         struct scriptTriggerComplex {
                 uint16_t ID : 3;
                 uint16_t GPR : 5;
@@ -80,12 +82,11 @@ namespace script {
         // a maxium of 255 blocks can be allocated, with a maximum size of 255 entries per block.
         //
         // Blocks are indexed starting at 1, as block 0 is the GLOBAL list, which cannot be changed and is defined by the
-        // compiler. If a PTR VAR points to another VAR, the bits [8-15] will be 0, and bits [0-7] will be the index of the
+        // compiler. If a VAR points to another VAR, the bits [8-15] will be 0, and bits [0-7] will be the index of the
         // VAR in the GLOBAL list. This means the same structure can be used to reference dynamic block data and static VARs.
         //
-        // Data offsets (from STRUCTs in script) are applied exclusively to block memory access; even if a GLOBAL is assigned a
-        // structure, points to another GLOBAL, and is accessed with a member, the offset will be ignored, even though it's syntaxically correct and the compiler
-        // won't make a fuss.
+        // Data offsets (from STRUCTs or general offsets) are normally not applied to standard VAR references to the global list 
+        // unless the VAR was defined as a FIXED.
         
         struct BlockMemoryEntry {
                 typedef enum {
@@ -125,6 +126,7 @@ namespace script {
         constexpr int GLOBAL_LIST = 0;
         constexpr PtrDescriptor_st NULL_REF = {0,0};
 
+        // Returns a fixed type length pointer descriptor encoded with the specified block and address.
         constexpr FIXED_TYPE constructPtrDescriptor(FIXED_TYPE block, FIXED_TYPE address) {
                 using namespace nthp::script::internal_constants;
                 const FIXED_TYPE result = ((block << blockMemoryBitAllocation) & blockMemoryBlockMask) | (address & blockMemoryDataMask);
@@ -132,6 +134,7 @@ namespace script {
                 return result;
         }
 
+        // Returns an accessible structure from a fixed type length encoded pointer descriptor.
         constexpr PtrDescriptor_st parsePtrDescriptor(FIXED_TYPE bin) {
                 using namespace nthp::script::internal_constants;
                 const PtrDescriptor_st ret = {(bin >> blockMemoryBitAllocation), (bin & blockMemoryDataMask)};

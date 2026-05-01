@@ -27,8 +27,8 @@ LABEL 1
         @gamef_getVectorAngle ( &mouseVector &angle )
         @gamef_getNormalVector ( 5 $angle &normalVector )
 
-        PRINT $normalVector.x
-        PRINT $normalVector.y
+        PRINT $deltaTime
+
 
         IF $a_left
                 IF $currentIndex NOT 0
