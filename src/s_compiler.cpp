@@ -848,7 +848,7 @@ DEFINE_COMPILATION_BEHAVIOUR(JUMP) {
         auto instruction = EVAL_PREF();
         CHECK_REF(instruction);
 
-       stdRef* _position = (stdRef*)(nodeList[currentNode].access.data);
+        stdRef* _position = (stdRef*)(nodeList[currentNode].access.data);
 
        *_position = instruction;
 
@@ -4567,31 +4567,21 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
 
                 // Set up header with:
                 //      - Global Memory Budget (if applicable)
-                //      - Label List
 
                 if(nodeList.size() > 0) {
-                        nodeList[0].access.size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint8_t) + (sizeof(uint32_t) * labelList.size() * 2);
-                        nodeList[0].access.data = (char*)malloc(nodeList[0].access.size);
 
                         if(nodeList[0].access.data == NULL) {
                                 FATAL_PRINT(nthp::FATAL_ERROR::Memory_Fault, "Memory Fault in Compiler.\n");
                         }
 
                         uint32_t* globalmem = (decltype(globalmem))(nodeList[0].access.data);
-                        uint32_t* labelSize = (decltype(labelSize))(nodeList[0].access.data + (sizeof(uint32_t)));
-                        uint8_t* executionType = (decltype(executionType))(nodeList[0].access.data + (sizeof(uint32_t) + sizeof(uint32_t)));
-                        uint32_t* labelstart = (decltype(labelstart))(nodeList[0].access.data + (sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint8_t)));
-                        *labelSize = labelList.size();
-
+                        uint8_t* executionType = (decltype(executionType))(nodeList[0].access.data + (sizeof(uint32_t)));
+                        uint8_t* stdWidth = (uint8_t*)(nodeList[0].access.data + (sizeof(uint32_t) + sizeof(uint8_t)));
 
                         *globalmem = (uint32_t)globalAlloc;
                         *executionType = executionFlags;
-
-                        // Writes label data to header. For use in JUMP.
-                        for(size_t i = 0; i < labelList.size(); ++i) {
-                                labelstart[i + i] = labelList[i].ID;
-                                labelstart[(i + i) + 1] = labelList[i].label_position;
-                        }
+                        *stdWidth = sizeof(nthp::script::stdVarWidth);  // Added mainly for modules; incompatible widths are a commonality with them.
+                                                                        // Linker compares all target script stdwidths, which must match for the linker to continue. 
                 }
 
 

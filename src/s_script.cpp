@@ -212,7 +212,7 @@ DEFINE_EXECUTION_BEHAVIOUR(INC) {
         ptrRef var = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
         EVAL_PTRREF(var);
 
-        *target_dsc = *target_dsc + nthp::intToFixed(1);
+        *target_dsc = (*target_dsc) + nthp::intToFixed(1);
 
         return 0;
 }
@@ -222,7 +222,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DEC) {
         EVAL_PTRREF(var);
 
        
-        *target_dsc = *target_dsc - nthp::intToFixed(1);
+        *target_dsc = (*target_dsc) - nthp::intToFixed(1);
 
         return 0;
 }

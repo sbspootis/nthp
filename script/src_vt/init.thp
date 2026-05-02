@@ -7,7 +7,7 @@ SET_ACTIVE_PALETTE ~paletteFile
 
 
 
-CORE_SETMAXFPS -1
+CORE_SETMAXFPS 60
 SET_BLOCKLISTSIZE 10
 
 / ================================================================ /

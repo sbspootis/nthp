@@ -188,7 +188,7 @@ namespace nthp {
                         } TriggerBits;
 
                 static inline uint8_t getScriptTriggerFlags(const nthp::script::Node& node) {
-                        return *(uint8_t*)(node.access.data + (sizeof(uint32_t) + sizeof(uint32_t)));
+                        return *(uint8_t*)(node.access.data + (sizeof(uint32_t)));
                 }
                 static inline uint32_t getScriptGlobalRequest(const nthp::script::Node& node) {
                         return *(uint32_t*)(node.access.data);

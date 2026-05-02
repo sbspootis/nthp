@@ -195,7 +195,7 @@ typedef stdRef setpieceRef;                             // Uses eval_special on 
 namespace Size {
 
         INSTRUCTION_SIZE_LIST(
-                HEADER = DYNAMIC_SIZE,
+                HEADER = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(uint8_t),
                 EXIT = 0,
 
                 LABEL = sizeof(uint32_t),
