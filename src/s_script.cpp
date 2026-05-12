@@ -1840,7 +1840,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
         std::fstream file;
         file.open(fileString, std::ios::in | std::ios::binary);
         if(file.fail()) {
-                PRINT_DEBUG_ERROR("Unable to open file [%s]; File inaccessible. Set null/ERRORLEVEL 1.\n", fileString);
+                PRINT_DEBUG_ERROR("Unable to open file [%s]; File inaccessible.\n", fileString);
                 data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
                 return 0;
         }
@@ -1858,7 +1858,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
                 return 0;
         }
         else {
-                PRINT_DEBUG_ERROR("Cannot use DFILE_READ to input external data into global list. Set null/ERRORLEVEL 1.\n");
+                PRINT_DEBUG_ERROR("Cannot use DFILE_READ to input external data into global list.\n");
                 data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
                 return 0;
         }
@@ -1881,7 +1881,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
         std::fstream file;
         file.open(fileString, std::ios::out | std::ios::binary);
         if(file.fail()) {
-                PRINT_DEBUG_ERROR("Unable to open file [%s] for writing; File not accessible. Set null/ERRORLEVEL 1.\n", fileString);
+                PRINT_DEBUG_ERROR("Unable to open file [%s] for writing; File not accessible. \n", fileString);
                 data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
                 return 0;
         }
@@ -1934,8 +1934,70 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING_COPY) {
         EVAL_PTRREF(target);
         auto str = EVAL_STRREF(c_string);
 
-        memcpy(target_dsc, str, c_string.offset);
+        // Because the string length is stored in the offset of the reference.
+        if(PR_METADATA_GET(c_string, nthp::script::flagBits::IS_NODE_STRING_PTR)) {
+                memcpy(target_dsc, str, c_string.offset);
+        }
+        else {
+                int i = 0; for(; str[i] != '\0'; ++i);
+                memcpy(target_dsc, str, i);
+        }
         
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(STRING_GETCHAR) {
+        strRef string = *(strRef*)(data->nodeSet[data->currentNode].access.data);
+        stdRef index = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef) + sizeof(stdRef));
+
+        auto str = EVAL_STRREF(string);
+        EVAL_STDREF(index);
+        EVAL_PTRREF(output);
+
+
+        (*target_dsc) = nthp::intToFixed(str[nthp::fixedToInt(index.value)]);
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(STRING_TO_NUM) {
+        strRef string = *(strRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));
+
+        auto str = EVAL_STRREF(string);
+        EVAL_PTRREF(output);
+
+        try {
+                (*target_dsc) = nthp::doubleToFixed(std::stod(str));
+        }
+        catch(std::invalid_argument) {
+                PRINT_DEBUG_ERROR("Invalid string conversion to fixed point @ [%zu].\n", data->currentNode);
+                (*target_dsc) = 0;
+                data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
+        }
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
+        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(value);
+        EVAL_PTRREF(output);
+
+        char str[256]; memset(str, 0, 256);
+        sprintf(str, "%lf", nthp::fixedToDouble(value.value));
+        int size;
+        for(size = 0; (size < 256) && (str[size] != '\0'); ++size);
+
+        const auto ptr = nthp::script::nthp_internal_alloc(data, target_dsc, (nthp::intToFixed(size / sizeof(nthp::script::stdVarWidth) + 1)), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        if(ptr.block == 0) { return 1; }
+        
+        memcpy(data->blockData[ptr.block].data, str, size);
+        data->blockData[ptr.block].data[size] = '\0';
+
         return 0;
 }
 

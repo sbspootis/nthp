@@ -162,6 +162,9 @@ namespace ID {
                 PRINT_STRING,\
                 STRING,\
                 STRING_COPY,\
+                STRING_GETCHAR,\
+                STRING_TO_NUM,\
+                NUM_TO_STRING,\
                 IB_SET_TARGET,\
                 IB_WRITE_STRING,\
                 IB_STOP,\
@@ -176,7 +179,7 @@ namespace ID {
         INSTRUCTION_LIST( INSTRUCTION_TOKENS(), numberOfInstructions);
 }
 
-#define GET_INSTRUCTION_ID(instruction) nthp::script::instructions::ID::instruction
+#define GET_INSTRUCTION_ID(instruction) nthp::script::instructions::ID::Instruction::instruction
 
 
 typedef P_Reference<nthp::script::stdVarWidth> stdRef;  // The standard value type; Can be a reference to memory or a constant, 'metadata' bits can be set for type description. The endpoint should be a workable value.
@@ -341,6 +344,9 @@ namespace Size {
                 PRINT_STRING = sizeof(strRef),
                 STRING = DYNAMIC_SIZE,
                 STRING_COPY = sizeof(ptrRef) + sizeof(strRef),
+                STRING_GETCHAR = sizeof(strRef) + sizeof(stdRef) + sizeof(ptrRef),
+                STRING_TO_NUM = sizeof(strRef) + sizeof(ptrRef),
+                NUM_TO_STRING = sizeof(stdRef) + sizeof(ptrRef),
                 IB_SET_TARGET = sizeof(ptrRef),
                 IB_WRITE_STRING = 0,
                 IB_STOP = 0,

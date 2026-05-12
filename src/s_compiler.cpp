@@ -388,8 +388,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         }
 
 
-        // Prefixes are evaluated IN ORDER of ; Negation (-), ptr_dereference (*), ptr_reference (&), Globality (> or $)
-        // NOTE: reference (&) PTR prefixes can evaluate as constants, dereferences (*) cannot.
         do {
                 if(expression[0] == '~') {
 
@@ -3307,6 +3305,96 @@ DEFINE_COMPILATION_BEHAVIOUR(STRING) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(STRING_COPY) {
+        ADD_NODE(STRING_COPY);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto stringRef = EVAL_PREF();
+        CHECK_REF(stringRef);
+
+        ptrRef* p_target = (ptrRef*)(nodeList[currentNode].access.data);
+        strRef* p_string = (strRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+
+        *p_target = target;
+        *p_string = stringRef;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(STRING_GETCHAR) {
+        ADD_NODE(STRING_GETCHAR);
+
+        EVAL_SYMBOL();
+        auto string = EVAL_PREF();
+        CHECK_REF(string);
+
+        EVAL_SYMBOL();
+        auto index = EVAL_PREF();
+        CHECK_REF(index);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        strRef* _string = (strRef*)(nodeList[currentNode].access.data);
+        stdRef* _index = (stdRef*)(nodeList[currentNode].access.data + sizeof(strRef));
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(strRef) + sizeof(stdRef));
+
+        *_string = string;
+        *_index = index;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(STRING_TO_NUM) {
+        ADD_NODE(STRING_TO_NUM);
+
+        EVAL_SYMBOL();
+        auto string = EVAL_PREF();
+        CHECK_REF(string);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        strRef* _string = (strRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(strRef));
+
+        *_string = string;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(NUM_TO_STRING) {
+        ADD_NODE(NUM_TO_STRING);
+
+        EVAL_SYMBOL();
+        auto input = EVAL_PREF();
+        CHECK_REF(input);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        stdRef* _input = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_input = input;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 DEFINE_COMPILATION_BEHAVIOUR(IB_SET_TARGET) {
         ADD_NODE(IB_SET_TARGET);
 
@@ -3360,26 +3448,6 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_STOP) {
 }
 
 
-DEFINE_COMPILATION_BEHAVIOUR(STRING_COPY) {
-        ADD_NODE(STRING_COPY);
-
-        EVAL_SYMBOL();
-        auto target = EVAL_PREF();
-        CHECK_REF(target);
-
-        EVAL_SYMBOL();
-        auto stringRef = EVAL_PREF();
-        CHECK_REF(stringRef);
-
-        ptrRef* p_target = (ptrRef*)(nodeList[currentNode].access.data);
-        strRef* p_string = (strRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
-
-        *p_target = target;
-        *p_string = stringRef;
-
-        PRINT_NODEDATA();
-        return 0;
-}
 
 
 DEFINE_COMPILATION_BEHAVIOUR(DEBUG_BREAK) {
@@ -4405,6 +4473,9 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(PRINT);
                 CHECK_COMP(STRING);
                 CHECK_COMP(STRING_COPY);
+                CHECK_COMP(STRING_GETCHAR);
+                CHECK_COMP(STRING_TO_NUM);
+                CHECK_COMP(NUM_TO_STRING);
                 CHECK_COMP(IB_SET_TARGET);
                 CHECK_COMP(IB_WRITE_STRING);
                 CHECK_COMP(IB_STOP);

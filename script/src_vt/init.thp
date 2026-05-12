@@ -125,9 +125,13 @@ PRIVATE angle
 
 
 
+PRIVATE testVar
+SET &testVar 10.665
 
-PRIVATE powerTest
-POW 2 8 &powerTest
+PRIVATE conversionValue
+PRIVATE Coolstring
 
+NUM_TO_STRING $testVar &Coolstring
+STRING_TO_NUM ~$Coolstring &conversionValue
 
 EXIT
