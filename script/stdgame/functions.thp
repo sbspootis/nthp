@@ -106,7 +106,7 @@ FUNC stdgame_getNormalVector {
 
 
         SIN $mathReg0 ^&y_angle
-        MUL ^$y_angle ^-$magnitude $argReg2.y      / Negate the magnitude because up is actually down /
+        MUL ^$y_angle ^$magnitude $argReg2.y
         
         COS $mathReg0 ^&x_angle
         MUL ^$x_angle ^$magnitude $argReg2.x
@@ -141,23 +141,23 @@ FUNC stdgame_getVectorAngle {
 			END
 		END
 		
-		
+	
         IF ^*argReg0.x GRT 0
                 IF ^*argReg0.y GRT 0
-                        SET ^&offsetModifier 360
-                ELSE
                         SET ^&offsetModifier 0
+                ELSE
+                        SET ^&offsetModifier 360
                 END
         ELSE
                 IF ^*argReg0.x LST 0
                         SET ^&offsetModifier 180
                 ELSE
                         IF ^*argReg0.y GRT 0
-                                SET $argReg1 270
+                                SET $argReg1 90
                                 RETURN
                         END
                         IF ^*argReg0.y LST 0
-                                SET $argReg1 90
+                                SET $argReg1 270
                                 RETURN
                         END
                 END
@@ -175,9 +175,9 @@ FUNC stdgame_getVectorAngle {
                         RETURN
                 END
         END
+        
 
-
-        DIV ^-*argReg0.y ^*argReg0.x ^&initital_angle
+        DIV ^*argReg0.y ^*argReg0.x ^&initital_angle
         ATAN ^$initital_angle ^&calculatedAngle
 
         MUL ^$calculatedAngle 180 ^&calculatedAngle

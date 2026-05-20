@@ -17,7 +17,7 @@ namespace nthp {
 
 #ifndef FIXED_POINT_SCALE
                 // The fixed-point scale factor as a whole-number power of 2
-#define         FIXED_POINT_SCALE       10
+#define         FIXED_POINT_SCALE       16
 
 #endif
 
@@ -28,7 +28,7 @@ namespace nthp {
 
 
         // Size of a fixed point number in bits; Must be a standard width (8,16,32,64).
-#define         FIXED_POINT_WIDTH       32
+#define         FIXED_POINT_WIDTH       64
 
 #endif
 

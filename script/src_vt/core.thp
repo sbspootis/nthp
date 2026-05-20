@@ -26,9 +26,9 @@ LABEL 1
 
         @gamef_getVectorAngle ( &mouseVector &angle )
         @gamef_getNormalVector ( 5 $angle &normalVector )
-
-        PRINT $deltaTime
-
+        PRINT $normalVector.x
+        PRINT $normalVector.y
+        PRINT $angle
 
         IF $a_left
                 IF $currentIndex NOT 0
@@ -55,7 +55,7 @@ LABEL 1
                 DRAW_SETCOLOR $count
                 DRAW_LINE 400 400 $mousePosition.x $mousePosition.y
                 
-                CORE_QRENDER $ep_entities
+          /      CORE_QRENDER $ep_entities /
         CORE_DISPLAY
 
 

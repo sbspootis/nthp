@@ -1987,16 +1987,13 @@ DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
         EVAL_STDREF(value);
         EVAL_PTRREF(output);
 
-        char str[256]; memset(str, 0, 256);
-        sprintf(str, "%lf", nthp::fixedToDouble(value.value));
-        int size;
-        for(size = 0; (size < 256) && (str[size] != '\0'); ++size);
+        // Need to change gholy shit this is terrible. TODO
+        std::string temp = std::to_string(nthp::fixedToDouble(value.value));
 
-        const auto ptr = nthp::script::nthp_internal_alloc(data, target_dsc, (nthp::intToFixed(size / sizeof(nthp::script::stdVarWidth) + 1)), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        const auto ptr = nthp::script::nthp_internal_alloc(data, target_dsc, (nthp::intToFixed(temp.size() / sizeof(nthp::script::stdVarWidth) + 1)), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         if(ptr.block == 0) { return 1; }
         
-        memcpy(data->blockData[ptr.block].data, str, size);
-        data->blockData[ptr.block].data[size] = '\0';
+        memcpy(data->blockData[ptr.block].data, temp.c_str(), temp.size());
 
         return 0;
 }
