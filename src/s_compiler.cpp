@@ -465,7 +465,6 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
                 
 
-                // No need for 2 compares. Only reaches this point if dereference character is present ($ OR > checked prior).
                 if(expression[0] == '$') {
                         PR_METADATA_SET (ref, nthp::script::flagBits::IS_REFERENCE);
 
@@ -618,6 +617,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
 
                                 if(isStructAccess) {
                                         if(globalList[i].isStruct) {
+                                                PR_METADATA_SET(ref, nthp::script::flagBits::IGNORE_SPECIAL_OFFSET);
                                         
                                                 bool validAccess = false;
                                                 for(size_t j = 0; j < structList[globalList[i].structID].members.size(); ++j) {
@@ -712,7 +712,7 @@ nthp::script::instructions::stdRef EvaluateReference(std::string expression, std
         if(ptr_reference) { PR_METADATA_CLEAR(ref, nthp::script::flagBits::IS_REFERENCE); }
 
         // In order for is_fixed_ref to pass this check, IS_REFERENCE is set, a valid struct and offset is assigned, and the global in question
-        // was declared as a FIXED. ref.value therefor is not encoded as a fixed point number.
+        // was declared as a FIXED. ref.value therefore is not encoded as a fixed point number.
         if(is_fixed_ref) {
                 ref.value += ref.offset;
                 ref.offset = 0;

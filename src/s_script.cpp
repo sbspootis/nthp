@@ -22,7 +22,8 @@ static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet*
                         ref.value = data->blockData[ptr.block].data[ptr.address];
                 }
 
-
+                // Copy the reference in the following data node; the compiler will add a data node to the list when a dynamic offset is
+                // used. The offset value stored in the current ref is the dynamic offset's position in the data node (if the flag is set).
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_OFFSET_DYNAMIC)) {
                         stdRef offsetEval = *(stdRef*)(data->nodeSet[data->currentNode + 1].access.data + (sizeof(stdRef) * ref.offset));
                         ____eval_std(offsetEval, data);
@@ -31,9 +32,6 @@ static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet*
                 }
 
 
-                // This is okay because the compiler simplifies ptr_descriptor call dereferences.
-                // Technically *&var is syntaxically correct and will evaluate correctly, but will take much longer.
-                // The compiler therefore simplifies constant ptr_descriptor dereferences to a simple reference '$'.
                 if(PR_METADATA_GET(ref, nthp::script::flagBits::IS_PTR)) {
                         const auto ptr = nthp::script::parsePtrDescriptor(ref.value);
                 #ifdef DEBUG
@@ -125,7 +123,8 @@ static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet
 #endif
         Type* const target = (Type*)(data->blockData[ptr.block].data);
 
-        return (target + (ptr.address + ref.offset));
+        // If IGNORE_SPECIAL_OFFSET is zero, multiply the offset by 1, otherwise it zeros the offset value.
+        return (target + (ptr.address + (ref.offset * (!PR_METADATA_GET(ref, nthp::script::flagBits::IGNORE_SPECIAL_OFFSET)))));
 }
 
 
@@ -160,7 +159,7 @@ DEFINE_EXECUTION_BEHAVIOUR(LABEL) {
         return 0;
 }
 
-// Fastest instruction jumping.
+// Fastest instruction jumping; matched by compiler within the same unit.
 DEFINE_EXECUTION_BEHAVIOUR(GOTO) {
         data->currentNode = (*(uint32_t*)data->nodeSet[data->currentNode].access.data) + data->currentScriptHeaderLocation;
         --data->currentNode;
@@ -168,12 +167,15 @@ DEFINE_EXECUTION_BEHAVIOUR(GOTO) {
         return 0;
 }
 
+// Jump allows direct switching to any node in the program. Unless specifically planned, must use GETINDEX
+// as an anchor to determine which instructions to jump to.
 DEFINE_EXECUTION_BEHAVIOUR(JUMP) {
         stdRef instruction = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
         EVAL_STDREF(instruction);
 
         data->currentNode = nthp::fixedToInt(instruction.value);
+        data->currentScriptHeaderLocation = nthp::script::Script::findInstructionHeader(data->nodeSet, nthp::fixedToInt(instruction.value));
         return 0;
 }
 
