@@ -1,0 +1,20 @@
+STRING firstPrint "This is the first (0) function."
+STRING secondPrint "This is the second (1) function."
+STRING thirdPrint "This is the third (2) function."
+STRING fourthPrint "This is the fourth (3) function."
+
+FUNC test1 { PRINT ~firstPrint }
+FUNC test2 { PRINT ~secondPrint }
+FUNC test3 { PRINT ~thirdPrint }
+FUNC test4 { PRINT ~fourthPrint }
+
+FUNC_LIST testList {
+        test1
+        test2
+        test3
+        test4
+}
+
+
+
+EXIT

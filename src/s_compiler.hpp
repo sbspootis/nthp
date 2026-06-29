@@ -131,6 +131,13 @@ namespace nthp {
                         }
                 };
 
+                // Acts as a function pointer list; compiler tracks different lists here and substitutes if the offset is constant.
+                // Otherwise, FUNC_LIST nodes store  
+                struct FLIST_DEF {
+                        std::string listName;
+                        std::vector<uint32_t> funcIDList;
+                };
+
 
                 // Takes source script as input, writes compiled script to output.
                 // output file can be NULL, where the compiler won't write anything.
@@ -152,6 +159,7 @@ namespace nthp {
                 std::vector<nthp::script::CompilerInstance::GLOBAL_DEF>    globalList;
                 std::vector<nthp::script::CompilerInstance::STR_DEF> strList;
                 std::vector<nthp::script::CompilerInstance::FUNC_DEF> funcList;
+                std::vector<nthp::script::CompilerInstance::FLIST_DEF> flists;
                 std::vector<nthp::script::CompilerInstance::STRUCT_DEF> structList;
 
                 static inline void undefConstant(const char* constName, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList) {

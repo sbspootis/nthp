@@ -11,6 +11,7 @@ MODULE script/stdgame/stdgame.mod
 
 BUILD_SYSTEM
         script/src_vt/init.thp  T_INIT
+        script/src_vt/functest.thp      T_HIDDEN
         script/src_vt/core.thp  T_TICK
         script/src_vt/exit.thp  T_EXIT
 

@@ -172,6 +172,8 @@ namespace ID {
                 TEXTINPUT_STOP,\
                 FUNC_START,\
                 FUNC_CALL,\
+                FUNC_LIST,\
+                FUNC_LIST_CALL,\
                 DEBUG_BREAK,\
                 ERROR_CLEAR\
         )
@@ -355,6 +357,8 @@ namespace Size {
 
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
                 FUNC_CALL = sizeof(uint32_t), // Func ID, to be matched to a FUNC_START by the linker.
+                FUNC_LIST = DYNAMIC_SIZE, // FUNC_LIST acts as an array of function pointers.
+                FUNC_LIST_CALL = sizeof(uint32_t) + sizeof(stdRef),        // Calls an element from a FUNC_LIST. The ID is of the list, not the access. If access is constant, compiler will substitute for a FUNC_CALL.
 
                 DEBUG_BREAK = 0,
                 ERROR_CLEAR = 0;

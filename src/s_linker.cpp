@@ -2,7 +2,6 @@
 
 
 
-
 nthp::script::LinkerInstance::LinkerInstance(std::vector<std::string>& targets, const char* output) {
         if(linkFiles(targets, output)) {
                 PRINT_DEBUG_ERROR("Failed to link compiled source files.\n");
@@ -79,6 +78,9 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
         }
         
         NOVERB_PRINT_DEBUG("Done.\n");
+        std::vector<uint32_t> funcPositionList; // stores locations of func starts (ID is position in this list).
+
+
 
         // Find and match headers for each FUNC!
         for(uint32_t i = 0; i < header.totalNodeCount; ++i) {
@@ -89,6 +91,7 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
                         for(; tempStorage[finder].access.ID != GET_INSTRUCTION_ID(HEADER); --finder);
 
                         *headerLocation = finder;
+                        funcPositionList.push_back(i);
                 }
         }
 
@@ -105,7 +108,6 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
 
 
 
-                                
                                         if((*callID) == (*startID)) {
                                                 PRINT_COMPILER("Linker Matched FUNC_CALL @ [%u] to FUNC @ [%u]; ID=%u\n", i, j, *callID);
 
@@ -117,7 +119,43 @@ int nthp::script::LinkerInstance::linkFiles(std::vector<std::string>& targets, c
                                         }
                                 }
                         }
+                }
+        }
 
+        // search for func lists and substitiute locations.
+        for(uint32_t i = 0; i < header.totalNodeCount; ++i) {
+                if(tempStorage[i].access.ID == GET_INSTRUCTION_ID(FUNC_LIST)) {
+                        auto listSize = tempStorage[i].access.size / sizeof(uint32_t);
+                        uint32_t* funcs = (uint32_t*)(tempStorage[i].access.data);
+
+                        for(auto j = 0; j < listSize; ++j) {
+                                PRINT_COMPILER("Substituting FUNC ID [%u] in list [%u]; ID[%u]->pos[%u].\n", funcs[j], i, funcs[j], funcPositionList[funcs[j]]);
+                                funcs[j] = funcPositionList[funcs[j]] - 1; 
+                        }
+                }
+        }
+
+
+        // The most inefficient way to do this, but my patience is running thin. Don't feel like making a list or anything.
+        {
+                uint32_t listCount = 0;
+                for(uint32_t i = 0; i < header.totalNodeCount; ++i) {
+                        if(tempStorage[i].access.ID == GET_INSTRUCTION_ID(FUNC_LIST_CALL)) {
+                                listCount = *(uint32_t*)tempStorage[i].access.data; // Need to find that many FUNC_LISTs before matching.
+
+                                // Match the list ID to the called list position.
+                                for(uint32_t j = 0; j < header.totalNodeCount; ++j) {
+                                        if(tempStorage[j].access.ID == GET_INSTRUCTION_ID(FUNC_LIST)) {
+                                                if(listCount == 0) {
+                                                        uint32_t* position = (uint32_t*)tempStorage[i].access.data;
+                                                        *position = j;
+                                                        PRINT_COMPILER("Linker Matched FUNC_LIST_CALL @ [%u] to FUNC_LIST @ [%u].\n", i, j);
+                                                        break;
+                                                }
+                                                else { --listCount; }
+                                        }
+                                }
+                        }
                 }
         }
 

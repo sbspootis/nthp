@@ -11,6 +11,10 @@ PRIVATE angle
 PRIVATE count
 SET &count 0
 
+
+PRIVATE executionID
+SET &executionID 0
+
 LABEL 1
         INC &count
         IF $count GRT 4095
@@ -26,9 +30,6 @@ LABEL 1
 
         @gamef_getVectorAngle ( &mouseVector &angle )
         @gamef_getNormalVector ( 5 $angle &normalVector )
-        PRINT $normalVector.x
-        PRINT $normalVector.y
-        PRINT $angle
 
         IF $a_left
                 IF $currentIndex NOT 0
@@ -45,6 +46,22 @@ LABEL 1
         END
         IF $currentIndex GRT 3
                 SET &currentIndex 0
+        END
+
+        IF $a_panUp
+                INC &executionID
+                PRINT $executionID
+                SET &a_panUp 0
+        END
+        IF $a_panDown
+                DEC &executionID
+                PRINT $executionID
+                SET &a_panDown 0
+        END
+
+        IF $a_enter
+                FUNC_CALL testList.$executionID
+                SET &a_enter 0
         END
         
 

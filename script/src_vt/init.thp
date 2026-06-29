@@ -117,13 +117,5 @@ ACTION_BIND #ai_panRight &a_panRight d
 
 
 
-PRIVATE testVar
-SET &testVar 10.665
-
-PRIVATE conversionValue
-PRIVATE Coolstring
-
-NUM_TO_STRING $testVar &Coolstring
-STRING_TO_NUM ~$Coolstring &conversionValue
 
 EXIT
