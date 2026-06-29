@@ -136,6 +136,14 @@ namespace nthp {
                 struct FLIST_DEF {
                         std::string listName;
                         std::vector<uint32_t> funcIDList;
+
+                        void writeToFile(std::fstream& symbolFile, std::vector<FUNC_DEF>& fList) {
+                                symbolFile << "FUNC_LIST " << listName << " { ";
+                                for(auto i = 0; i < funcIDList.size(); ++i) {
+                                        symbolFile << fList[funcIDList[i]].name << ' ';
+                                }
+                                symbolFile << "}\n";
+                        }
                 };
 
 
@@ -211,6 +219,8 @@ namespace nthp {
                         gotoList.clear();
                         strList.clear();
                         structList.clear();
+                        funcList.clear();
+                        flists.clear();
                 }
 
                 void clean() {

@@ -69,10 +69,9 @@ LABEL 1
 
 
         CORE_CLEAR
-                DRAW_SETCOLOR $count
                 DRAW_LINE 400 400 $mousePosition.x $mousePosition.y
                 
-          /      CORE_QRENDER $ep_entities /
+                CORE_QRENDER $ep_entities
         CORE_DISPLAY
 
 

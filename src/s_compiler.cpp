@@ -3646,6 +3646,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                                 for(uint32_t i = 0; i < newDef.funcIDList.size(); ++i) { writer[i] = newDef.funcIDList[i]; }
                         }
 
+                        if(createSymbolFile) { newDef.writeToFile(symbolFile, funcList); }
 
                         flists.push_back(newDef);
                         continue;
