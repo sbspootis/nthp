@@ -192,66 +192,172 @@ void destroyArgumentConsts(std::vector<nthp::script::CompilerInstance::CONST_DEF
 
 
 int EvaluateMacro(std::fstream& file, std::string& expression, std::vector<nthp::script::CompilerInstance::MACRO_DEF>& list, std::vector<nthp::script::CompilerInstance::CONST_DEF>& constantList, size_t& mp, size_t& targetMacro, bool& beginMacroEval) {
-        if(expression[0] == '@') {
-                auto initialPosition = file.tellg();
+        auto macroFindStart = expression.find_first_of('@');
+        if(macroFindStart == expression.npos) { return 0; }
 
-                for(size_t i = 0; i < list.size(); ++i) {
-                        if(expression == list[i].macroName) {
-                                targetMacro = i;
+        bool appendPrefix = false;
+        unsigned int checksMade = 0;
 
-                                
-                                (file >> expression);
-                                nthp::script::CompilerInstance::portable_evalConst(expression, constantList);
-                                if(expression == "(") {
-                                        // Evaluate Arguments
-                                        std::string argument_const;
-                                        size_t argumentsFound = 0;
-                                        do {
-                                                (file >> expression);
-                                                nthp::script::CompilerInstance::portable_evalConst(expression, constantList);
-                                                if(expression != ")") {        
-                                                        ++argumentsFound;
-                                                        if(argumentsFound > 255) { // Was at 500, thought that was too big. When are you going to have more than 255 arguments in a function?
-                                                                PRINT_COMPILER_ERROR("Macro Argument data is too large; no ARG_END ')' character found.\n");
-                                                                return 1;
-                                                        }
+        std::string prefix = "";
+        if(macroFindStart != 0) {
+                prefix = expression;
+                prefix.erase(prefix.begin()+macroFindStart, prefix.end());
+                appendPrefix = true;
 
-                                                        argument_const = ("#ar" + std::to_string(argumentsFound - 1));
+                expression.erase(expression.begin(), expression.begin()+macroFindStart); // Make sure the start of the expression is the @.
+        }
+        
+        
+        // Do a by-character match across the entire macro list.
+        auto finder = 1;
 
-                                                        constantList.push_back(nthp::script::CompilerInstance::CONST_DEF());
-                                                        constantList[constantList.size() - 1].constName = argument_const;
-                                                        constantList[constantList.size() - 1].value = expression;
-                                                        PRINT_COMPILER("Detected argument name[%s] = [%s];\n", constantList[constantList.size() - 1].constName.c_str(), constantList[constantList.size() - 1].value.c_str());
+        struct searchEntry {
+                searchEntry(std::string name, size_t pos, bool pass) { searchName = name; index = pos; passToNext = pass; }
 
-                                                }
-                                        }
-                                        while(expression != ")");
-                                        PRINT_COMPILER("Evaluated Arguments.\n");
-
-                                }
-                                else {
-                                        file.seekg(initialPosition);
-                                }
-                                // TODO: Test this shit
+                std::string searchName;
+                size_t index;
+                bool passToNext;
+        };
 
 
+        
+        std::vector<searchEntry> searchList; // This is the compiler, so I don't care about how quickly it gets done, just how long my sanity holds.
 
+        // Search for strings that match the target character at the correct relative positions.
+        // Search across the macro list; any matches get added to the 'searchList'. The searchlist gets truncated and searched again.
 
-                                expression = list[i].macroData[0];
-                                mp = 0;
-                                beginMacroEval = true;
-
-
-                                PRINT_COMPILER("Beginning Expansion of Macro [%s]...\n", list[targetMacro].macroName.c_str());
-                                
-                                return 0;
-                        }
+        // First pass is not in a loop, and checks the macro list directly for first-character matches.
+        for(size_t macroIterator = 0; macroIterator < list.size(); ++macroIterator) {
+                if(expression[finder] == list[macroIterator].macroName[finder]) {
+                        searchList.push_back(searchEntry(list[macroIterator].macroName, macroIterator, true));
+                        ++checksMade;
                 }
-                
-                PRINT_COMPILER_ERROR("Unable to evaluate MACRO substitution [%s]; MACRO not declared.\n", expression.c_str());
+        }
+        if(checksMade == 0) {
+                PRINT_COMPILER_ERROR("Unable to evaluate MACRO substitution [%s]; Failed at first pass.\n", expression.c_str());
                 return 1;
         }
-       return 0;
+
+        
+        
+        auto lastPassFinalMatch = UINT32_MAX; // Once all passes are made, this should be the match.
+        std::string suffix = expression; // Evaluate once the target macro is matched.
+        bool matchFound = false;
+        checksMade = 0;
+
+        // Second and following passes; least cursed for loop.
+        for(finder = 2; true; ++finder) {
+                for(size_t i = 0; i < searchList.size(); ++i) {
+                        if(searchList[i].passToNext) {
+                                ++checksMade;
+
+                                // I was unsure about left-to-right order (if it's guaranteed on multiple platforms) so I made it a seperate check instead of
+                                // using logic AND &&.
+                                
+                                if(finder < searchList[i].searchName.size() && finder < expression.size()) {
+                                        if(expression[finder] == searchList[i].searchName[finder]) {
+                                                lastPassFinalMatch = i;
+                                                continue;
+                                        }
+                                        else {
+                                                searchList[i].passToNext = false;
+                                                continue;
+                                        }
+                                }
+                                else {
+                                        searchList[i].passToNext = false;
+                                        continue;
+                                }
+                        }
+                }
+
+                // After each pass, 
+                // ChecksMade will be the number of entries allowed to pass from previous round.
+
+                // If the number of checks made is zero, then lastPassFinalMatch should contain the correct(closest) match.
+                
+                if((checksMade == 0)) {
+                
+                        if(lastPassFinalMatch != UINT32_MAX) {
+                                // Matches by-character. Isolate and set the prefix and suffix (if applicable).
+                                // If the finder never reached the end of the expression, isolate as suffix.
+                                if(finder <= expression.size()) {
+                                        {
+                                                suffix.erase(0, finder-1); // range erase erases [first, last)
+                                        }
+                                        expression.erase(expression.begin()+(finder-1), expression.end());
+                                }
+                                else { suffix = ""; }
+
+                                // Incorrect expressions will pass if at least one character match was made. This final check makes sure an incorrect name isn't treated as a suffix.
+                                if(expression !=  list[searchList[lastPassFinalMatch].index].macroName) {
+                                        PRINT_COMPILER_ERROR("Unable to evaluate MACRO substitution [%s]-[%s], f=%u; Failed at final verification.\n", expression.c_str(), suffix.c_str(), finder);
+                                        return 1;
+                                }
+
+                                list[searchList[lastPassFinalMatch].index].prefix = prefix;
+                                list[searchList[lastPassFinalMatch].index].suffix = suffix;
+
+                                matchFound = true;
+                                targetMacro = searchList[lastPassFinalMatch].index;
+
+                                PRINT_COMPILER("Succeeded a case match; macroName = [%s] prefix = [%s], suffix = [%s].\n", list[searchList[lastPassFinalMatch].index].macroName.c_str(), list[searchList[lastPassFinalMatch].index].prefix.c_str(), list[searchList[lastPassFinalMatch].index].suffix.c_str());
+                                break;
+                        }
+                        else {
+                                PRINT_COMPILER_ERROR("Unable to evaluate MACRO substitution [%s]; Failed at searchList pass #%u.\n", expression.c_str(), finder);
+                                return 1;
+                        }
+
+                }
+
+                checksMade = 0;
+        }
+        
+        auto initialPosition = file.tellg();
+        
+        (file >> expression);
+        nthp::script::CompilerInstance::portable_evalConst(expression, constantList);
+        if(expression == "(") {
+                // Evaluate Arguments
+                std::string argument_const;
+                size_t argumentsFound = 0;
+                do {
+                        (file >> expression);
+                        nthp::script::CompilerInstance::portable_evalConst(expression, constantList);
+                        if(expression != ")") {        
+                                ++argumentsFound;
+                                if(argumentsFound > 255) { // Was at 500, thought that was too big. When are you going to have more than 255 arguments in a function?
+                                        PRINT_COMPILER_ERROR("Macro Argument data is too large; no ARG_END ')' character found.\n");
+                                        return 1;
+                                }
+
+                                argument_const = ("#ar" + std::to_string(argumentsFound - 1));
+
+                                constantList.push_back(nthp::script::CompilerInstance::CONST_DEF());
+                                constantList[constantList.size() - 1].constName = argument_const;
+                                constantList[constantList.size() - 1].value = expression;
+                                PRINT_COMPILER("Detected argument name[%s] = [%s];\n", constantList[constantList.size() - 1].constName.c_str(), constantList[constantList.size() - 1].value.c_str());
+
+                        }
+                }
+                while(expression != ")");
+                PRINT_COMPILER("Evaluated Arguments.\n");
+
+        }
+        else {
+                file.seekg(initialPosition);
+        }
+
+        expression = prefix + list[targetMacro].macroData[0] + suffix;
+        mp = 0;
+        beginMacroEval = true;
+
+
+        PRINT_COMPILER("Beginning Expansion of Macro [%s]...\n", list[targetMacro].macroName.c_str());
+        
+        return 0;
+
 }
 
 
@@ -271,7 +377,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
                                 destroyArgumentConsts(constList);
                         }
                         else {
-                                expression = macroList[targetMacro].macroData[currentMacroPosition];
+                                expression =  macroList[targetMacro].prefix + macroList[targetMacro].macroData[currentMacroPosition] +  macroList[targetMacro].suffix;
                                 if(EvaluateConst(expression, constList)) return 1;
                                 
 

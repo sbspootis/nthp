@@ -71,6 +71,9 @@ namespace nthp {
                         std::string macroName;
                         std::vector<std::string> macroData;
 
+                        std::string prefix;
+                        std::string suffix;
+
                         void writeToFile(std::fstream& symbolFile) {
                                 std::string newName = macroName;
                                 newName.erase(newName.begin());
@@ -186,6 +189,7 @@ namespace nthp {
                         for(size_t i = 0; i < constantList.size(); ++i) {
                                 if(expression == constantList[i].constName) {
                                         expression = constantList[i].value;
+                                        if(expression[0] == '#') { portable_evalConst(expression, constantList); }
                                         break;
                                 }
                         }
