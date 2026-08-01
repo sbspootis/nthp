@@ -290,7 +290,7 @@ int EvaluateMacro(std::fstream& file, std::string& expression, std::vector<nthp:
                                 else { suffix = ""; }
 
                                 // Incorrect expressions will pass if at least one character match was made. This final check makes sure an incorrect name isn't treated as a suffix.
-                                if(expression !=  list[searchList[lastPassFinalMatch].index].macroName) {
+                                if(expression != list[searchList[lastPassFinalMatch].index].macroName) {
                                         PRINT_COMPILER_ERROR("Unable to evaluate MACRO substitution [%s]-[%s], f=%u; Failed at final verification.\n", expression.c_str(), suffix.c_str(), finder);
                                         return 1;
                                 }
@@ -377,7 +377,7 @@ int EvaluateSymbol(std::fstream& file, std::string& expression, std::vector<nthp
                                 destroyArgumentConsts(constList);
                         }
                         else {
-                                expression =  macroList[targetMacro].prefix + macroList[targetMacro].macroData[currentMacroPosition] +  macroList[targetMacro].suffix;
+                                expression =  macroList[targetMacro].prefix + macroList[targetMacro].macroData[currentMacroPosition] + macroList[targetMacro].suffix;
                                 if(EvaluateConst(expression, constList)) return 1;
                                 
 

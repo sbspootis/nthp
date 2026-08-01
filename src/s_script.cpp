@@ -1,8 +1,11 @@
 #include "s_script.hpp"
 using namespace nthp::script::instructions;
-#define DEFINE_EXECUTION_BEHAVIOUR(instruction) const int instruction (nthp::script::Script::ScriptDataSet* data)
+#define DEFINE_EXECUTION_BEHAVIOUR(instruction) static const int instruction (nthp::script::Script::ScriptDataSet* data)
 
 nthp::texture::Palette nthp::script::activePalette;
+
+// Immediately reserved cache for standard references.
+static nthp::script::instructions::stdRef refCache[10];
 
 
 static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
@@ -152,6 +155,7 @@ DEFINE_EXECUTION_BEHAVIOUR(EXIT) {
 DEFINE_EXECUTION_BEHAVIOUR(HEADER) {
         data->currentScriptHeaderLocation = data->currentNode;
 
+        
         return 0;
 }
 
@@ -170,12 +174,12 @@ DEFINE_EXECUTION_BEHAVIOUR(GOTO) {
 // Jump allows direct switching to any node in the program. Unless specifically planned, must use GETINDEX
 // as an anchor to determine which instructions to jump to.
 DEFINE_EXECUTION_BEHAVIOUR(JUMP) {
-        stdRef instruction = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(instruction);
+        EVAL_STDREF(refCache[0]);
 
-        data->currentNode = nthp::fixedToInt(instruction.value);
-        data->currentScriptHeaderLocation = nthp::script::Script::findInstructionHeader(data->nodeSet, nthp::fixedToInt(instruction.value));
+        data->currentNode = nthp::fixedToInt(refCache[0].value);
+        data->currentScriptHeaderLocation = nthp::script::Script::findInstructionHeader(data->nodeSet, nthp::fixedToInt(refCache[0].value));
         return 0;
 }
 
@@ -197,8 +201,8 @@ DEFINE_EXECUTION_BEHAVIOUR(RETURN) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(GETINDEX) {
-        ptrRef var = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
-        EVAL_PTRREF(var);
+        refCache[0] = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
+        EVAL_PTRREF(refCache[0]);
 
         *target_dsc = nthp::intToFixed(data->currentNode);
 
@@ -211,8 +215,8 @@ DEFINE_EXECUTION_BEHAVIOUR(DATA) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(INC) {
-        ptrRef var = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
-        EVAL_PTRREF(var);
+        refCache[0] = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
+        EVAL_PTRREF(refCache[0]);
 
         *target_dsc = (*target_dsc) + nthp::intToFixed(1);
 
@@ -220,8 +224,8 @@ DEFINE_EXECUTION_BEHAVIOUR(INC) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DEC) {
-        ptrRef var = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
-        EVAL_PTRREF(var);
+        refCache[0] = *(ptrRef*)data->nodeSet[data->currentNode].access.data;
+        EVAL_PTRREF(refCache[0]);
 
        
         *target_dsc = (*target_dsc) - nthp::intToFixed(1);
@@ -230,27 +234,27 @@ DEFINE_EXECUTION_BEHAVIOUR(DEC) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LSHIFT) {
-        ptrRef var =  *(ptrRef*)data->nodeSet[data->currentNode].access.data;
-        stdRef count = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] =  *(ptrRef*)data->nodeSet[data->currentNode].access.data;
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
 
-        EVAL_PTRREF(var);
-        EVAL_STDREF(count);
+        EVAL_PTRREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
         
-        *target_dsc = (*target_dsc) << nthp::fixedToInt(count.value);
+        *target_dsc = (*target_dsc) << nthp::fixedToInt(refCache[1].value);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(RSHIFT) {
-        ptrRef var =  *(ptrRef*)data->nodeSet[data->currentNode].access.data;
-        stdRef count = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] =  *(ptrRef*)data->nodeSet[data->currentNode].access.data;
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
         
         
-        EVAL_PTRREF(var);
-        EVAL_STDREF(count);
+        EVAL_PTRREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
         
-        *target_dsc = (*target_dsc) >> nthp::fixedToInt(count.value);
+        *target_dsc = (*target_dsc) >> nthp::fixedToInt(refCache[1].value);
 
       
         return 0;
@@ -258,136 +262,136 @@ DEFINE_EXECUTION_BEHAVIOUR(RSHIFT) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ADD) {
-        stdRef a = *(stdRef*)data->nodeSet[data->currentNode].access.data;
-        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)data->nodeSet[data->currentNode].access.data;                                           // a
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                        // b
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));       // output
 
 
-        EVAL_STDREF(a);
-        EVAL_STDREF(b);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
 
-        *target_dsc = (a.value + b.value);
+        *target_dsc = (refCache[0].value + refCache[1].value);
        
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SUB) {
-        stdRef a = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
 
-        EVAL_STDREF(a);
-        EVAL_STDREF(b);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
 
-        *target_dsc = (a.value - b.value);
+        *target_dsc = (refCache[0].value - refCache[1].value);
 
        
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(MUL) {
-        stdRef a = *(stdRef*)data->nodeSet[data->currentNode].access.data;
-        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
 
-        EVAL_STDREF(a);
-        EVAL_STDREF(b);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
 
-        *target_dsc = nthp::f_fixedProduct(a.value, b.value);
+        *target_dsc = nthp::f_fixedProduct(refCache[0].value, refCache[1].value);
       
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DIV) {
-        stdRef a = *(stdRef*)data->nodeSet[data->currentNode].access.data;
-        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
 
 
-        EVAL_STDREF(a);
-        EVAL_STDREF(b);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        *target_dsc = nthp::f_fixedQuotient(a.value, b.value);
+        *target_dsc = nthp::f_fixedQuotient(refCache[0].value, refCache[1].value);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SQRT) {
-        stdRef base = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(base);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::f_sqrt(base.value);
+        *target_dsc = nthp::f_sqrt(refCache[0].value);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POW) {
-        stdRef base = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef exponent = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                         // Base
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                        // Exponent
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));       // Output
 
-        EVAL_STDREF(base);
-        EVAL_STDREF(exponent);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        nthp::script::stdVarWidth math = base.value;
-        for(int i = 1; i < nthp::fixedToInt(exponent.value); ++i) { math = nthp::f_fixedProduct(math, base.value); }
+        nthp::script::stdVarWidth math = refCache[0].value;
+        for(int i = 1; i < nthp::fixedToInt(refCache[1].value); ++i) { math = nthp::f_fixedProduct(math, refCache[0].value); }
         
         (*target_dsc) = math;
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ABS) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // Value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // output
 
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(ptr);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
 
-        *target_dsc = std::abs(value.value);
+        *target_dsc = std::abs(refCache[0].value);
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(MOD) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef divisor = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                         // Value
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                        // Divisor
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));       // Output
 
-        EVAL_STDREF(value);
-        EVAL_STDREF(divisor);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        (*target_dsc) = nthp::intToFixed(nthp::fixedToInt(value.value) % nthp::fixedToInt(divisor.value));
+        (*target_dsc) = nthp::intToFixed(nthp::fixedToInt(refCache[0].value) % nthp::fixedToInt(refCache[1].value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(RAND) {
-        stdRef a = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef b = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                         // a (min)
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                        // b (max)
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));       // output
 
-        EVAL_STDREF(a);
-        EVAL_STDREF(b);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        (*target_dsc) = nthp::intToFixed((rand() % (nthp::fixedToInt(b.value - a.value))) + nthp::fixedToInt(a.value));
+        (*target_dsc) = nthp::intToFixed((rand() % (nthp::fixedToInt(refCache[1].value - refCache[0].value))) + nthp::fixedToInt(refCache[0].value));
         return 0;
 }
 
@@ -395,78 +399,78 @@ DEFINE_EXECUTION_BEHAVIOUR(RAND) {
 // Like hell I'm writing a fixed point trigonometry set myself. Just take the slower
 // trig up the ass, not worth my time.
 DEFINE_EXECUTION_BEHAVIOUR(SIN) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::sin(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::sin(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
 
 
 DEFINE_EXECUTION_BEHAVIOUR(COS) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::cos(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::cos(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
 
 
 DEFINE_EXECUTION_BEHAVIOUR(TAN) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::tan(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::tan(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ASIN) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::asin(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::asin(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ACOS) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::acos(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::acos(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ATAN) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        *target_dsc = nthp::doubleToFixed(std::atan(nthp::fixedToDouble(value.value)));
+        *target_dsc = nthp::doubleToFixed(std::atan(nthp::fixedToDouble(refCache[0].value)));  // two conversions! Why even use fixed point in the first place?!
         return 0;
 }
 
@@ -495,13 +499,13 @@ DEFINE_EXECUTION_BEHAVIOUR(SKIP_END) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_IF_TRUE) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(uint32_t));
 
 
-        EVAL_STDREF(opA);
-        if(opA.value) return 0;
+        EVAL_STDREF(refCache[0]);
+        if(refCache[0].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
         
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -511,15 +515,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_IF_TRUE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_EQU) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value == opB.value) return 0;
+        if(refCache[0].value == refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -528,15 +532,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_EQU) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_NOT) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value != opB.value) return 0;
+        if(refCache[0].value != refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -545,15 +549,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_NOT) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRT) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value > opB.value) return 0;
+        if(refCache[0].value > refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -562,15 +566,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRT) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LST) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value < opB.value) return 0;
+        if(refCache[0].value < refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -579,15 +583,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LST) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRTE) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value >= opB.value) return 0;
+        if(refCache[0].value >= refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -597,15 +601,15 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_GRTE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LSTE) {
-        stdRef opA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef opB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                  // opA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                 // opB
         uint32_t endIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
         uint32_t elseIndex = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) + sizeof(stdRef) + sizeof(uint32_t)));
 
-        EVAL_STDREF(opA);
-        EVAL_STDREF(opB);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        if(opA.value <= opB.value) return 0;
+        if(refCache[0].value <= refCache[1].value) return 0;
         if(elseIndex) { data->currentNode = elseIndex + data->currentScriptHeaderLocation; return 0; }
 
         data->currentNode = endIndex + data->currentScriptHeaderLocation;
@@ -614,13 +618,13 @@ DEFINE_EXECUTION_BEHAVIOUR(LOGIC_LSTE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SET) {
-        ptrRef pointer = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                         // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));        // value
 
-        EVAL_PTRREF(pointer);
-        EVAL_STDREF(value);
+        EVAL_PTRREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        *target_dsc = value.value;
+        *target_dsc = refCache[1].value;
        
         return 0;
 }
@@ -724,27 +728,27 @@ SpecialType* nthp::script::nthp_internal_alloc_special(nthp::script::Script::Scr
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef ptrOutput = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // output
 
-        EVAL_STDREF(size);
-        EVAL_PTRREF(ptrOutput);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        if(nthp::script::nthp_internal_alloc(data, target_dsc, size.value, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
+        if(nthp::script::nthp_internal_alloc(data, target_dsc, refCache[0].value, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
         
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(NEW) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef ptrOutput = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));   // output
         const uint32_t entrySize = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(ptrRef));
 
-        EVAL_STDREF(size);
-        EVAL_PTRREF(ptrOutput);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        const auto out = nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(size.value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
-        data->blockData[out.block].sizeSpecial = nthp::fixedToInt(size.value);
+        const auto out = nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(refCache[0].value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        data->blockData[out.block].sizeSpecial = nthp::fixedToInt(refCache[0].value);
         if(out.block == 0) { return 1; }
 
         return 0;
@@ -752,11 +756,12 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(FREE) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(ptr);
-        const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
+        EVAL_PTRREF(refCache[0]);
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         
+        // Will refuse of the block is zero (attempted free on global list)
         if(ptr_dsc.block) {
                 if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].data = nullptr;
@@ -770,28 +775,28 @@ DEFINE_EXECUTION_BEHAVIOUR(FREE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(COPY) {
-        ptrRef src = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef size = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
-        ptrRef dst = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                          // src
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));        // size
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));        // dst
 
         nthp::script::stdVarWidth* r_src = nullptr;
         {                                       // Fucky shit you have to do when evaluating 2 ptrrefs.
-                EVAL_PTRREF(src);
+                EVAL_PTRREF(refCache[0]);
                 r_src = target_dsc;
         }
-        EVAL_STDREF(size);
-        EVAL_PTRREF(dst);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        memcpy(target_dsc, r_src, nthp::fixedToInt(size.value) * sizeof(nthp::script::stdVarWidth));
+        memcpy(target_dsc, r_src, nthp::fixedToInt(refCache[1].value) * sizeof(nthp::script::stdVarWidth));
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(NEXT) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data); // target
+        const uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
         
-        EVAL_PTRREF(ptr);
+        EVAL_PTRREF(refCache[0]);
 
        
         *target_dsc = (*target_dsc + offset);
@@ -800,33 +805,33 @@ DEFINE_EXECUTION_BEHAVIOUR(NEXT) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(PREV) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        const uint8_t offset = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
         
-        EVAL_PTRREF(ptr);
+        EVAL_PTRREF(refCache[0]);
 
         *target_dsc = (*target_dsc - offset);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(INDEX) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef addr = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
-        uint8_t offsetSize = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                          // ptr
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));        // addr
+        const uint8_t offsetSize = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(stdRef));
 
-        EVAL_PTRREF(ptr);
-        EVAL_STDREF(addr);
+        EVAL_PTRREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        *target_dsc = nthp::script::constructPtrDescriptor(nthp::script::parsePtrDescriptor((*target_dsc)).block, (nthp::fixedToInt(addr.value) * offsetSize));
+        *target_dsc = nthp::script::constructPtrDescriptor(nthp::script::parsePtrDescriptor((*target_dsc)).block, (nthp::fixedToInt(refCache[1].value) * offsetSize));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(LAST) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
         uint8_t offsetSize = *(uint8_t*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
 
-        EVAL_PTRREF(target);
+        EVAL_PTRREF(refCache[0]);
         auto ptr = nthp::script::parsePtrDescriptor(*target_dsc);
         
         {       // This is a safety check for the pointer after eval; the regular checks are run on the stored pointer
@@ -850,22 +855,22 @@ DEFINE_EXECUTION_BEHAVIOUR(LAST) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(GET_BLOCKSIZE) {
-        stdRef block = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                        // block
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // output
 
-        EVAL_STDREF(block);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        (*target_dsc) = nthp::intToFixed(data->blockData[nthp::script::parsePtrDescriptor(block.value).block].size);
+        (*target_dsc) = nthp::intToFixed(data->blockData[nthp::script::parsePtrDescriptor(refCache[0].value).block].size);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data); // size
 
-        EVAL_STDREF(size);
+        EVAL_STDREF(refCache[0]);
 
-        auto newSizeBytes = nthp::fixedToInt(size.value) * sizeof(nthp::script::BlockMemoryEntry) + 1;
+        auto newSizeBytes = nthp::fixedToInt(refCache[0].value) * sizeof(nthp::script::BlockMemoryEntry) + 1;
         auto temp = (nthp::script::BlockMemoryEntry*)realloc(data->blockData, newSizeBytes);
 
         if(temp != NULL) { data->blockData = temp; }
@@ -874,35 +879,35 @@ DEFINE_EXECUTION_BEHAVIOUR(SET_BLOCKLISTSIZE) {
                 return 1;
         }
 
-        for(size_t i = data->blockDataSize; i < nthp::fixedToInt(size.value); ++i) {
+        for(size_t i = data->blockDataSize; i < nthp::fixedToInt(refCache[0].value); ++i) {
                 data->blockData[i].isFree = true;
                 data->blockData[i].type = nthp::script::BlockMemoryEntry::bmType::TYPELESS;
                 data->blockData[i].size = 0;
                 data->blockData[i].data = nullptr;
         }
 
-        data->blockDataSize = nthp::fixedToInt(size.value);
+        data->blockDataSize = nthp::fixedToInt(refCache[0].value);
 
-        PRINT_DEBUG("Reserved fixed BLOCK LIST size; size=%u.\n", nthp::fixedToInt(size.value));
+        PRINT_DEBUG("Reserved fixed BLOCK LIST size; size=%u.\n", nthp::fixedToInt(refCache[0].value));
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ALLOC_TARGET) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef block = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                         // size
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                       // block
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));     // output
 
-        EVAL_STDREF(size);
-        EVAL_STDREF(block);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
-        if(block.value < 0 || block.value > nthp::intToFixed(data->blockDataSize)) {
-                PRINT_DEBUG_ERROR("Invalid target for ALLOC_TARGET @ [%zu]; Entry [%d] not registered.\n", data->currentNode, nthp::fixedToInt(block.value));
+        if(refCache[1].value <= 0 || refCache[1].value > nthp::intToFixed(data->blockDataSize)) {
+                PRINT_DEBUG_ERROR("Invalid target for ALLOC_TARGET @ [%zu]; Entry [%d] not registered.\n", data->currentNode, nthp::fixedToInt(refCache[1].value));
                 return 1;
         }
 
-        const auto result = nthp::script::nthp_internal_alloc(data, target_dsc, size.value, nthp::fixedToInt(block.value), nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        const auto result = nthp::script::nthp_internal_alloc(data, target_dsc, refCache[0].value, nthp::fixedToInt(refCache[1].value), nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         if(result.block == nthp::script::NULL_REF.block) { return 1; }
 
         return 0;
@@ -910,23 +915,23 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC_TARGET) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_ALLOC) {
-	stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+	refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // target
 	
-	EVAL_STDREF(size);
-        EVAL_PTRREF(target);    // where to write the pointer descriptor to!
+	EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);    // where to write the pointer descriptor to!
 
-        auto textureBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::gTexture>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::TEXTURE);
+        auto textureBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::gTexture>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::bmType::TEXTURE);
         if(textureBlock == nullptr) { return 1; }
 
 	return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(ptr);
-        const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
+        EVAL_PTRREF(refCache[0]);
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         
         if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
                 nthp::texture::gTexture* textures = (nthp::texture::gTexture*)(data->blockData[ptr_dsc.block].data);
@@ -947,20 +952,20 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_FREE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_CLEAN) {
-        textureRef target = *(textureRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(textureRef*)(data->nodeSet[data->currentNode].access.data);             // texture
 
-        auto t = EVAL_TEXTUREREF(target);
+        auto t = EVAL_TEXTUREREF(refCache[0]);  
 
         t->getTextureData().cleanSTData();
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
-	textureRef output = *(textureRef*)(data->nodeSet[data->currentNode].access.data);
-	strRef file = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+	refCache[0] = *(textureRef*)(data->nodeSet[data->currentNode].access.data);                             // texture
+	refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                // file (str)
 
-        auto t = EVAL_TEXTUREREF(output);
-        auto filename = EVAL_STRREF(file);
+        auto t = EVAL_TEXTUREREF(refCache[0]);
+        auto filename = EVAL_STRREF(refCache[1]);
 	
         if(t->autoLoadTextureFile(filename, &nthp::script::activePalette, nthp::core.getRenderer())) {
                 return 1;
@@ -970,9 +975,9 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTURE_LOAD) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SET_ACTIVE_PALETTE) {
-        strRef paletteFile = *(strRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(strRef*)(data->nodeSet[data->currentNode].access.data);                                 // palette file
 
-        auto filename = EVAL_STRREF(paletteFile);
+        auto filename = EVAL_STRREF(refCache[0]);
 
         nthp::script::activePalette.importPaletteFromFile(filename);
 
@@ -981,23 +986,23 @@ DEFINE_EXECUTION_BEHAVIOUR(SET_ACTIVE_PALETTE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_ALLOC) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                 // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                // output
         
-        EVAL_STDREF(size);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
         
-        auto frameBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::Frame>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::FRAME);
+        auto frameBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::Frame>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::bmType::FRAME);
         if(frameBlock == nullptr) { return 1; }
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(target);
-        auto ptr = nthp::script::parsePtrDescriptor(target.value);
+        EVAL_PTRREF(refCache[0]);
+        auto ptr = nthp::script::parsePtrDescriptor(refCache[0].value);
 
         if((ptr.block) && (ptr.block < data->blockDataSize)) {
                 if((!data->blockData[ptr.block].isFree)) free(data->blockData[ptr.block].data);
@@ -1012,26 +1017,27 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_FREE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
-        frameRef frameIndex = *(frameRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 2));
-        stdRef w = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));
-        stdRef h = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));
-        textureRef textureIndex = *(textureRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));
+        refCache[0] = *(frameRef*)(data->nodeSet[data->currentNode].access.data);                                       // frameindex
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                        // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 2));                  // y
+        refCache[3] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));                  // w
+        refCache[4] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));                  // h
+        refCache[5] = *(textureRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));              // texture
 
-        auto frame = EVAL_FRAMEREF(frameIndex);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
-        EVAL_STDREF(w);
-        EVAL_STDREF(h);
-        auto texture = EVAL_TEXTUREREF(textureIndex);
+        auto frame = EVAL_FRAMEREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
+        EVAL_STDREF(refCache[3]);
+        EVAL_STDREF(refCache[4]);
+        auto texture = EVAL_TEXTUREREF(refCache[5]);
 
         SDL_Rect rect;
-        rect.x = nthp::fixedToInt(x.value);
-        rect.y = nthp::fixedToInt(y.value);
-        rect.w = nthp::fixedToInt(w.value);
-        rect.h = nthp::fixedToInt(h.value);
+        rect.x = nthp::fixedToInt(refCache[1].value);
+        rect.y = nthp::fixedToInt(refCache[2].value);
+        rect.w = nthp::fixedToInt(refCache[3].value);
+        rect.h = nthp::fixedToInt(refCache[4].value);
 
+        // Written on the 29th of July 2026; I completely forgot about this! How handy!
         if(!(rect.w * rect.h)) {
                 rect.x = 0;
                 rect.y = 0;
@@ -1047,23 +1053,23 @@ DEFINE_EXECUTION_BEHAVIOUR(FRAME_SET) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_ALLOC) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // target
 
-        EVAL_STDREF(size);
-        EVAL_PTRREF(target);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        auto entityBlock = nthp::script::nthp_internal_alloc_special<nthp::entity::gEntity>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::ENTITY);
+        auto entityBlock = nthp::script::nthp_internal_alloc_special<nthp::entity::gEntity>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::bmType::ENTITY);
         if(entityBlock == nullptr) { return 1; }
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
-        ptrRef ptr = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(ptr);
-        const auto ptr_dsc = nthp::script::parsePtrDescriptor(ptr.value);
+        EVAL_PTRREF(refCache[0]);
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         
         if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
                 nthp::entity::gEntity* entities = (nthp::entity::gEntity*)(data->blockData[ptr_dsc.block].data);
@@ -1083,131 +1089,130 @@ DEFINE_EXECUTION_BEHAVIOUR(ENT_FREE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETCURRENTFRAME) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef frame = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                 // target 
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                // frame
         
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(frame);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        entity->setCurrentFrame(nthp::fixedToInt(frame.value));
+        entity->setCurrentFrame(nthp::fixedToInt(refCache[1].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETPOS) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                         // entity
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                        // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));       // y
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->setPosition(nthp::vectFixed(x.value, y.value));
+        entity->setPosition(nthp::vectFixed(refCache[1].value, refCache[2].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_MOVE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                 // entity
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                   // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));  // y
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->move(nthp::vectFixed(x.value, y.value));
+        entity->move(nthp::vectFixed(refCache[1].value, refCache[2].value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETFRAMERANGE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        frameRef start = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(frameRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                         // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                        // start
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(frameRef));     // size
 
-        auto entity = EVAL_ENTREF(target);
-        auto frameStart = EVAL_FRAMEREF(start);
-        EVAL_STDREF(size);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        auto frameStart = EVAL_FRAMEREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->importFrameData(frameStart, nthp::fixedToInt(size.value), false);
+        entity->importFrameData(frameStart, nthp::fixedToInt(refCache[2].value), false);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETHITBOXSIZE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                         // entity
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                        // w
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));       // h
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->setHtiboxSize(nthp::vectFixed(x.value, y.value));
+        entity->setHtiboxSize(nthp::vectFixed(refCache[1].value, refCache[2].value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETHITBOXOFFSET) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                         // entity
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                           // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));          // y
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->setHitboxOffset(nthp::vectFixed(x.value, y.value));
+        entity->setHitboxOffset(nthp::vectFixed(refCache[1].value, refCache[2].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETRENDERSIZE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                                       // entity
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                           // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));          // y
 
-        auto entity = EVAL_ENTREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto entity = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        entity->setRenderSize(nthp::vectFixed(x.value, y.value));
+        entity->setRenderSize(nthp::vectFixed(refCache[1].value, refCache[2].value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_CHECKCOLLISION) {
-        entRef entA = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        entRef entB = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                         // entA
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));                        // entB
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef) + sizeof(stdRef));     // output
         
-        auto a = EVAL_ENTREF(entA);
-        auto b = EVAL_ENTREF(entB);
-        EVAL_PTRREF(output);
+        auto a = EVAL_ENTREF(refCache[0]);
+        auto b = EVAL_ENTREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
         *target_dsc = nthp::intToFixed(nthp::entity::checkRectCollision(a->getHitbox(), b->getHitbox()));
-
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ENT_SETANGLE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef angle = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);                         // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(entRef));        // angle
 
-        auto t = EVAL_ENTREF(target);
-        EVAL_STDREF(angle);
+        auto e = EVAL_ENTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        t->setRenderAngle(angle.value);
+        e->setRenderAngle(refCache[1].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_ALLOC) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // size
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // target
 
-        EVAL_STDREF(size);
-        EVAL_PTRREF(target);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        auto check = nthp::script::nthp_internal_alloc_special<nthp::entity::staticSetpiece>(data, target_dsc, nthp::fixedToInt(size.value), nthp::script::BlockMemoryEntry::bmType::SETPIECE);
+        auto check = nthp::script::nthp_internal_alloc_special<nthp::entity::staticSetpiece>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::bmType::SETPIECE);
         if(check == nullptr) {
                 PRINT_DEBUG_ERROR("Failed to allocate staticSetpiece block.\n");
                 return 1;
@@ -1218,11 +1223,11 @@ DEFINE_EXECUTION_BEHAVIOUR(SP_ALLOC) {
 
 // Setpieces have no dynamic internal data, just fixed values and pointers to external data.
 DEFINE_EXECUTION_BEHAVIOUR(SP_FREE) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(target);
+        EVAL_PTRREF(refCache[0]);
 
-        const auto ptr_dsc = nthp::script::parsePtrDescriptor(target.value);
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
                 if(!(data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
                 data->blockData[ptr_dsc.block].isFree = true;
@@ -1239,72 +1244,72 @@ DEFINE_EXECUTION_BEHAVIOUR(SP_FREE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_SETRENDERSIZE) {
-        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef w = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
-        stdRef h = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(stdRef));
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);                             // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));                      // w
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(stdRef));     // h
 
-        auto target_ptr = EVAL_SETPIECEREF(target);
-        EVAL_STDREF(w);
-        EVAL_STDREF(h);
+        auto target_ptr = EVAL_SETPIECEREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        target_ptr->renderSize = nthp::vectFixed(w.value, h.value);
+        target_ptr->renderSize = nthp::vectFixed(refCache[1].value, refCache[2].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_SETFRAMERANGE) {
-        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
-        frameRef start = *(frameRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(frameRef));
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);                                            // target
+        refCache[1] = *(frameRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));                         // frameSet
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(frameRef));        // size
 
-        auto target_ptr = EVAL_SETPIECEREF(target);
-        auto frame_ptr = EVAL_FRAMEREF(start);
-        EVAL_STDREF(size);
+        auto target_ptr = EVAL_SETPIECEREF(refCache[0]);
+        auto frame_ptr = EVAL_FRAMEREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
         target_ptr->frames = frame_ptr;
-        target_ptr->frameSize = nthp::fixedToInt(size.value);
+        target_ptr->frameSize = nthp::fixedToInt(refCache[2].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_SETCURRENTFRAME) {
-        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef cf = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);                            // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));           // frame
 
-        auto target_ptr = EVAL_SETPIECEREF(target);
-        EVAL_STDREF(cf);
+        auto target_ptr = EVAL_SETPIECEREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        target_ptr->currentFrame = nthp::fixedToInt(cf.value);
+        target_ptr->currentFrame = nthp::fixedToInt(refCache[1].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_SETPOS) {
-        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(stdRef));
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);                                    // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));                      // x
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef) + sizeof(stdRef));     // y
 
-        auto target_ptr = EVAL_SETPIECEREF(target);
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        auto target_ptr = EVAL_SETPIECEREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
 
-        target_ptr->position = nthp::worldPosition(x.value, y.value);
+        target_ptr->position = nthp::worldPosition(refCache[1].value, refCache[2].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_SETANGLE) {
-        setpieceRef target = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef angle = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);                     // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(setpieceRef));          // angle
 
-        auto t = EVAL_SETPIECEREF(target);
-        EVAL_STDREF(angle);
+        auto t = EVAL_SETPIECEREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        t->angle = nthp::fixedToDouble(angle.value);
+        t->angle = nthp::fixedToDouble(refCache[1].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_COMPILE) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);               // target
         
-        EVAL_PTRREF(target);
-        auto block_dsc = nthp::script::parsePtrDescriptor(target.value);
+        EVAL_PTRREF(refCache[0]);
+        auto block_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         auto blockData = (nthp::entity::staticSetpiece*)(data->blockData[block_dsc.block].data);
 
         for(size_t i = 0; i < data->blockData[block_dsc.block].sizeSpecial; ++i) {
@@ -1315,10 +1320,10 @@ DEFINE_EXECUTION_BEHAVIOUR(SP_COMPILE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SP_ABS_COMPILE) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);               // target
         
-        EVAL_PTRREF(target);
-        auto block_dsc = nthp::script::parsePtrDescriptor(target.value);
+        EVAL_PTRREF(refCache[0]);
+        auto block_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
         auto blockData = (nthp::entity::staticSetpiece*)(data->blockData[block_dsc.block].data);
 
         for(size_t i = 0; i < data->blockData[block_dsc.block].sizeSpecial; ++i) {
@@ -1332,28 +1337,28 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
         if(nthp::core.getInitSuccess())
                 nthp::core.cleanup();
 
-        stdRef px = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef py = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 1));
-        stdRef tx = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 2));
-        stdRef ty = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));
-        stdRef cx = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));
-        stdRef cy = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));
-        stdRef fs = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 6));
-        stdRef sr = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 7));
-        strRef title = *(strRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 8));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                 // px
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 1));          // py
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 2));          // tx
+        refCache[3] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 3));          // ty
+        refCache[4] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 4));          // cx
+        refCache[5] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 5));          // cy
+        refCache[6] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 6));          // fs
+        refCache[7] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 7));          // sr
+        refCache[8] = *(strRef*)(data->nodeSet[data->currentNode].access.data + (sizeof(stdRef) * 8));          // title
 
-        EVAL_STDREF(px);
-        EVAL_STDREF(py);
-        EVAL_STDREF(tx);
-        EVAL_STDREF(ty);
-        EVAL_STDREF(cx);
-        EVAL_STDREF(cy);
-        EVAL_STDREF(fs);
-        EVAL_STDREF(sr);
-        auto titleString = EVAL_STRREF(title);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
+        EVAL_STDREF(refCache[3]);
+        EVAL_STDREF(refCache[4]);
+        EVAL_STDREF(refCache[5]);
+        EVAL_STDREF(refCache[6]);
+        EVAL_STDREF(refCache[7]);
+        auto titleString = EVAL_STRREF(refCache[8]);
 
 
-        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(px.value), nthp::fixedToInt(py.value), tx.value, ty.value, nthp::vectFixed(cx.value, cy.value)), titleString, nthp::fixedToInt(fs.value) & 1, nthp::fixedToInt(sr.value) & 1);
+        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(refCache[0].value), nthp::fixedToInt(refCache[1].value), refCache[2].value, refCache[3].value, nthp::vectFixed(refCache[4].value, refCache[5].value)), titleString, nthp::fixedToInt(refCache[6].value) & 1, nthp::fixedToInt(refCache[7].value) & 1);
 
 
         return 0;
@@ -1361,9 +1366,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_QRENDER) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        auto entity = EVAL_ENTREF(target);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         if(nthp::core.render(entity->getUpdateRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
                 PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
@@ -1373,9 +1378,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_QRENDER) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_QRENDER) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);       // target
 
-        auto entity = EVAL_ENTREF(target);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         if(nthp::core.render(entity->abs_getRenderPacket(&nthp::core.p_coreDisplay)) < 0) {
                 PRINT_DEBUG_ERROR("%s; invalid render call.\n", SDL_GetError());
@@ -1384,9 +1389,9 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_QRENDER) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SP_QRENDER) {
-        setpieceRef setpiece = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(setpieceRef*)(data->nodeSet[data->currentNode].access.data);
 
-        auto target = EVAL_SETPIECEREF(setpiece);
+        auto target = EVAL_SETPIECEREF(refCache[0]);
 
         nthp::core.render(target->compiledPacket);
 
@@ -1394,10 +1399,10 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_SP_QRENDER) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SP_QRENDER_BLOCK) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);         // target
 
-        EVAL_PTRREF(target);
-        auto block_dsc = nthp::script::parsePtrDescriptor(target.value);
+        EVAL_PTRREF(refCache[0]);
+        auto block_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
 
         const auto block = (nthp::entity::staticSetpiece*)data->blockData[block_dsc.block].data;
         const auto length = data->blockData[block_dsc.block].sizeSpecial;
@@ -1420,56 +1425,56 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_DISPLAY) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SETMAXFPS) {
-        stdRef fps = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);         // fps
 
-        EVAL_STDREF(fps);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::setMaxFPS(nthp::fixedToInt(fps.value));
+        nthp::setMaxFPS(nthp::fixedToInt(refCache[0].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SETWINDOWRES) {
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                    // x
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));   // y
 
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        nthp::core.setWindowRenderSize(nthp::fixedToInt(x.value), nthp::fixedToInt(y.value));
+        nthp::core.setWindowRenderSize(nthp::fixedToInt(refCache[0].value), nthp::fixedToInt(refCache[1].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SETCAMERARES) {
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        nthp::core.setVirtualRenderScale(x.value, y.value);
+        nthp::core.setVirtualRenderScale(refCache[0].value, refCache[1].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_SETCAMERAPOSITION) {
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        nthp::core.p_coreDisplay.cameraWorldPosition.x = x.value;
-        nthp::core.p_coreDisplay.cameraWorldPosition.y = y.value;
+        nthp::core.p_coreDisplay.cameraWorldPosition.x = refCache[0].value;
+        nthp::core.p_coreDisplay.cameraWorldPosition.y = refCache[1].value;
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_MOVECAMERA) {
-        stdRef x = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef y = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(x);
-        EVAL_STDREF(y);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(x.value, y.value);
+        nthp::core.p_coreDisplay.cameraWorldPosition += nthp::worldPosition(refCache[0].value, refCache[1].value);
         return 0;
 }
 
@@ -1482,17 +1487,17 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_STOP) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_GETMOUSEPOSITION) {
-        ptrRef _x = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef _y = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                           // x
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));          // y
         nthp::script::stdVarWidth* xOutput;
         {
-                EVAL_PTRREF(_x);
+                EVAL_PTRREF(refCache[0]);
                 xOutput = target_dsc;
         }
 
         nthp::script::stdVarWidth* yOutput;
         {
-                EVAL_PTRREF(_y);
+                EVAL_PTRREF(refCache[1]);
                 yOutput = target_dsc;
         }
         *xOutput = nthp::mousePosition.x;
@@ -1502,17 +1507,18 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_GETMOUSEPOSITION) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_GETMOUSEPOSITION) {
-        ptrRef _x = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef _y = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+
         nthp::script::stdVarWidth* xOutput;
         {
-                EVAL_PTRREF(_x);
+                EVAL_PTRREF(refCache[0]);
                 xOutput = target_dsc;
         }
 
         nthp::script::stdVarWidth* yOutput;
         {
-                EVAL_PTRREF(_y);
+                EVAL_PTRREF(refCache[1]);
                 yOutput = target_dsc;
         }
         int x,y;
@@ -1526,29 +1532,29 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_ABS_GETMOUSEPOSITION) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_DEFINE) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(size);
+        EVAL_STDREF(refCache[0]);
 
-        data->actionList = new nthp::script::Script::Action[nthp::fixedToInt(size.value)];
-        data->actionListSize = nthp::fixedToInt(size.value);
+        data->actionList = new nthp::script::Script::Action[nthp::fixedToInt(refCache[0].value)];
+        data->actionListSize = nthp::fixedToInt(refCache[0].value);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(ACTION_BIND) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef var = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // target
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // var
         int32_t key = *(int32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(ptrRef));
 
-        EVAL_STDREF(target);
-        EVAL_PTRREF(var);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        data->actionList[nthp::fixedToInt(target.value)].varLocation = target_dsc;  
-        data->actionList[nthp::fixedToInt(target.value)].boundKey = key;
+        data->actionList[nthp::fixedToInt(refCache[0].value)].varLocation = target_dsc;  
+        data->actionList[nthp::fixedToInt(refCache[0].value)].boundKey = key;
 
 #ifdef PM
-        GENERIC_PRINT("bound ACTION [%d] key index [%d] to ptrRef [b%ua%u]\n", nthp::fixedToInt(target.value), key, nthp::script::parsePtrDescriptor(var.value).block, nthp::script::parsePtrDescriptor(var.value).address);
+        GENERIC_PRINT("bound ACTION [%d] key index [%d] to ptrRef [b%ua%u]\n", nthp::fixedToInt(refCache[0].value), key, nthp::script::parsePtrDescriptor(refCache[1].value).block, nthp::script::parsePtrDescriptor(refCache[1].value).address);
 #endif
         return 0;
 }
@@ -1562,8 +1568,8 @@ DEFINE_EXECUTION_BEHAVIOUR(ACTION_CLEAR) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_POSITION) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        auto entity = EVAL_ENTREF(target);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         const auto pos = entity->getPosition();
 
@@ -1574,8 +1580,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_POSITION) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_CURRENTFRAME) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        auto entity = EVAL_ENTREF(target);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         const auto cf = entity->getCurrentFrameIndex();
         
@@ -1585,8 +1591,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_CURRENTFRAME) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_HITBOX) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        auto entity = EVAL_ENTREF(target);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         const auto box = entity->getHitbox();
 
@@ -1599,8 +1605,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_HITBOX) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_RENDERSIZE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        auto entity = EVAL_ENTREF(target);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(refCache[0]);
         
 
         const auto rs = entity->getRenderSize();
@@ -1612,8 +1618,8 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_RENDERSIZE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_ANGLE) {
-        entRef target = *(entRef*)(data->nodeSet[data->currentNode].access.data);
-        auto entity = EVAL_ENTREF(target);
+        refCache[0] = *(entRef*)(data->nodeSet[data->currentNode].access.data);
+        auto entity = EVAL_ENTREF(refCache[0]);
 
         const auto a = entity->getRenderAngle();
         data->blockData[0].data[nthp::script::predefined_globals::RPOLL1_GLOBAL_INDEX] = a;
@@ -1622,29 +1628,29 @@ DEFINE_EXECUTION_BEHAVIOUR(POLL_ENT_ANGLE) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DRAW_SETCOLOR) {
-        stdRef colorIndex = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(colorIndex);
+        EVAL_STDREF(refCache[0]);
 
-        data->penColor = (decltype(data->penColor))nthp::fixedToInt(colorIndex.value);
+        data->penColor = (decltype(data->penColor))nthp::fixedToInt(refCache[0].value);
 
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DRAW_LINE) {
-        stdRef x1 = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef y1 = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
-        stdRef x2 = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));
-        stdRef y2 = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                                                         // x1
+        refCache[1]= *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));                                         // y1
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef));                       // x2
+        refCache[3] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef) + sizeof(stdRef) + sizeof(stdRef));      // y2
 
-        EVAL_STDREF(x1);
-        EVAL_STDREF(y1);
-        EVAL_STDREF(x2);
-        EVAL_STDREF(y2);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
+        EVAL_STDREF(refCache[3]);
 
-        const nthp::vectGeneric pointA = nthp::generatePixelPosition(nthp::worldPosition(x1.value, y1.value), &nthp::core.p_coreDisplay) + nthp::generatePixelPosition(nthp::core.p_coreDisplay.cameraWorldPosition, &nthp::core.p_coreDisplay);
-        const nthp::vectGeneric pointB = nthp::generatePixelPosition(nthp::worldPosition(x2.value, y2.value), &nthp::core.p_coreDisplay) + nthp::generatePixelPosition(nthp::core.p_coreDisplay.cameraWorldPosition, &nthp::core.p_coreDisplay);
+        const nthp::vectGeneric pointA = nthp::generatePixelPosition(nthp::worldPosition(refCache[0].value, refCache[1].value), &nthp::core.p_coreDisplay) + nthp::generatePixelPosition(nthp::core.p_coreDisplay.cameraWorldPosition, &nthp::core.p_coreDisplay);
+        const nthp::vectGeneric pointB = nthp::generatePixelPosition(nthp::worldPosition(refCache[2].value, refCache[3].value), &nthp::core.p_coreDisplay) + nthp::generatePixelPosition(nthp::core.p_coreDisplay.cameraWorldPosition, &nthp::core.p_coreDisplay);
 
         SDL_SetRenderDrawColor(nthp::core.getRenderer(), nthp::script::activePalette.colorSet[data->penColor].R,nthp::script::activePalette.colorSet[data->penColor].G, nthp::script::activePalette.colorSet[data->penColor].B, 255);
         
@@ -1657,13 +1663,13 @@ DEFINE_EXECUTION_BEHAVIOUR(DRAW_LINE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(AUDIOCHANNEL_DEFINE) {
-        stdRef channelCount = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(channelCount);
+        EVAL_STDREF(refCache[0]);
 
         // Set the new channel count, then poll for the allocated channel count, in case
         // something goes wrong.
-        Mix_AllocateChannels(nthp::fixedToInt(channelCount.value));
+        Mix_AllocateChannels(nthp::fixedToInt(refCache[0].value));
         nthp::core.audioSystem.channelCount = Mix_AllocateChannels(-1);
 
         return 0;
@@ -1671,17 +1677,17 @@ DEFINE_EXECUTION_BEHAVIOUR(AUDIOCHANNEL_DEFINE) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_DEFINE) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(size);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::core.audioSystem.soundEffects = new (std::nothrow) nthp::audio::SoundChannel[nthp::fixedToInt(size.value)];
+        nthp::core.audioSystem.soundEffects = new (std::nothrow) nthp::audio::SoundChannel[nthp::fixedToInt(refCache[0].value)];
         if(nthp::core.audioSystem.soundEffects == nullptr) {
                 PRINT_DEBUG_ERROR("SOUND_DEFINE call @ [%zu] failed to allocate sound data.\n", data->currentNode);
                 nthp::core.audioSystem.soundSize = 0;
         }
         else {
-                nthp::core.audioSystem.soundSize = nthp::fixedToInt(size.value);
+                nthp::core.audioSystem.soundSize = nthp::fixedToInt(refCache[0].value);
         }
 
         return 0;
@@ -1698,17 +1704,17 @@ DEFINE_EXECUTION_BEHAVIOUR(SOUND_CLEAR) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(MUSIC_DEFINE) {
-        stdRef size = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(size);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::core.audioSystem.music = new (std::nothrow) nthp::audio::MusicChannel[nthp::fixedToInt(size.value)];
+        nthp::core.audioSystem.music = new (std::nothrow) nthp::audio::MusicChannel[nthp::fixedToInt(refCache[0].value)];
         if(nthp::core.audioSystem.music == nullptr) {
-                PRINT_DEBUG_ERROR("MUSIC_DEFINE call failed to allocate sound data. [%d] is not valid.\n", nthp::fixedToInt(size.value));
+                PRINT_DEBUG_ERROR("MUSIC_DEFINE call failed to allocate sound data. [%d] is not valid.\n", nthp::fixedToInt(refCache[0].value));
                 nthp::core.audioSystem.musicSize = 0;
         }
         else
-                nthp::core.audioSystem.musicSize = nthp::fixedToInt(size.value);
+                nthp::core.audioSystem.musicSize = nthp::fixedToInt(refCache[0].value);
 
 
         return 0;
@@ -1726,66 +1732,66 @@ DEFINE_EXECUTION_BEHAVIOUR(MUSIC_CLEAR) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(MUSIC_LOAD) {
-        stdRef objectIndex = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        strRef filename = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                          // object
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));            // filename
 
-        EVAL_STDREF(objectIndex);
-        auto fileString = EVAL_STRREF(filename);
+        EVAL_STDREF(refCache[0]);
+        auto fileString = EVAL_STRREF(refCache[1]);
 
-        int ret = nthp::core.audioSystem.music[nthp::fixedToInt(objectIndex.value)].load(fileString);
-        if(ret) { PRINT_DEBUG_ERROR("Failed to load track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(objectIndex.value)); }
-        else PRINT_DEBUG("Loaded music track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(objectIndex.value));
+        int ret = nthp::core.audioSystem.music[nthp::fixedToInt(refCache[0].value)].load(fileString);
+        if(ret) { PRINT_DEBUG_ERROR("Failed to load track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(refCache[0].value)); }
+        else PRINT_DEBUG("Loaded music track [%s] into MUSIC_ID %d.\n", fileString, nthp::fixedToInt(refCache[0].value));
         
         return ret;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_LOAD) {
-        stdRef objectIndex = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        strRef filename = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
 
-        EVAL_STDREF(objectIndex);
-        auto fileString = EVAL_STRREF(filename);
+        EVAL_STDREF(refCache[0]);
+        auto fileString = EVAL_STRREF(refCache[1]);
 
-        int ret = nthp::core.audioSystem.soundEffects[nthp::fixedToInt(objectIndex.value)].load(fileString);
+        int ret = nthp::core.audioSystem.soundEffects[nthp::fixedToInt(refCache[0].value)].load(fileString);
         return ret;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_PLAY) {
-        stdRef obj = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(obj);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(obj.value)].playSound();
+        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(refCache[0].value)].playSound();
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_SETCHANNEL) {
-        stdRef soundID = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef channel = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                      // soundID
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));     // channel
 
-        EVAL_STDREF(soundID);
-        EVAL_STDREF(channel);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
         
-        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(soundID.value)].channel = nthp::fixedToInt(channel.value);
+        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(refCache[0].value)].channel = nthp::fixedToInt(refCache[1].value);
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_STOP) {
-        stdRef soundID = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(soundID);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(soundID.value)].stopSound();
+        nthp::core.audioSystem.soundEffects[nthp::fixedToInt(refCache[0].value)].stopSound();
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(MUSIC_START) {
-        stdRef obj = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(obj);
+        EVAL_STDREF(refCache[0]);
 
-        data->currentMusicTrack = nthp::fixedToInt(obj.value);
-        nthp::core.audioSystem.music[nthp::fixedToInt(obj.value)].start();
+        data->currentMusicTrack = nthp::fixedToInt(refCache[0].value);
+        nthp::core.audioSystem.music[nthp::fixedToInt(refCache[0].value)].start();
 
         return 0;
 }
@@ -1812,32 +1818,32 @@ DEFINE_EXECUTION_BEHAVIOUR(MUSIC_RESUME) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(MUSIC_SETVOLUME) {
-        stdRef volume = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(volume);
+        EVAL_STDREF(refCache[0]);
 
-        nthp::core.setMusicVolume(nthp::fixedToInt(volume.value));
+        nthp::core.setMusicVolume(nthp::fixedToInt(refCache[0].value));
         return 0;
 }
 
 
 DEFINE_EXECUTION_BEHAVIOUR(SOUND_SETVOLUME) {
-        stdRef target = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef volume = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                       // target
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));      // volume
 
-        EVAL_STDREF(target);
-        EVAL_STDREF(volume);
+        EVAL_STDREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
 
-        nthp::core.setSoundVolume(nthp::fixedToInt(target.value), nthp::fixedToInt(volume.value));
+        nthp::core.setSoundVolume(nthp::fixedToInt(refCache[0].value), nthp::fixedToInt(refCache[1].value));
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        strRef filename = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                       // target
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));    // filename
 
-        EVAL_PTRREF(target);
-        auto fileString = EVAL_STRREF(filename);
+        EVAL_PTRREF(refCache[0]);
+        auto fileString = EVAL_STRREF(refCache[1]);
 
         std::fstream file;
         file.open(fileString, std::ios::in | std::ios::binary);
@@ -1869,15 +1875,15 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_READ) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        strRef filename = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                       // target
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));    // filename
 
 
-        EVAL_PTRREF(target); // EVAL_PTRREF does NOT change the evaluated ptr_descriptor in 'target.value'; it just creates target_dsc after evaluating it.
-        const auto ptr = nthp::script::parsePtrDescriptor(target.value);
+        EVAL_PTRREF(refCache[0]); // EVAL_PTRREF does NOT change the evaluated ptr_descriptor in 'target.value'; it just creates target_dsc after evaluating it.
+        const auto ptr = nthp::script::parsePtrDescriptor(refCache[0].value);
 
 
-        auto fileString = EVAL_STRREF(filename);
+        auto fileString = EVAL_STRREF(refCache[1]);
 
 
         std::fstream file;
@@ -1903,11 +1909,11 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
 
 DEFINE_EXECUTION_BEHAVIOUR(PRINT_REF) {
 #ifdef DEBUG
-        stdRef output = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_STDREF(output);
+        EVAL_STDREF(refCache[0]);
 
-        GENERIC_PRINT("[t %u] %lf\n", SDL_GetTicks(), nthp::fixedToDouble(output.value));
+        GENERIC_PRINT("[t %u] %lf\n", SDL_GetTicks(), nthp::fixedToDouble(refCache[0].value));
 #endif
 
         return 0;
@@ -1915,9 +1921,9 @@ DEFINE_EXECUTION_BEHAVIOUR(PRINT_REF) {
 
 DEFINE_EXECUTION_BEHAVIOUR(PRINT_STRING) {
 #ifdef DEBUG
-        strRef output = *(strRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(strRef*)(data->nodeSet[data->currentNode].access.data);
 
-        auto message = EVAL_STRREF(output);
+        auto message = EVAL_STRREF(refCache[0]);
 
         GENERIC_PRINT("[t %u] %s\n", SDL_GetTicks(), message);
 #endif
@@ -1930,15 +1936,15 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(STRING_COPY) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
-        strRef c_string = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                       // target
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));    // c_string
 
-        EVAL_PTRREF(target);
-        auto str = EVAL_STRREF(c_string);
+        EVAL_PTRREF(refCache[0]);
+        auto str = EVAL_STRREF(refCache[1]);
 
         // Because the string length is stored in the offset of the reference.
-        if(PR_METADATA_GET(c_string, nthp::script::flagBits::IS_NODE_STRING_PTR)) {
-                memcpy(target_dsc, str, c_string.offset);
+        if(PR_METADATA_GET(refCache[1], nthp::script::flagBits::IS_NODE_STRING_PTR)) {
+                memcpy(target_dsc, str, refCache[1].offset);
         }
         else {
                 int i = 0; for(; str[i] != '\0'; ++i);
@@ -1949,26 +1955,26 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING_COPY) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(STRING_GETCHAR) {
-        strRef string = *(strRef*)(data->nodeSet[data->currentNode].access.data);
-        stdRef index = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef) + sizeof(stdRef));
+        refCache[0] = *(strRef*)(data->nodeSet[data->currentNode].access.data);                                       // string
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));                       // index
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef) + sizeof(stdRef));     // output
 
-        auto str = EVAL_STRREF(string);
-        EVAL_STDREF(index);
-        EVAL_PTRREF(output);
+        auto str = EVAL_STRREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_PTRREF(refCache[2]);
 
 
-        (*target_dsc) = nthp::intToFixed(str[nthp::fixedToInt(index.value)]);
+        (*target_dsc) = nthp::intToFixed(str[nthp::fixedToInt(refCache[1].value)]);
 
         return 0;
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(STRING_TO_NUM) {
-        strRef string = *(strRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));
+        refCache[0] = *(strRef*)(data->nodeSet[data->currentNode].access.data);                       // string
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef));      // output
 
-        auto str = EVAL_STRREF(string);
-        EVAL_PTRREF(output);
+        auto str = EVAL_STRREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
         try {
                 (*target_dsc) = nthp::doubleToFixed(std::stod(str));
@@ -1983,14 +1989,14 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING_TO_NUM) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
-        stdRef value = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
-        ptrRef output = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);                         // value
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));        // output
 
-        EVAL_STDREF(value);
-        EVAL_PTRREF(output);
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
 
-        // Need to change gholy shit this is terrible. TODO
-        std::string temp = std::to_string(nthp::fixedToDouble(value.value));
+        // 7/29/2026; slightly less shit.
+        std::string temp = std::to_string(nthp::fixedToDouble(refCache[1].value));
 
         const auto ptr = nthp::script::nthp_internal_alloc(data, target_dsc, (nthp::intToFixed(temp.size() / sizeof(nthp::script::stdVarWidth) + 1)), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
         if(ptr.block == 0) { return 1; }
@@ -2002,9 +2008,9 @@ DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
 
 
 DEFINE_EXECUTION_BEHAVIOUR(IB_SET_TARGET) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_PTRREF(target);
+        EVAL_PTRREF(refCache[0]);
 
         data->ibTargetOrigin = (char*)target_dsc;
         data->ibTargetSet = true;
@@ -2039,13 +2045,13 @@ DEFINE_EXECUTION_BEHAVIOUR(IB_STOP) {
 }
 
 DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_START) {
-        ptrRef target = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
 
-        EVAL_PTRREF(target);
+        EVAL_PTRREF(refCache[0]);
 
         data->textInputActive = true;
         data->textInputTarget = (char*)target_dsc;
-        data->textInputLocation = nthp::script::parsePtrDescriptor(target.value);
+        data->textInputLocation = nthp::script::parsePtrDescriptor(refCache[0].value);
 
         nthp::core.startTextInput();
 
@@ -2094,15 +2100,15 @@ DEFINE_EXECUTION_BEHAVIOUR(FUNC_CALL) {
 
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_LIST_CALL) {
         uint32_t listLocation = *(uint32_t*)(data->nodeSet[data->currentNode].access.data);
-        stdRef index = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(uint32_t));
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(uint32_t));
 
-        EVAL_STDREF(index);
+        EVAL_STDREF(refCache[0]);
 
         const nthp::script::Script::ReturnStackEntry newEntry = { data->currentScriptHeaderLocation, (uint32_t)(data->currentNode + 1) };
         data->returnStack[data->stackPointer] = newEntry;
         ++(data->stackPointer);
 
-        data->currentNode = ((uint32_t*)(data->nodeSet[listLocation].access.data))[nthp::fixedToInt(index.value)];        
+        data->currentNode = ((uint32_t*)(data->nodeSet[listLocation].access.data))[nthp::fixedToInt(refCache[0].value)];        
         return 0;
 }
 
