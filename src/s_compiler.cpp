@@ -4895,8 +4895,8 @@ int nthp::script::CompilerInstance::exportToFile(const char* outputFile, std::ve
                 return 1;
         }
 
-        nthp::script::Node* target = nodeList->data();
-        size_t cont_size = nodeList->size();
+        nthp::script::Node* target = nullptr;
+        size_t cont_size = 0;
         if(nodeList != NULL) {
                 target = nodeList->data();
                 cont_size = nodeList->size();
