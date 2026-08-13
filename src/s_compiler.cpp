@@ -3678,6 +3678,13 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                         EVAL_SYMBOL();
 
                         PRINT_COMPILER("Defining new FUNC [%s]...\n", fileRead.c_str());
+                        for(size_t i = 0; i < funcList.size(); ++i) {
+                                if(fileRead == funcList[i].name) {
+                                        PRINT_COMPILER_ERROR("FUNC [%s] already exists.\n", funcList[i].name.c_str());
+                                        return 1;
+                                }
+                        }
+
 
                         FUNC_DEF newFunc;
                         newFunc.name = fileRead;

@@ -38,6 +38,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <mutex>
+#include <thread>
 #include "fixed.hpp"
 
 
