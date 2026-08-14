@@ -13,7 +13,6 @@ VAR gpReg1
 VAR gpReg2
 CONSTEVAL pi 3.14159265
 STRUCT obj { pos_x pos_y gameObj flags }
-STRUCT vector { x y }
 MACRO gamef_createAnimationX { SET &argReg0 #ar0 SET &argReg1 #ar1 SET &argReg2 #ar2 SET &argReg3 #ar3 SET &argReg4 #ar4 SET &argReg5 #ar5 FUNC_CALL stdgame_createAnimationX }
 FUNC stdgame_createAnimationX
 CONSTEVAL texture &argReg0

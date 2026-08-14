@@ -1,0 +1,3 @@
+rem script to build the STDGAME module.
+
+buildmodule script/stdgame/stdgame.thp

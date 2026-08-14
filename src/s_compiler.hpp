@@ -270,6 +270,9 @@ namespace nthp {
 
                                 globalList.push_back(def);
                         }
+
+                        // Creates and adds all prebuild symbols to use in script programs.
+                        void definePrebuildSymbols();
                 
                 };
 

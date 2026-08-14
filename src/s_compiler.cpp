@@ -4921,6 +4921,42 @@ int nthp::script::CompilerInstance::exportToFile(const char* outputFile, std::ve
 
 
 
+void nthp::script::CompilerInstance::definePrebuildSymbols() {
+        // Add constant runtime globals.
+        addGlobalDef("null",            "predefined");
+        addGlobalDef("deltaTime",       "predefined");
+        addGlobalDef("mouse1",          "predefined");
+        addGlobalDef("mouse2",          "predefined");
+        addGlobalDef("mouse3",          "predefined");
+        addGlobalDef("r_poll1",         "predefined");
+        addGlobalDef("r_poll2",         "predefined");
+        addGlobalDef("r_poll3",         "predefined");
+        addGlobalDef("r_poll4",         "predefined");
+
+        {
+                STRUCT_DEF vector;
+                vector.name = "vector";
+                vector.members.push_back("x");
+                vector.members.push_back("y");
+
+                structList.push_back(vector);
+        }
+
+        {
+                STRUCT_DEF ray;
+                ray.name = "ray";
+                ray.members.push_back("x1");
+                ray.members.push_back("y1");
+                ray.members.push_back("x2");
+                ray.members.push_back("y2");
+
+                structList.push_back(ray);
+        }
+
+}
+
+
+
 int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFile, std::vector<std::string>* targetList, bool forceBuild, const bool ignoreInstructionData) {
         std::fstream file(stageConfigFile, std::ios::in);
         if(file.fail()) {
@@ -4935,16 +4971,7 @@ int nthp::script::CompilerInstance::compileStageConfig(const char* stageConfigFi
         PRINT_COMPILER("Building Script System [%s]: force=%u ignore=%u\n\n", stageConfigFile, forceBuild, ignoreInstructionData);
 
         
-        // Add constant runtime globals.
-        addGlobalDef("null",            "predefined");
-        addGlobalDef("deltaTime",       "predefined");
-        addGlobalDef("mouse1",          "predefined");
-        addGlobalDef("mouse2",          "predefined");
-        addGlobalDef("mouse3",          "predefined");
-        addGlobalDef("r_poll1",         "predefined");
-        addGlobalDef("r_poll2",         "predefined");
-        addGlobalDef("r_poll3",         "predefined");
-        addGlobalDef("r_poll4",         "predefined");
+        definePrebuildSymbols();
 
         while(!operationComplete) {
 
@@ -5164,17 +5191,7 @@ int nthp::script::CompilerInstance::buildModule(const char* source) {
 
         outputFile += ".mod";
 
-        // Add constant runtime globals.
-        addGlobalDef("null",            "predefined");
-        addGlobalDef("deltaTime",       "predefined");
-        addGlobalDef("mouse1",          "predefined");
-        addGlobalDef("mouse2",          "predefined");
-        addGlobalDef("mouse3",          "predefined");
-        addGlobalDef("r_poll1",         "predefined");
-        addGlobalDef("r_poll2",         "predefined");
-        addGlobalDef("r_poll3",         "predefined");
-        addGlobalDef("r_poll4",         "predefined");
-
+        definePrebuildSymbols();
 
         if(compileSourceFile(source, outputFile.c_str(), true, 1 << nthp::script::CompilerInstance::TriggerBits::T_MODULE, false, true)) {
                 PRINT_DEBUG_ERROR("Failed to build module [%s]; compiler failure.\n", source);

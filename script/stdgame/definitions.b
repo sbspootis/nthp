@@ -27,11 +27,5 @@ STRUCT obj {
 }
 
 
-STRUCT vector {
-        x
-        y
-}
-
-
 
 EXIT

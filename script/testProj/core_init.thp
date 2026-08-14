@@ -2,11 +2,11 @@ IMPORT script/testProj/globals.b
 
 
 MACRO initFlags {
-/	x		y		tx	ty	cx	cy	fs	sr	/
-	1600 	900		160	90	0	0	0	0
+/	x	y	tx	ty	cx	cy	fs	sr	/
+	1600 	900     160	90	0	0	0	1
 }
 
-STRING title "Super Black Brothers"
+STRING title "Vector Testing Program"
 CORE_INIT @initFlags ~title
 
 STRING palette "resource/genericPalette.pal"
