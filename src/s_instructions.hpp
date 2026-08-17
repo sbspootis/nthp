@@ -170,6 +170,7 @@ namespace ID {
                 IB_STOP,\
                 TEXTINPUT_START,\
                 TEXTINPUT_STOP,\
+                RAY_CHECKCOLLISION,\
                 FUNC_START,\
                 FUNC_CALL,\
                 FUNC_LIST,\
@@ -354,6 +355,8 @@ namespace Size {
                 IB_STOP = 0,
                 TEXTINPUT_START = sizeof(ptrRef),
                 TEXTINPUT_STOP = 0,
+
+                RAY_CHECKCOLLISION = sizeof(ptrRef) + sizeof(ptrRef) + sizeof(ptrRef),
 
                 FUNC_START = sizeof(uint32_t) + sizeof(uint32_t), // Func ID, to be identified by the linker, followed by local header location.
                 FUNC_CALL = sizeof(uint32_t), // Func ID, to be matched to a FUNC_START by the linker.

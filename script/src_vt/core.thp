@@ -15,6 +15,22 @@ SET &count 0
 PRIVATE executionID
 SET &executionID 0
 
+
+FIXED rayCollision output
+FIXED ray mouseRay
+FIXED ray rayNumber2
+
+SET &rayNumber2.x1 500 
+SET &rayNumber2.y1 650 
+SET &rayNumber2.x2 800 
+SET &rayNumber2.y2 700
+
+SET &mouseRay.x1 400 
+SET &mouseRay.y1 400 
+SET &mouseRay.x2 0 
+SET &mouseRay.y2 0
+
+
 LABEL 1
         INC &count
         IF $count GRT 4095
@@ -31,6 +47,11 @@ LABEL 1
         @gamef_getVectorAngle ( &mouseVector &angle )
         @gamef_getNormalVector ( 5 $angle &normalVector )
 
+        SET &mouseRay.x2 $mousePosition.x
+        SET &mouseRay.y2 $mousePosition.y
+
+        RAY_CHECKCOLLISION &mouseRay &rayNumber2 &output
+
         IF $a_left
                 IF $currentIndex NOT 0
                         DEC &currentIndex
@@ -40,6 +61,8 @@ LABEL 1
                         SET &a_left 0
                 END
         END
+
+
         IF $a_right
                 INC &currentIndex
                 SET &a_right 0
@@ -70,6 +93,7 @@ LABEL 1
 
         CORE_CLEAR
                 DRAW_LINE 400 400 $mousePosition.x $mousePosition.y
+                DRAW_LINE 500 650 800 700
                 
                 CORE_QRENDER $ep_entities
         CORE_DISPLAY

@@ -3562,6 +3562,32 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_STOP) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(RAY_CHECKCOLLISION) {
+        ADD_NODE(RAY_CHECKCOLLISION);
+
+        EVAL_SYMBOL();
+        auto a = EVAL_PREF();
+        CHECK_REF(a);
+
+        EVAL_SYMBOL();
+        auto b = EVAL_PREF();
+        CHECK_REF(b);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+        ptrRef* _a = (ptrRef*)(nodeList[currentNode].access.data);
+        ptrRef* _b = (ptrRef*)(nodeList[currentNode].access.data + sizeof(ptrRef));
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(ptrRef) + sizeof(ptrRef));
+
+        *_a = a;
+        *_b = b;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
 
 
 
@@ -4706,6 +4732,7 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_STOP);
                 CHECK_COMP(TEXTINPUT_START);
                 CHECK_COMP(TEXTINPUT_STOP);
+                CHECK_COMP(RAY_CHECKCOLLISION);
 
                 CHECK_COMP(DEBUG_BREAK);
                 CHECK_COMP(ERROR_CLEAR);
@@ -4951,6 +4978,16 @@ void nthp::script::CompilerInstance::definePrebuildSymbols() {
                 ray.members.push_back("y2");
 
                 structList.push_back(ray);
+        }
+
+        {
+                STRUCT_DEF rayCollision;
+                rayCollision.name = "rayCollision";
+                rayCollision.members.push_back("isColliding");
+                rayCollision.members.push_back("x");
+                rayCollision.members.push_back("y");
+
+                structList.push_back(rayCollision);
         }
 
 }

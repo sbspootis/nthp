@@ -7,6 +7,7 @@
 #include "e_collision.hpp"
 #include "gtexture.hpp"
 #include "e_setpiece.hpp"
+#include "ray.hpp"
 
 #ifdef PM
         #ifndef DEBUG

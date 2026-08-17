@@ -2074,6 +2074,36 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_STOP) {
 }
 
 
+DEFINE_EXECUTION_BEHAVIOUR(RAY_CHECKCOLLISION) {
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);                         // ray a
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));        // ray b
+        refCache[2] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef) + sizeof(ptrRef)); // output
+
+        nthp::script::stdVarWidth* target_a;
+        {
+                EVAL_PTRREF(refCache[0]);
+                target_a = target_dsc;
+        }
+        nthp::script::stdVarWidth* target_b;
+        {
+                EVAL_PTRREF(refCache[1]);
+                target_b = target_dsc;
+        }
+        EVAL_PTRREF(refCache[2]);
+
+        // Relies on the use of the predefined "ray" and "rayCollision" for correct indexing.
+        // Quite risky, as you can see.
+
+        const auto out = nthp::rayColliding(nthp::ray(target_a[0], target_a[1], target_a[2], target_a[3]), nthp::ray(target_b[0], target_b[1], target_b[2], target_b[3]));
+        (target_dsc)[0] = nthp::intToFixed(out.isColliding);
+        (target_dsc)[1] = out.position.x;
+        (target_dsc)[2] = out.position.y;
+
+        return 0;
+}
+
+
+
 DEFINE_EXECUTION_BEHAVIOUR(FUNC_START) {
         const uint32_t headerLocation = *(uint32_t*)(data->nodeSet[data->currentNode].access.data + sizeof(uint32_t));
         data->currentScriptHeaderLocation = headerLocation;

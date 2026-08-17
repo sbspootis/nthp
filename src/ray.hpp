@@ -6,6 +6,8 @@
 namespace nthp {
 
         struct ray {
+                ray() { x1=0;y1=0;x2=0;y2=0;}
+                ray(nthp::fixed_t _x1, nthp::fixed_t _y1, nthp::fixed_t _x2, nthp::fixed_t _y2) { x1=_x1;y1=_y1;x2=_x2;y2=_y2; }
                 nthp::fixed_t x1;
                 nthp::fixed_t y1;
                 nthp::fixed_t x2;
