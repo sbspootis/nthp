@@ -1879,7 +1879,7 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
         refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(ptrRef));    // filename
 
 
-        EVAL_PTRREF(refCache[0]); // EVAL_PTRREF does NOT change the evaluated ptr_descriptor in 'target.value'; it just creates target_dsc after evaluating it.
+        EVAL_STDREF(refCache[0]); // Use EVAL_STD here because target_dsc is not needed.
         const auto ptr = nthp::script::parsePtrDescriptor(refCache[0].value);
 
 
@@ -1899,7 +1899,10 @@ DEFINE_EXECUTION_BEHAVIOUR(DFILE_WRITE) {
         file.write((char*)&size, sizeof(nthp::script::stdVarWidth));
 
         size_t byteSize = data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth);
-        file.write((char*)target_dsc, byteSize);
+        file.write((char*)data->blockData[ptr.block].data, byteSize);           // Aug. 22, 2026; Changed to not use target_dsc as the output data.
+                                                                                // If the ptrRef was INDEXed, it would still use the entire block size as the output size,
+                                                                                // but only read a portion of the block, potentially causing a crash, or at the very least
+                                                                                // incorrect output.
 
         file.close();
 

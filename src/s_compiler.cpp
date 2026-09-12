@@ -1886,7 +1886,7 @@ DEFINE_COMPILATION_BEHAVIOUR(LAST) {
         ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
         uint8_t* offsetSize = (uint8_t*)(nodeList[currentNode].access.data + sizeof(ptrRef));
 
-        if((globalList[pos].isStruct && (!globalList[pos].isFixed)) && pos != 0) {
+        if((globalList[pos].isStruct && (!globalList[pos].isFixed)) && (pos != nthp::script::NTHP_NULL)) {
                 *offsetSize = structList[globalList[pos].structID].members.size();
         }
         else { *offsetSize = 1; }
@@ -2944,6 +2944,27 @@ DEFINE_COMPILATION_BEHAVIOUR(ACTION_BIND) {
                 if(fileRead == "CAPSLOCK")      { key = SDLK_CAPSLOCK; break; }
                 if(fileRead == "LALT")          { key = SDLK_LALT; break; }
                 if(fileRead == "RALT")          { key = SDLK_RALT; break; }
+                
+                if(fileRead == "F1")            { key = SDLK_F1; break; }
+                if(fileRead == "F2")            { key = SDLK_F2; break; }
+                if(fileRead == "F3")            { key = SDLK_F3; break; }
+                if(fileRead == "F4")            { key = SDLK_F4; break; }
+                if(fileRead == "F5")            { key = SDLK_F5; break; }
+                if(fileRead == "F6")            { key = SDLK_F6; break; }
+                if(fileRead == "F7")            { key = SDLK_F7; break; }
+                if(fileRead == "F8")            { key = SDLK_F8; break; }
+                if(fileRead == "F9")            { key = SDLK_F9; break; }
+                if(fileRead == "F10")            { key = SDLK_F10; break; }
+                if(fileRead == "F11")            { key = SDLK_F11; break; }
+                if(fileRead == "F12")            { key = SDLK_F12; break; }
+
+                if(fileRead == "INSERT")        { key = SDLK_INSERT; break; }
+                if(fileRead == "DELETE")        { key = SDLK_DELETE; break; }
+                if(fileRead == "HOME")          { key = SDLK_HOME; break; }
+                if(fileRead == "END")           {key = SDLK_END; break; }
+
+                if(fileRead == "PAGEUP")        { key = SDLK_PAGEUP; break; }
+                if(fileRead == "PAGEDOWN")      { key = SDLK_PAGEDOWN; break; }
 
         } while(0);
 

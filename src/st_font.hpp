@@ -7,23 +7,34 @@ namespace nthp {
         namespace texture {
                 namespace text {
 
+                class characterMap {
+                public:
+                        characterMap() { charWidth = 0; memset(map, 0, CHAR_MAX); }
+
+                        int exportToFile(const char* output);
+                        int import(const char* file);
+
+                        uint32_t charWidth;
+                        uint8_t map[CHAR_MAX];
+                };
+
+
+
+
                 class Font {
                 public:
                         Font();
-
-                        int loadFontTexture(const char* filename, SDL_Renderer* renderer, unsigned int cWidth, unsigned int cHeight);
-                        nthp::texture::SoftwareTexture& getTexture() { return fontSet.getTextureData(); }
+                        int importFontSet(const char* texture, const char* mapFile, nthp::texture::Palette* palette, SDL_Renderer* renderer);
+                        nthp::texture::Frame getCharFrame(char value);
                         
-                        nthp::texture::Frame getCharacterFrame(const char code);
 
-                        SDL_Rect getCharacterRect(const char code);
+                        ~Font();
 
-                        SDL_Rect characterMap[96];
-                        
-                         
-                        nthp::texture::gTexture fontSet;
-                        unsigned int characterWidth;
-                        unsigned int characterHeight;
+                        nthp::texture::gTexture fontTextureData;
+                        SDL_Rect* frameList;
+                        characterMap map;
+
+                        size_t frameCount;
                 };
 
                 }

@@ -747,6 +747,56 @@ L_BEGIN:
                                 }
                                 continue;
                         }
+                        if(args[0] == "createcmap") {
+                                if(args.size() < 4) {
+                                        PM_PRINT_ERROR("Invalid command argument. (createcmap inputfile charWidth(pxl) outputfile)\n");
+                                        continue;
+                                }
+
+                                {
+                                        nthp::texture::text::characterMap temp;
+                                        temp.map[' '] = 0;
+                                        
+                                        std::fstream file;
+
+                                        file.open(args[1], std::ios::in);
+                                        if(file.fail()) {
+                                                PM_PRINT_ERROR("Failed to generate character map; Unable to open input file [%s].\n", args[1].c_str());
+                                                continue;
+                                        }
+
+                                        std::string toMap;
+                                        std::string index;
+                                        try {
+                                                temp.charWidth = std::stoi(args[2]);
+                                        }
+                                        catch(std::exception) {
+                                                PM_PRINT_ERROR("Failed to generate character map; Invalid character width [%s].\n", args[2].c_str());
+                                                continue;
+                                        }
+
+                                        while(!file.eof()) {
+                                                file >> toMap;
+                                                file >> index;
+                                                try {
+                                                        temp.map[toMap[0]] = std::stoul(index);
+                                                }
+                                                catch(std::exception) {
+                                                        PM_PRINT_ERROR("Failed to generate character map; Invalid index in file [%s]; [%s] invalid.\n", args[1].c_str(), index.c_str());
+                                                        continue;
+                                                }
+                                        }
+
+                                        file.close();
+                                        
+                                        if(temp.exportToFile(args[3].c_str())) { 
+                                                PM_PRINT_ERROR("Failed to generate character map; Couldn't output to file [%s].\n", args[3].c_str());
+                                                continue;
+                                        }
+                                }
+
+                                continue;
+                        }
 
 
 

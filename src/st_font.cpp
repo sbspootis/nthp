@@ -1,50 +1,95 @@
 #include "st_font.hpp"
 
 
-nthp::texture::text::Font::Font() {
-        characterWidth = 0;
-        characterHeight = 0;
+int nthp::texture::text::characterMap::exportToFile(const char* output) {
+        std::fstream file;
+        file.open(output, std::ios::out | std::ios::binary);
+
+        if(file.fail()) {
+                PRINT_DEBUG_ERROR("Failed to open output file [%s] for characterMap [%p].\n", output, this);
+                return 1;
+        }
+
+        file.write((char*)&charWidth, sizeof(charWidth));
+        file.write((char*)map, sizeof(map));
+
+        file.close();
+
+        return 0;
 }
 
-int nthp::texture::text::Font::loadFontTexture(const char* filename, SDL_Renderer* renderer, const unsigned int cWidth, const unsigned int cHeight) {
-        if(fontSet.autoLoadTextureFile(filename, NULL, renderer)) {
-                PRINT_DEBUG_ERROR("Unable to import font set from file [%s].\n", filename);
+
+int nthp::texture::text::characterMap::import(const char* input) {
+        std::fstream file;
+        file.open(input, std::ios::in | std::ios::binary);
+
+        if(file.fail()) {
+                PRINT_DEBUG_ERROR("Unable to open character map [%s]; File not found.\n", input);
                 return 1;
         }
 
-        characterWidth = cWidth;
-        characterHeight = cHeight;
+        file.read((char*)&charWidth, sizeof(charWidth));
+        file.read((char*)map, sizeof(map));
 
-        const size_t elementSize = fontSet.getTextureData().metadata.x / cWidth;
-        
-        // Must accomodate exactly 96 characters in the texture, joined by width.
-        // (ASCII 32-127). 
-        if(elementSize != 96) {
-                PRINT_DEBUG_ERROR("Font set [%s] not formatted correctly; must contain exactly 96 (ACSII 32-127) characters joined by width.\n", filename);
+        return 0;
+}
+
+
+
+
+
+
+
+
+nthp::texture::text::Font::Font() {
+        frameList = nullptr;
+        frameCount = 0;
+}
+
+
+int nthp::texture::text::Font::importFontSet(const char* texture, const char* mapFile, nthp::texture::Palette* palette, SDL_Renderer* renderer) {
+        if(map.import(mapFile)) { return 1; }
+        if(fontTextureData.autoLoadTextureFile(texture, palette, renderer)) { return 1; }
+
+        SDL_Rect format;
+        format.w = map.charWidth;
+        format.h = fontTextureData.getTextureData().getMetaData().y;
+        format.y = 0;
+
+        frameCount = fontTextureData.getTextureData().getMetaData().x / map.charWidth;
+
+        try {
+                frameList = new SDL_Rect[frameCount];
+        }
+        catch(std::bad_alloc) {
+                PRINT_DEBUG_ERROR("Unable to allocate frame data for font [%p].\n", this);
                 return 1;
         }
-        SDL_Rect src;
-        src.w = cWidth;
-        src.h = cHeight;
-        src.y = 0;
-        for(size_t i = 0; i < 96; ++i) {
-                src.x = i * cWidth;
-                characterMap[i] = src;
+
+        for(size_t i = 0; i < frameCount; ++i) {
+                format.x = i * format.w;
+                frameList[i] = format;
         }
 
         return 0;
 }
 
 
-nthp::texture::Frame nthp::texture::text::Font::getCharacterFrame(const char code) {
-        nthp::texture::Frame frame;
-        frame.src = getCharacterRect(code);
-        frame.texture = fontSet.getTextureData().getTexture();
+nthp::texture::Frame nthp::texture::text::Font::getCharFrame(char value) {
+        nthp::texture::Frame output;
+        output.src = frameList[map.map[value]];
+        output.texture = fontTextureData.getTextureData().getTexture();
 
-        return frame;
+        return output;
 }
 
 
-SDL_Rect nthp::texture::text::Font::getCharacterRect(const char code) {
-        return characterMap[(code - 32) & 127];
+
+
+
+nthp::texture::text::Font::~Font() {
+        if(frameCount) {
+                delete[] frameList;
+                frameCount = 0;
+        }
 }

@@ -10,6 +10,7 @@
 #include "s_runtime.hpp"
 #include "st_mono.hpp"
 #include "st_font.hpp"
+#include "st_renderText.hpp"
 
 nthp::EngineCore nthp::core;
 nthp::script::Runtime mainRuntime;
@@ -37,6 +38,7 @@ int nthp::runtimeBehaviour(int argv, char** argc) {
                 std::chrono::steady_clock tickTimer;
                 std::chrono::microseconds frameTime;
                 auto frameStart = tickTimer.now();
+
 
                 // Anyone would agree an infinite loop here is acceptable.
                 while(true) {

@@ -4,6 +4,7 @@
 #include "s_script.hpp"
 #include "s_runtime.hpp"
 #include "st_font.hpp"
+#include "st_rendertext.hpp"
 #include <sstream>
 #include <thread>
 #include <mutex>
