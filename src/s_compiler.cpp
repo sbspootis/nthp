@@ -3427,7 +3427,6 @@ DEFINE_COMPILATION_BEHAVIOUR(STRING) {
         nodeList[currentNode].access.data = (char*)malloc(nodeList[currentNode].access.size);
         memcpy(nodeList[currentNode].access.data, buf, count + 1);
 
-
         nthp::script::CompilerInstance::STR_DEF def;
         def.objectPosition = currentNode;
         def.name = name;
@@ -3582,6 +3581,266 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_STOP) {
         PRINT_NODEDATA();
         return 0;
 }
+
+
+DEFINE_COMPILATION_BEHAVIOUR(FONT_ALLOC) {
+        ADD_NODE(FONT_ALLOC);
+
+        EVAL_SYMBOL();
+        auto size = EVAL_PREF();
+        CHECK_REF(size);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_size = size;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(FONT_FREE) {
+        ADD_NODE(FONT_FREE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(FONT_IMPORT) {
+        ADD_NODE(FONT_IMPORT);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto textureFile = EVAL_PREF();
+        CHECK_REF(textureFile);
+
+        EVAL_SYMBOL();
+        auto characterMap = EVAL_PREF();
+        CHECK_REF(characterMap);
+
+        fontRef* _target = (fontRef*)(nodeList[currentNode].access.data);
+        strRef* _tf = (stdRef*)(nodeList[currentNode].access.data + sizeof(fontRef));
+        strRef* _cm = (ptrRef*)(nodeList[currentNode].access.data + sizeof(fontRef) + sizeof(strRef));
+
+        *_target = target;
+        *_tf = textureFile;
+        *_cm = characterMap;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_ALLOC) {
+        ADD_NODE(RTEXT_ALLOC);
+
+        EVAL_SYMBOL();
+        auto size = EVAL_PREF();
+        CHECK_REF(size);
+
+        EVAL_SYMBOL();
+        auto output = EVAL_PREF();
+        CHECK_REF(output);
+
+
+        stdRef* _size = (stdRef*)(nodeList[currentNode].access.data);
+        ptrRef* _output = (ptrRef*)(nodeList[currentNode].access.data + sizeof(stdRef));
+
+        *_size = size;
+        *_output = output;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_FREE) {
+        ADD_NODE(RTEXT_FREE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        ptrRef* _target = (ptrRef*)(nodeList[currentNode].access.data);
+
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_SETFONT) {
+        ADD_NODE(RTEXT_SETFONT);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto font = EVAL_PREF();
+        CHECK_REF(font);
+
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+        fontRef* _font = (fontRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef));
+
+        *_target = target;
+        *_font = font;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_SETPOS) {
+        ADD_NODE(RTEXT_SETPOS);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto xpos = EVAL_PREF();
+        CHECK_REF(xpos);
+
+        EVAL_SYMBOL();
+        auto ypos = EVAL_PREF();
+        CHECK_REF(ypos);
+
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+        stdRef* _xpos = (stdRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef));
+        stdRef* _ypos = (stdRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef) + sizeof(stdRef));
+
+
+        *_target = target;
+        *_xpos = xpos;
+        *_ypos = ypos;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_SETRENDERSIZE) {
+        ADD_NODE(RTEXT_SETRENDERSIZE);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto xpos = EVAL_PREF();
+        CHECK_REF(xpos);
+
+        EVAL_SYMBOL();
+        auto ypos = EVAL_PREF();
+        CHECK_REF(ypos);
+
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+        stdRef* _xpos = (stdRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef));
+        stdRef* _ypos = (stdRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef) + sizeof(stdRef));
+
+
+        *_target = target;
+        *_xpos = xpos;
+        *_ypos = ypos;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_RENDER) {
+        ADD_NODE(RTEXT_RENDER);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_ABS_RENDER) {
+        ADD_NODE(RTEXT_ABS_RENDER);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+
+        *_target = target;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_SETKERNING) {
+        ADD_NODE(RTEXT_SETKERNING);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto kerning = EVAL_PREF();
+        CHECK_REF(kerning);
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+        stdRef* _kerning = (stdRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef));
+
+        *_target = target;
+        *_kerning = kerning;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+DEFINE_COMPILATION_BEHAVIOUR(RTEXT_SETSTRINGTARGET) {
+        ADD_NODE(RTEXT_SETSTRINGTARGET);
+
+        EVAL_SYMBOL();
+        auto target = EVAL_PREF();
+        CHECK_REF(target);
+
+        EVAL_SYMBOL();
+        auto string = EVAL_PREF();
+        CHECK_REF(string);
+
+        renderTextRef* _target = (renderTextRef*)(nodeList[currentNode].access.data);
+        strRef* _string = (strRef*)(nodeList[currentNode].access.data + sizeof(renderTextRef));
+
+        *_target = target;
+        *_string = string;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
+
+
+
 
 DEFINE_COMPILATION_BEHAVIOUR(RAY_CHECKCOLLISION) {
         ADD_NODE(RAY_CHECKCOLLISION);
@@ -4753,6 +5012,21 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_STOP);
                 CHECK_COMP(TEXTINPUT_START);
                 CHECK_COMP(TEXTINPUT_STOP);
+
+                CHECK_COMP(FONT_ALLOC);
+                CHECK_COMP(FONT_FREE);
+                CHECK_COMP(FONT_IMPORT);
+
+                CHECK_COMP(RTEXT_ALLOC);
+                CHECK_COMP(RTEXT_FREE);
+                CHECK_COMP(RTEXT_SETFONT);
+                CHECK_COMP(RTEXT_SETPOS);
+                CHECK_COMP(RTEXT_SETRENDERSIZE);
+                CHECK_COMP(RTEXT_RENDER);
+                CHECK_COMP(RTEXT_ABS_RENDER);
+                CHECK_COMP(RTEXT_SETKERNING);
+                CHECK_COMP(RTEXT_SETSTRINGTARGET);
+
                 CHECK_COMP(RAY_CHECKCOLLISION);
 
                 CHECK_COMP(DEBUG_BREAK);

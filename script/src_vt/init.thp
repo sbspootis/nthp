@@ -115,21 +115,14 @@ ACTION_BIND #ai_panDown &a_panDown s
 ACTION_BIND #ai_panLeft &a_panLeft a
 ACTION_BIND #ai_panRight &a_panRight d
 
-VAR testBlock1
-VAR testBlock2
 
-ALLOC 15 &testBlock1
-ALLOC 20 &testBlock2
+VAR newFont
 
-SET $testBlock1.0 45
-SET $testBlock1.1 55
-SET $testBlock1.2 65
-SET $testBlock1.3 75
-SET $testBlock1.4 85
-SET $testBlock1.5 95
-SET $testBlock1.6 105
+FONT_ALLOC 1 &newFont
+STRING fontTexture "resource/fontSheet.st"
+STRING fontCM "cmap.cm"
 
-COPY $testBlock1 15 $testBlock2
+FONT_IMPORT $newFont ~fontTexture ~fontCM
 
 
 EXIT

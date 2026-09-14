@@ -170,6 +170,18 @@ namespace ID {
                 IB_STOP,\
                 TEXTINPUT_START,\
                 TEXTINPUT_STOP,\
+                FONT_ALLOC,\
+                FONT_FREE,\
+                FONT_IMPORT,\
+                RTEXT_ALLOC,\
+                RTEXT_FREE,\
+                RTEXT_SETFONT,\
+                RTEXT_SETPOS,\
+                RTEXT_SETRENDERSIZE,\
+                RTEXT_RENDER,\
+                RTEXT_ABS_RENDER,\
+                RTEXT_SETKERNING,\
+                RTEXT_SETSTRINGTARGET,\
                 RAY_CHECKCOLLISION,\
                 FUNC_START,\
                 FUNC_CALL,\
@@ -195,7 +207,8 @@ typedef stdRef entRef;                                  // Uses eval_special on 
 typedef stdRef textureRef;                              // Uses eval_special on runtime to parse a gTexture object in a given block.
 typedef stdRef frameRef;                                // Uses eval_special on runtime to parse a Frame object in a given block.
 typedef stdRef setpieceRef;                             // Uses eval_special on runtime to parse staticSetpiece object in a given block.
-
+typedef stdRef fontRef;                                 // ...
+typedef stdRef renderTextRef;                           // ...
 
 // Sizes must have the same name as the ENUM entry in 'ID'.
 namespace Size {
@@ -355,6 +368,19 @@ namespace Size {
                 IB_STOP = 0,
                 TEXTINPUT_START = sizeof(ptrRef),
                 TEXTINPUT_STOP = 0,
+                FONT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+                FONT_FREE = sizeof(ptrRef),
+                FONT_IMPORT = sizeof(fontRef) + sizeof(strRef) + sizeof(strRef),
+
+                RTEXT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
+                RTEXT_FREE = sizeof(ptrRef),
+                RTEXT_SETFONT = sizeof(renderTextRef) + sizeof(fontRef),
+                RTEXT_SETPOS = sizeof(renderTextRef) + sizeof(stdRef) + sizeof(stdRef),
+                RTEXT_SETRENDERSIZE = sizeof(renderTextRef) + sizeof(stdRef) + sizeof(stdRef),
+                RTEXT_RENDER = sizeof(renderTextRef),
+                RTEXT_ABS_RENDER = sizeof(renderTextRef),
+                RTEXT_SETKERNING = sizeof(renderTextRef) + sizeof(stdRef),
+                RTEXT_SETSTRINGTARGET = sizeof(renderTextRef) + sizeof(strRef),
 
                 RAY_CHECKCOLLISION = sizeof(ptrRef) + sizeof(ptrRef) + sizeof(ptrRef),
 

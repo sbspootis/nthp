@@ -135,6 +135,8 @@ static inline Type* eval_special(stdRef ref, nthp::script::Script::ScriptDataSet
 #define EVAL_TEXTUREREF(ref)            eval_special<nthp::texture::gTexture>(ref, data, nthp::script::BlockMemoryEntry::bmType::TEXTURE)
 #define EVAL_FRAMEREF(ref)              eval_special<nthp::texture::Frame>(ref, data, nthp::script::BlockMemoryEntry::bmType::FRAME)
 #define EVAL_SETPIECEREF(ref)           eval_special<nthp::entity::staticSetpiece>(ref, data, nthp::script::BlockMemoryEntry::bmType::SETPIECE)
+#define EVAL_FONTREF(ref)               eval_special<nthp::texture::text::Font>(ref, data, nthp::script::BlockMemoryEntry::bmType::FONT);
+#define EVAL_RENDERTEXTREF(ref)         eval_special<nthp::texture::text::RenderText>(ref, data, nthp::script::BlockMemoryEntry::bmType::RENDERTEXT);
 
 #define EVAL_STRREF(ref)        ____eval_str(ref, data)
 
@@ -1948,6 +1950,7 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING_COPY) {
         // Because the string length is stored in the offset of the reference.
         if(PR_METADATA_GET(refCache[1], nthp::script::flagBits::IS_NODE_STRING_PTR)) {
                 memcpy(target_dsc, str, refCache[1].offset);
+                target_dsc[refCache[1].offset - 1] = '\0';
         }
         else {
                 int i = 0; for(; str[i] != '\0'; ++i);
@@ -1999,12 +2002,21 @@ DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
         EVAL_PTRREF(refCache[1]);
 
         // 7/29/2026; slightly less shit.
-        std::string temp = std::to_string(nthp::fixedToDouble(refCache[1].value));
+        std::string temp = std::to_string(nthp::fixedToDouble(refCache[0].value));
 
-        const auto ptr = nthp::script::nthp_internal_alloc(data, target_dsc, (nthp::intToFixed(temp.size() / sizeof(nthp::script::stdVarWidth) + 1)), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
-        if(ptr.block == 0) { return 1; }
+        const auto ptr = nthp::script::parsePtrDescriptor(refCache[1].value);
+        const auto blockByteSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth));
+
+        if((ptr.address * sizeof(nthp::script::stdVarWidth)) + temp.size() > blockByteSize) {
+                memcpy(target_dsc, temp.c_str(), blockByteSize - (ptr.address * sizeof(nthp::script::stdVarWidth)));
+                target_dsc[blockByteSize - (ptr.address * sizeof(nthp::script::stdVarWidth))] = '\000';
+        }
+        else {
+                memcpy(target_dsc, temp.c_str(), temp.size());
+                target_dsc[temp.size()] = '\000';
+        }
+
         
-        memcpy(data->blockData[ptr.block].data, temp.c_str(), temp.size());
 
         return 0;
 }
@@ -2075,6 +2087,170 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_STOP) {
 
         return 0;
 }
+
+DEFINE_EXECUTION_BEHAVIOUR(FONT_ALLOC) {
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
+
+        auto newBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::text::Font>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::FONT);
+        if(newBlock == nullptr) { return 1; }
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(FONT_FREE) {
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(refCache[0]);
+
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
+        if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
+                nthp::texture::text::Font* fontBlock = (nthp::texture::text::Font*)(data->blockData[ptr_dsc.block].data);
+
+                for(size_t i = 0; i < data->blockData[ptr_dsc.block].sizeSpecial; ++i) { fontBlock[i].clean(); }
+
+                if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].isFree = true;
+                data->blockData[ptr_dsc.block].size = 0;
+
+                return 0;
+        }
+
+        PRINT_DEBUG_ERROR("FONT_FREE at [%zu] Attempted to free global list.\n", data->currentNode);
+	return 1;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(FONT_IMPORT) {
+        refCache[0] = *(fontRef*)(data->nodeSet[data->currentNode].access.data);                                        // target
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(fontRef));                       // textureFile
+        refCache[2] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(strRef) + sizeof(fontRef));      // charactermap
+
+        auto target = EVAL_FONTREF(refCache[0]);
+        auto tf = EVAL_STRREF(refCache[1]);
+        auto cm = EVAL_STRREF(refCache[2]);
+        
+        return target->importFontSet(tf, cm, &nthp::script::activePalette, nthp::core.getRenderer());
+}
+
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_ALLOC) {
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data + sizeof(stdRef));
+
+        EVAL_STDREF(refCache[0]);
+        EVAL_PTRREF(refCache[1]);
+
+        auto newBlock = nthp::script::nthp_internal_alloc_special<nthp::texture::text::RenderText>(data, target_dsc, nthp::fixedToInt(refCache[0].value), nthp::script::BlockMemoryEntry::RENDERTEXT);
+        if(newBlock == nullptr) { return 1; }
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_FREE) {
+        refCache[0] = *(ptrRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_PTRREF(refCache[0]);
+
+        const auto ptr_dsc = nthp::script::parsePtrDescriptor(refCache[0].value);
+        if((ptr_dsc.block) && (ptr_dsc.block < data->blockDataSize)) {
+                nthp::texture::text::RenderText* textBlock = (nthp::texture::text::RenderText*)(data->blockData[ptr_dsc.block].data);
+
+                // Rendertext objects have no memory to manage themselves; it only uses static and pointers to other existing objects.
+
+                if((!data->blockData[ptr_dsc.block].isFree)) free(data->blockData[ptr_dsc.block].data);
+                data->blockData[ptr_dsc.block].isFree = true;
+                data->blockData[ptr_dsc.block].size = 0;
+
+                return 0;
+        }
+
+        PRINT_DEBUG_ERROR("RTEXT_FREE at [%zu] Attempted to free global list.\n", data->currentNode);
+	return 1;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_SETFONT) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(fontRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef));
+
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+        auto font = EVAL_FONTREF(refCache[1]);
+
+
+        target->setFont(font);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_SETPOS) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef));
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef) + sizeof(stdRef));
+
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
+
+
+        target->setPosition(nthp::worldPosition(refCache[1].value, refCache[2].value));
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_SETRENDERSIZE) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef));
+        refCache[2] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef) + sizeof(stdRef));
+
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+        EVAL_STDREF(refCache[2]);
+
+
+        target->setCharacterRenderSize(nthp::vectFixed(refCache[1].value, refCache[2].value));
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_RENDER) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+
+        target->renderText(&nthp::core);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_ABS_RENDER) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+
+        target->abs_renderText(&nthp::core);
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_SETKERNING) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(stdRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef));
+        
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+        EVAL_STDREF(refCache[1]);
+
+        target->kerning = refCache[1].value;
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(RTEXT_SETSTRINGTARGET) {
+        refCache[0] = *(renderTextRef*)(data->nodeSet[data->currentNode].access.data);
+        refCache[1] = *(strRef*)(data->nodeSet[data->currentNode].access.data + sizeof(renderTextRef));
+        
+        auto target = EVAL_RENDERTEXTREF(refCache[0]);
+        auto str = EVAL_STRREF(refCache[1]);
+
+        target->setStringTarget(str);
+        return 0;
+}
+
 
 
 DEFINE_EXECUTION_BEHAVIOUR(RAY_CHECKCOLLISION) {

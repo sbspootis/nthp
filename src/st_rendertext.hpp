@@ -12,6 +12,7 @@ namespace nthp {
                         class RenderText {
                         public:
                                 RenderText();
+                                void init();
 
                                 void setFont(nthp::texture::text::Font* newFont);
                                 
@@ -19,15 +20,18 @@ namespace nthp {
                                 void setCharacterRenderSize(nthp::vectFixed size);
                                 int renderText(nthp::EngineCore* coreTarget);   // requires the use of the core's rendering because it's done in chunks.
                                 int abs_renderText(nthp::EngineCore* coreTarget);
+                                void setStringTarget(char* newTarget);
 
                                 nthp::vectFixed position;
+                                nthp::vectFixed renderSize;
                                 nthp::fixed_t kerning;
 
                                 char* stringTarget;
+                        
                         private:
-                                nthp::entity::gEntity renderCursor;
+                                nthp::RenderPacket renderCursor;
                                 nthp::texture::text::Font* font;
-                                nthp::texture::Frame renderFrameChar;
+                                SDL_Rect src;
                         };
 
 

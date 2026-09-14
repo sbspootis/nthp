@@ -9,13 +9,14 @@ namespace nthp {
 
                 class characterMap {
                 public:
-                        characterMap() { charWidth = 0; memset(map, 0, CHAR_MAX); }
+                        characterMap();
+                        void init() { charWidth = 0; memset(map, 0, CHAR_MAX); };
 
                         int exportToFile(const char* output);
                         int import(const char* file);
 
                         uint32_t charWidth;
-                        uint8_t map[CHAR_MAX];
+                        int8_t map[CHAR_MAX];
                 };
 
 
@@ -24,10 +25,12 @@ namespace nthp {
                 class Font {
                 public:
                         Font();
+                        void init();
                         int importFontSet(const char* texture, const char* mapFile, nthp::texture::Palette* palette, SDL_Renderer* renderer);
                         nthp::texture::Frame getCharFrame(char value);
                         
 
+                        void clean();
                         ~Font();
 
                         nthp::texture::gTexture fontTextureData;

@@ -8,6 +8,7 @@
 #include "gtexture.hpp"
 #include "e_setpiece.hpp"
 #include "ray.hpp"
+#include "st_rendertext.hpp"
 
 #ifdef PM
         #ifndef DEBUG

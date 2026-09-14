@@ -3,5 +3,9 @@ TEXTURE_FREE $tp_textures
 FRAME_FREE $fp_frames
 ENT_FREE $ep_entities
 
+FONT_FREE $newFont
+RTEXT_FREE $textObject
+
+FREE $mouseXString
 
 EXIT

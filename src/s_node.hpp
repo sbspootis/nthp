@@ -85,6 +85,8 @@ namespace script {
                         FRAME,
                         ENTITY,
                         SETPIECE,
+                        FONT,
+                        RENDERTEXT,
                         GLOBAL,
 
                         bmTypeSize

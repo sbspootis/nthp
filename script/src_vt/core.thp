@@ -30,17 +30,35 @@ SET &mouseRay.y1 400
 SET &mouseRay.x2 0 
 SET &mouseRay.y2 0
 
+VAR mouseXString
+ALLOC 6 &mouseXString
+
+STRING toRender "this is a very neat message hooray"
+
+VAR textObject
+RTEXT_ALLOC 2 &textObject
+
+RTEXT_SETFONT $textObject $newFont
+RTEXT_SETPOS $textObject 0 400
+RTEXT_SETRENDERSIZE $textObject 12 16
+RTEXT_SETKERNING $textObject 11.5
+
+RTEXT_SETSTRINGTARGET $textObject ~toRender
+
+RTEXT_SETFONT $textObject.1 $newFont
+RTEXT_SETPOS $textObject.1 0 700
+RTEXT_SETRENDERSIZE $textObject.1 12 16
+RTEXT_SETKERNING $textObject.1 2
+
+RTEXT_SETSTRINGTARGET $textObject.1 ~$mouseXString
+
 
 LABEL 1
-        INC &count
-        IF $count GRT 4095
-                SET &count 0
-        END
-
-        
-
 
         CORE_GETMOUSEPOSITION &mousePosition.x &mousePosition.y
+        NUM_TO_STRING $mousePosition.x $mouseXString
+        
+
         SUB $mousePosition.x 400 &mouseVector.x
         SUB $mousePosition.y 400 &mouseVector.y
 
@@ -90,12 +108,14 @@ LABEL 1
 
         INDEX &ep_entities $currentIndex
 
-
+        
         CORE_CLEAR
                 DRAW_LINE 400 400 $mousePosition.x $mousePosition.y
                 DRAW_LINE 500 650 800 700
                 
                 CORE_QRENDER $ep_entities
+                RTEXT_RENDER $textObject
+                RTEXT_RENDER $textObject.1
         CORE_DISPLAY
 
 

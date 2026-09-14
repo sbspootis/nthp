@@ -1,5 +1,11 @@
 #include "st_font.hpp"
 
+nthp::texture::text::characterMap::characterMap() {
+        init();
+}
+
+
+
 
 int nthp::texture::text::characterMap::exportToFile(const char* output) {
         std::fstream file;
@@ -42,14 +48,23 @@ int nthp::texture::text::characterMap::import(const char* input) {
 
 
 nthp::texture::text::Font::Font() {
+        init();
+}
+
+void nthp::texture::text::Font::init() {
         frameList = nullptr;
         frameCount = 0;
+        fontTextureData.init();
+
+        map.init();
 }
 
 
 int nthp::texture::text::Font::importFontSet(const char* texture, const char* mapFile, nthp::texture::Palette* palette, SDL_Renderer* renderer) {
         if(map.import(mapFile)) { return 1; }
         if(fontTextureData.autoLoadTextureFile(texture, palette, renderer)) { return 1; }
+
+        
 
         SDL_Rect format;
         format.w = map.charWidth;
@@ -71,6 +86,8 @@ int nthp::texture::text::Font::importFontSet(const char* texture, const char* ma
                 frameList[i] = format;
         }
 
+        PRINT_DEBUG("Successfully imported font set tx=[%s]; cm=[%s]; frameCount=%zu.\n", texture, mapFile, frameCount);
+
         return 0;
 }
 
@@ -85,11 +102,13 @@ nthp::texture::Frame nthp::texture::text::Font::getCharFrame(char value) {
 
 
 
-
-
-nthp::texture::text::Font::~Font() {
+void nthp::texture::text::Font::clean() {
         if(frameCount) {
                 delete[] frameList;
                 frameCount = 0;
         }
+}
+
+nthp::texture::text::Font::~Font() {
+        clean();
 }
