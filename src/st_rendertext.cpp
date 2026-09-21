@@ -41,7 +41,7 @@ int nthp::texture::text::RenderText::renderText(nthp::EngineCore* coreTarget) {
 
         for(int i = 0; stringTarget[i] != '\0'; ++i) {
 
-                src = font->frameList[font->map.map[stringTarget[i]]];
+                src = font->frameList[font->map.map[stringTarget[i] & 127]];
                 _pos = nthp::vectFixed(nthp::f_fixedProduct(nthp::intToFixed(i), renderSize.x) + position.x + (nthp::f_fixedProduct(nthp::intToFixed(i),kerning)), position.y);
 
 

@@ -47,7 +47,7 @@ PM_CFLAGS =  -D WINDOWS -D PM -D DEBUG=1 -D USE_SDLIMG=1 -I $(SDLInclude) $(PM_S
 
 LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(SDLIMGLibPath) -SUBSYSTEM:WINDOWS -MACHINE:$(CONFIG)
 DEBUG_LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(SDLIMGLibPath) -DEBUG -ASSEMBLYDEBUG -SUBSYSTEM:CONSOLE -MACHINE:$(CONFIG)
-PM_LINKERFLAGS = shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(PM_SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(PM_SDLIMGLibPath) -SUBSYSTEM:CONSOLE -MACHINE:$(CONFIG)
+PM_LINKERFLAGS = comdlg32.lib user32.lib shell32.lib SDL2.lib SDL2main.lib SDL2_mixer.lib $(PM_SDLIMGLibFile) -link -LIBPATH:$(SDLLib) -LIBPATH:$(SDLMixerLib) $(PM_SDLIMGLibPath) -SUBSYSTEM:CONSOLE -MACHINE:$(CONFIG)
 
 libTargets = global_defs.obj core.obj position.obj palette.obj rawsurface.obj softwaretexture.obj e_entity.obj e_collision.obj st_compress.obj s_compiler.obj s_script.obj gtexture.obj s_linker.obj s_runtime.obj st_mono.obj st_font.obj st_rendertext.obj
 debug_libTargets = global_defs_d.obj core_d.obj position_d.obj palette_d.obj rawsurface_d.obj softwaretexture_d.obj e_entity_d.obj e_collision_d.obj st_compress_d.obj s_compiler_d.obj s_script_d.obj gtexture_d.obj s_linker_d.obj s_runtime_d.obj st_mono_d.obj st_font_d.obj st_rendertext_d.obj
@@ -66,7 +66,7 @@ debug: main_d.obj $(debug_libTargets)
 	$(CC) main_d.obj $(debug_libTargets) -Fe"$(TARGET)_debug.exe" $(DEBUG_LINKERFLAGS) 
 
 pm: $(SRCDIR)pm_core.cpp $(SRCDIR)pm_globals.cpp
-	$(CC) $(PM_CFLAGS) $(SRCDIR)pm_core.cpp $(SRCDIR)pm_globals.cpp $(lib_srcSymbols) -Fe"pm.exe" $(PM_LINKERFLAGS)
+	$(CC) $(PM_CFLAGS) $(SRCDIR)pm_core.cpp $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_editor.cpp $(lib_srcSymbols) -Fe"pm.exe" $(PM_LINKERFLAGS)
 
 
 

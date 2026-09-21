@@ -3582,6 +3582,28 @@ DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_STOP) {
         return 0;
 }
 
+DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_REMOVELAST) {
+        ADD_NODE(TEXTINPUT_REMOVELAST);
+
+
+        PRINT_NODEDATA();
+        return 0;
+}
+DEFINE_COMPILATION_BEHAVIOUR(TEXTINPUT_SETCURSOR) {
+        ADD_NODE(TEXTINPUT_SETCURSOR);
+
+        EVAL_SYMBOL();
+        auto ref = EVAL_PREF();
+        CHECK_REF(ref);
+
+        stdRef* target = (stdRef*)(nodeList[currentNode].access.data);
+
+        *target = ref;
+
+        PRINT_NODEDATA();
+        return 0;
+}
+
 
 DEFINE_COMPILATION_BEHAVIOUR(FONT_ALLOC) {
         ADD_NODE(FONT_ALLOC);
@@ -5012,6 +5034,8 @@ int nthp::script::CompilerInstance::compileSourceFile(const char* inputFile, con
                 CHECK_COMP(IB_STOP);
                 CHECK_COMP(TEXTINPUT_START);
                 CHECK_COMP(TEXTINPUT_STOP);
+                CHECK_COMP(TEXTINPUT_REMOVELAST);
+                CHECK_COMP(TEXTINPUT_SETCURSOR);
 
                 CHECK_COMP(FONT_ALLOC);
                 CHECK_COMP(FONT_FREE);

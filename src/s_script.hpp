@@ -96,7 +96,7 @@ namespace script {
                         PtrDescriptor_st textInputLocation;
                         char* textInputTarget;
                         bool textInputActive;
-                        uint8_t textInputBufferPosition;
+                        unsigned int textInputBufferPosition;
                         
 
                         unsigned short penColor; // stores a color as an index to the palette to draw primitives with the DRAW instruction.

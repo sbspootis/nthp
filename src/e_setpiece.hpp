@@ -67,10 +67,10 @@ namespace nthp {
 
                         setpiece->compiledPacket.texture = setpiece->frames[setpiece->currentFrame].texture;
                         setpiece->compiledPacket.dstRect = {
-                                (int)pxlPos.x, 
-                                (int)pxlPos.y, 
-                                (int)nthp::fixedToInt(nthp::f_fixedProduct(setpiece->renderSize.x, context->scaleFactor.x)),
-                                (int)nthp::fixedToInt(nthp::f_fixedProduct(setpiece->renderSize.y, context->scaleFactor.y))
+                                (int)nthp::fixedToInt(setpiece->position.x), 
+                                (int)nthp::fixedToInt(setpiece->position.y), 
+                                (int)nthp::fixedToInt(setpiece->renderSize.x),
+                                (int)nthp::fixedToInt(setpiece->renderSize.y)
                         };
                         setpiece->compiledPacket.srcRect = &(setpiece->frames[setpiece->currentFrame].src);
                         setpiece->compiledPacket.state = nthp::RenderPacket::C_OPERATE::ABSOLUTE;

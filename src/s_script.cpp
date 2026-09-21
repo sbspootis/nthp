@@ -6,6 +6,7 @@ nthp::texture::Palette nthp::script::activePalette;
 
 // Immediately reserved cache for standard references.
 static nthp::script::instructions::stdRef refCache[10];
+static std::string str_conversion;
 
 
 static inline int ____eval_std(stdRef& ref, nthp::script::Script::ScriptDataSet* data) {
@@ -676,6 +677,7 @@ const nthp::script::PtrDescriptor_st nthp::script::nthp_internal_alloc(nthp::scr
                         data->blockData[i].isFree = false;
                         if(target_dsc != nullptr) *target_dsc = nthp::script::constructPtrDescriptor(i, 0); // Initalize the ptr to the first element in the allocated block.
                         data->blockData[i].type = type;
+
                         return nthp::script::parsePtrDescriptor(nthp::script::constructPtrDescriptor(i, 0));
                 }
         }
@@ -736,8 +738,10 @@ DEFINE_EXECUTION_BEHAVIOUR(ALLOC) {
         EVAL_STDREF(refCache[0]);
         EVAL_PTRREF(refCache[1]);
 
-        if(nthp::script::nthp_internal_alloc(data, target_dsc, refCache[0].value, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS).block == 0) { return 1; }
-        
+        const auto ret = nthp::script::nthp_internal_alloc(data, target_dsc, refCache[0].value, 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
+        if(ret.block == 0) { return 1; }
+        memset(data->blockData[ret.block].data, 0, sizeof(nthp::script::stdVarWidth) * data->blockData[ret.block].size);
+
         return 0;
 }
 
@@ -750,8 +754,10 @@ DEFINE_EXECUTION_BEHAVIOUR(NEW) {
         EVAL_PTRREF(refCache[1]);
 
         const auto out = nthp::script::nthp_internal_alloc(data, target_dsc, nthp::intToFixed(nthp::fixedToInt(refCache[0].value) * entrySize), 0, nthp::script::BlockMemoryEntry::bmType::TYPELESS);
-        data->blockData[out.block].sizeSpecial = nthp::fixedToInt(refCache[0].value);
         if(out.block == 0) { return 1; }
+        
+        data->blockData[out.block].sizeSpecial = nthp::fixedToInt(refCache[0].value);
+        memset(data->blockData[out.block].data, 0, sizeof(nthp::script::stdVarWidth) * data->blockData[out.block].size);
 
         return 0;
 }
@@ -769,6 +775,9 @@ DEFINE_EXECUTION_BEHAVIOUR(FREE) {
                 data->blockData[ptr_dsc.block].data = nullptr;
                 data->blockData[ptr_dsc.block].isFree = true;
                 data->blockData[ptr_dsc.block].size = 0;
+                data->blockData[ptr_dsc.block].sizeSpecial = 0;
+                data->blockData[ptr_dsc.block].type = nthp::script::BlockMemoryEntry::bmType::TYPELESS;
+
                 return 0;
         }
 
@@ -1986,7 +1995,6 @@ DEFINE_EXECUTION_BEHAVIOUR(STRING_TO_NUM) {
                 (*target_dsc) = nthp::doubleToFixed(std::stod(str));
         }
         catch(std::invalid_argument) {
-                PRINT_DEBUG_ERROR("Invalid string conversion to fixed point @ [%zu].\n", data->currentNode);
                 (*target_dsc) = 0;
                 data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
         }
@@ -2001,21 +2009,23 @@ DEFINE_EXECUTION_BEHAVIOUR(NUM_TO_STRING) {
         EVAL_STDREF(refCache[0]);
         EVAL_PTRREF(refCache[1]);
 
-        // 7/29/2026; slightly less shit.
-        std::string temp = std::to_string(nthp::fixedToDouble(refCache[0].value));
+        try {
+                // 7/29/2026; slightly less shit.
+                str_conversion = std::to_string(nthp::fixedToDouble(refCache[0].value));
+        }
+        catch(std::exception) { 
+                str_conversion = "N/A";
+                data->blockData[0].data[nthp::script::predefined_globals::NTHP_NULL] = 1;
+        }
+
 
         const auto ptr = nthp::script::parsePtrDescriptor(refCache[1].value);
         const auto blockByteSize = (data->blockData[ptr.block].size * sizeof(nthp::script::stdVarWidth));
 
-        if((ptr.address * sizeof(nthp::script::stdVarWidth)) + temp.size() > blockByteSize) {
-                memcpy(target_dsc, temp.c_str(), blockByteSize - (ptr.address * sizeof(nthp::script::stdVarWidth)));
-                target_dsc[blockByteSize - (ptr.address * sizeof(nthp::script::stdVarWidth))] = '\000';
-        }
-        else {
-                memcpy(target_dsc, temp.c_str(), temp.size());
-                target_dsc[temp.size()] = '\000';
-        }
+        memcpy(target_dsc, str_conversion.c_str(), str_conversion.size());
+        ((char*)target_dsc)[str_conversion.size()] = '\0';
 
+        str_conversion.clear();
         
 
         return 0;
@@ -2084,6 +2094,34 @@ DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_STOP) {
         data->textInputLocation = nthp::script::NULL_REF;
 
         nthp::core.stopTextInput();
+
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_REMOVELAST) {
+        if(!data->textInputActive) { return 0; }
+
+        
+        if(data->textInputBufferPosition) { --(data->textInputBufferPosition); }
+
+        data->textInputTarget[data->textInputBufferPosition] = '\0';
+        
+        return 0;
+}
+
+DEFINE_EXECUTION_BEHAVIOUR(TEXTINPUT_SETCURSOR) {
+        refCache[0] = *(stdRef*)(data->nodeSet[data->currentNode].access.data);
+
+        EVAL_STDREF(refCache[0]);
+
+        if(nthp::fixedToInt(refCache[0].value) > 0) {
+                data->textInputBufferPosition = nthp::fixedToInt(refCache[0].value);
+                data->textInputTarget[nthp::fixedToInt(refCache[0].value)] = '\0';
+        }
+        else {
+                data->textInputBufferPosition = 0;
+                data->textInputTarget[0] = '\0';
+        }
 
         return 0;
 }

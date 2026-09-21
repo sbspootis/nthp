@@ -40,7 +40,6 @@ const nthp::RenderPacket nthp::entity::gEntity::getUpdateRenderPacket(nthp::Rend
 
 // Gets the entity RenderPacket
 const nthp::RenderPacket nthp::entity::gEntity::abs_getRenderPacket(nthp::RenderRuleSet* context) {
-        const auto pxlPos = nthp::generatePixelPosition(wPosition, context);
         nthp::RenderPacket::C_OPERATE state = nthp::RenderPacket::C_OPERATE::ABSOLUTE;
 
         if(frameData == nullptr) {
@@ -49,10 +48,10 @@ const nthp::RenderPacket nthp::entity::gEntity::abs_getRenderPacket(nthp::Render
 
          return nthp::generateRenderPacket(frameData[currentFrame].texture, &frameData[currentFrame].src, 
                 {
-                        (int)pxlPos.x, 
-                        (int)pxlPos.y,
-                        (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.x, context->scaleFactor.x)),
-                        (int)nthp::fixedToInt(nthp::f_fixedProduct(renderSize.y, context->scaleFactor.y))
+                        (int)nthp::fixedToInt(wPosition.x), 
+                        (int)nthp::fixedToInt(wPosition.y),
+                        (int)nthp::fixedToInt(renderSize.x),
+                        (int)nthp::fixedToInt(renderSize.y)
                 }, angle, state);
 }
 

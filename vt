@@ -4,7 +4,7 @@ CONST win_y     800
 
 MACRO init_flags { 
 /       x       y       tx      ty      cx      cy      fs      sr     /
-        #win_x  #win_y  #win_x  #win_y  0       0       0       0
+        #win_x  #win_y  #win_x  #win_y  0       0       0       1
 }
 
 MODULE script/stdgame/stdgame.mod

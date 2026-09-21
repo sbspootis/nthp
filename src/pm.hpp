@@ -1,4 +1,19 @@
 #pragma once
+#ifdef WINDOWS
+        #define WIN32_LEAN_AND_MEAN
+        #define _WIN32_WINNT 0x0A00
+
+        #undef PM
+
+        
+        #include <Windows.h>
+        #include <windef.h>
+        #include <wtypes.h>
+        #include <commdlg.h>
+
+        #undef ABSOLUTE
+        #define PM
+#endif
 
 #include "s_linker.hpp"
 #include "s_script.hpp"
@@ -18,3 +33,10 @@ extern void	PM_PRINT_ERROR(const char* format, ...);
 #else
 	#define PM_PRINT_V(...)
 #endif
+
+
+
+namespace nthp { namespace pm {
+        extern nthp::script::Runtime mainRuntime;
+
+}}

@@ -92,12 +92,12 @@ namespace script {
                         bmTypeSize
                 } bmType;
 
-                nthp::script::stdVarWidth* data;
-                size_t size;
-                size_t sizeSpecial;
+                nthp::script::stdVarWidth* data;        // Block data.
+                size_t size;                            // Size of block in stdVarWidths
+                size_t sizeSpecial;                     // If allocated if NEW or allocSpecial, will be set to the number of objects allocated.
         
-                int type = bmType::TYPELESS;
-                char isFree;
+                int type = bmType::TYPELESS;            // Block type. EVAL_SPECIAL will return a failure if the eval type does not match the block type.
+                char isFree;                            // Vacancy of the block list entry. If true, allocator will occupy on next call if needed.
         };
 
 

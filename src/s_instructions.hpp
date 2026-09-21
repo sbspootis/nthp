@@ -170,6 +170,8 @@ namespace ID {
                 IB_STOP,\
                 TEXTINPUT_START,\
                 TEXTINPUT_STOP,\
+                TEXTINPUT_REMOVELAST,\
+                TEXTINPUT_SETCURSOR,\
                 FONT_ALLOC,\
                 FONT_FREE,\
                 FONT_IMPORT,\
@@ -368,6 +370,8 @@ namespace Size {
                 IB_STOP = 0,
                 TEXTINPUT_START = sizeof(ptrRef),
                 TEXTINPUT_STOP = 0,
+                TEXTINPUT_REMOVELAST = 0,
+                TEXTINPUT_SETCURSOR = sizeof(stdRef),
                 FONT_ALLOC = sizeof(stdRef) + sizeof(ptrRef),
                 FONT_FREE = sizeof(ptrRef),
                 FONT_IMPORT = sizeof(fontRef) + sizeof(strRef) + sizeof(strRef),

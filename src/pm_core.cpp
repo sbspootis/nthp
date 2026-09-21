@@ -3,13 +3,16 @@
 #endif
 
 #include "pm.hpp"
+#include "pm_editor.hpp"
 
 // NTHP Project manager; compiles scripts, stages, textures, and palettes! Planned with built-in
 // debugger, allowing to step and breakpoint scripts with a virtual machine. Headless version first, then
 // GUI.
 
+using namespace nthp::pm;
+
 nthp::EngineCore nthp::core;
-nthp::script::Runtime mainRuntime;
+nthp::script::Runtime nthp::pm::mainRuntime;
 nthp::script::CompilerInstance symbolData;
 std::string testTarget;
 
@@ -440,6 +443,13 @@ L_BEGIN:
                                         PM_PRINT("Module build successful; output=[%s] [%s].\n", mod.c_str(), sym.c_str());
                                 }
 
+                                continue;
+                        }
+                        if(args[0] == "editor") {
+                                if(inHeadlessMode) { PM_PRINT_ERROR("Visual editor disabled in headless mode.\n"); continue; }
+
+                                int ret = nthp::pm::editor::editorRuntime();
+                                if(ret) { PM_PRINT_ERROR("Failed to initialize core.\n"); }
                                 continue;
                         }
 
