@@ -44,6 +44,8 @@ namespace nthp {
                 void setWindowRenderSize(int x, int y);
                 void setVirtualRenderScale(nthp::fixed_t x, nthp::fixed_t y);
 
+                void setWindowTitle(const char* title);
+
                 inline bool isRunning() { return running; }
 
                 nthp::RenderRuleSet p_coreDisplay;

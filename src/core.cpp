@@ -226,6 +226,9 @@ void nthp::EngineCore::setVirtualRenderScale(nthp::fixed_t x, nthp::fixed_t y) {
         p_coreDisplay.updateScaleFactor();
 }
 
+void nthp::EngineCore::setWindowTitle(const char* title) {
+        SDL_SetWindowTitle(window, title);
+}
 
 
 int nthp::EngineCore::cleanup() {

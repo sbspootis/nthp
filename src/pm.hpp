@@ -4,7 +4,10 @@
         #define _WIN32_WINNT 0x0A00
 
         #undef PM
-
+        #include "imgui/imgui.h"
+        #include "imgui/imgui_impl_sdl2.h"
+        #include "imgui/imgui_impl_sdlrenderer2.h"
+        #include <SDL_syswm.h>
         
         #include <Windows.h>
         #include <windef.h>
