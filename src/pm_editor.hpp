@@ -12,6 +12,7 @@ namespace nthp {
                                 nthp::entity::gEntity entity;
                                 nthp::script::CompilerInstance::CONST_DEF identifier;           // the identifier is the internal name.
                                 int layer;
+                                unsigned int targetSchema;
                         };
 
                         struct textureObject {
@@ -30,13 +31,12 @@ namespace nthp {
 
                         struct objectTypeSchematic {
                                 std::string name;
-                                void* frameSet;                 // Pointer to either the frameset target or textureObject.
-                                bool usingTextureFrame;         // Denotes use of texture or frameset. (false=frameset, true=texture)
+                                int framesetIndex;
+                                std::string searchFramesetName;
 
                                 nthp::vectf64 renderSize;
                                 nthp::vectf64 hitboxSize;
                                 nthp::vectf64 hitboxOffset;
-                                nthp::vectf64 position;
                         };
 
 
@@ -47,7 +47,7 @@ namespace nthp {
                                 void deleteTexture(unsigned int target);
 
                                 void regenAllTextures();
-                                unsigned int createSchematic(std::string name, void* frameTarget, bool usingTextureFrame);
+                                unsigned int createSchematic(std::string name);
 
                                 void addNewFrameset();
                                 void deleteFrameset(unsigned int index);
@@ -64,6 +64,7 @@ namespace nthp {
                                 std::vector<textureObject> textureList;
                                 std::vector<frameSetObject> frameSetList;
                                 std::vector<objectTypeSchematic> schematicList;
+                                unsigned int selectedEntity;
                         };
 
 
@@ -88,7 +89,6 @@ namespace nthp {
 
                                 std::vector<Scene> sceneList;
                                 int currentScene = 0;
-
                                 
                         };
 

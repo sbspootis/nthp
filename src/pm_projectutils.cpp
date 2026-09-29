@@ -57,15 +57,14 @@ void Scene::deleteFrameset(unsigned int index) {
 }
 
 
-unsigned int Scene::createSchematic(std::string name, void* frameTarget, bool usingTextureFrame) {
+unsigned int Scene::createSchematic(std::string name) {
         schematicList.push_back(objectTypeSchematic());
 
         schematicList.back().name = name;
-        schematicList.back().frameSet = frameTarget;
         schematicList.back().renderSize = nthp::vectf64(0,0);
         schematicList.back().hitboxSize = nthp::vectf64(0,0);
         schematicList.back().hitboxOffset = nthp::vectf64(0,0);
-        schematicList.back().position = nthp::vectf64(0,0);
+        schematicList.back().framesetIndex = -1;
 
         return schematicList.size() - 1;
 }

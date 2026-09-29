@@ -190,7 +190,7 @@ st_rendertext_d.o: $(SRCDIR)st_rendertext.hpp $(SRCDIR)st_rendertext.cpp
 
 
 
-pm: $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp $(lib_srcSymbols)
+pm: $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp $(SRCDIR)pm_editor.cpp $(SRCDIR)pm_projectutils.cpp $(lib_srcSymbols)
 	$(CC) $(SRCDIR)imgui/imgui_impl_sdl2.cpp $(SRCDIR)imgui/imgui_impl_sdlrenderer2.cpp $(SRCDIR)imgui/imgui_widgets.cpp $(SRCDIR)imgui/imgui_tables.cpp $(SRCDIR)imgui/imgui_draw.cpp $(SRCDIR)imgui/imgui_stdlib.cpp $(SRCDIR)imgui/imgui.cpp $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_core.cpp $(SRCDIR)pm_editor.cpp $(SRCDIR)pm_projectutils.cpp $(lib_srcSymbols) $(PM_CFLAGS) -D PM  -o pm
 
 
