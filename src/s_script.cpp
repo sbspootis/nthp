@@ -1369,7 +1369,7 @@ DEFINE_EXECUTION_BEHAVIOUR(CORE_INIT) {
         auto titleString = EVAL_STRREF(refCache[8]);
 
 
-        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(refCache[0].value), nthp::fixedToInt(refCache[1].value), refCache[2].value, refCache[3].value, nthp::vectFixed(refCache[4].value, refCache[5].value)), titleString, nthp::fixedToInt(refCache[6].value) & 1, nthp::fixedToInt(refCache[7].value) & 1);
+        nthp::core.init(nthp::RenderRuleSet(nthp::fixedToInt(refCache[0].value), nthp::fixedToInt(refCache[1].value), refCache[2].value, refCache[3].value, nthp::vectFixed(refCache[4].value, refCache[5].value)), titleString, nthp::fixedToInt(refCache[6].value) & 1, nthp::fixedToInt(refCache[7].value) & 1, false);
 
 
         return 0;

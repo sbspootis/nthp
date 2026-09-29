@@ -7,15 +7,18 @@
         #include "imgui/imgui.h"
         #include "imgui/imgui_impl_sdl2.h"
         #include "imgui/imgui_impl_sdlrenderer2.h"
-        #include <SDL_syswm.h>
+        #include "imgui/imgui_stdlib.h"
         
-        #include <Windows.h>
-        #include <windef.h>
-        #include <wtypes.h>
-        #include <commdlg.h>
-
-        #undef ABSOLUTE
         #define PM
+#endif
+
+#ifdef LINUX
+        #undef PM
+        #include "imgui/imgui.h"
+        #include "imgui/imgui_impl_sdl2.h"
+        #include "imgui/imgui_impl_sdlrenderer2.h"
+        #include <SDL2/SDL_syswm.h>
+
 #endif
 
 #include "s_linker.hpp"

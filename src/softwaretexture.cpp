@@ -120,12 +120,6 @@ void nthp::texture::SoftwareTexture::createEmptyTexture(const size_t dataSize) {
         memset(pixelData, 0, dataSize * sizeof(NTHPST_COLOR_WIDTH));
 }
 
-nthp::texture::SoftwareTexture::~SoftwareTexture() {
-
-        purgeTextureData();
-}
-
-
 
 
 

@@ -28,9 +28,9 @@ namespace nthp {
         class EngineCore {
         public:
                 EngineCore() { window = nullptr; renderer = nullptr; running = false; };
-                EngineCore(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering);
+                EngineCore(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering, bool windowResizable);
 
-                int init(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering);
+                int init(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering, bool windowResizable);
 
                 void handleEvents();
                 void handleEvents(void (*handler)(SDL_Event*));

@@ -18,6 +18,7 @@ std::string testTarget;
 
 bool debuggingActiveProcess = false;
 bool autobreak = true;
+bool openEditor = false;
 
 
 
@@ -200,6 +201,11 @@ int main(int argv, char** argc) {
         // Checks every frame if the debugger requests a session.
         do {
                 std::this_thread::sleep_for(std::chrono::milliseconds(nthp::fixedToInt(nthp::frameDelay)));
+                if(openEditor) {
+                        int ret = nthp::pm::editor::editorRuntime();
+
+                        openEditor = false;
+                }
                 
                 if(debuggingActiveProcess) {
 
@@ -448,8 +454,10 @@ L_BEGIN:
                         if(args[0] == "editor") {
                                 if(inHeadlessMode) { PM_PRINT_ERROR("Visual editor disabled in headless mode.\n"); continue; }
 
-                                int ret = nthp::pm::editor::editorRuntime();
-                                if(ret) { PM_PRINT_ERROR("Failed to initialize core.\n"); }
+                                g_access.lock();
+                                openEditor = true;
+                                g_access.unlock();
+                                
                                 continue;
                         }
 

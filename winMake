@@ -66,7 +66,7 @@ debug: main_d.obj $(debug_libTargets)
 	$(CC) main_d.obj $(debug_libTargets) -Fe"$(TARGET)_debug.exe" $(DEBUG_LINKERFLAGS) 
 
 pm: $(SRCDIR)pm_core.cpp $(SRCDIR)pm_globals.cpp
-        $(CC) $(PM_CFLAGS) src/imgui/imgui.cpp src/imgui/imgui_draw.cpp src/imgui/imgui_tables.cpp src/imgui/imgui_widgets.cpp src/imgui/imgui_impl_sdl2.cpp src/imgui/imgui_impl_sdlrenderer2.cpp src/pm_core.cpp src/pm_globals.cpp src/pm_editor.cpp $(lib_srcSymbols) -Fe"pm.exe" $(PM_LINKERFLAGS)
+        $(CC) $(PM_CFLAGS) $(SRCDIR)imgui/imgui.cpp $(SRCDIR)imgui/imgui_draw.cpp $(SRCDIR)imgui/imgui_tables.cpp $(SRCDIR)imgui/imgui_widgets.cpp $(SRCDIR)imgui/imgui_stdlib.cpp $(SRCDIR)imgui/imgui_impl_sdl2.cpp $(SRCDIR)imgui/imgui_impl_sdlrenderer2.cpp $(SRCDIR)pm_core.cpp $(SRCDIR)pm_globals.cpp $(SRCDIR)pm_editor.cpp $(SRCDIR)pm_projectutils.cpp $(lib_srcSymbols) -Fe"pm.exe" $(PM_LINKERFLAGS)
 
 
 # RELEASE DEPENDENCIES GO HERE

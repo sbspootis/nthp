@@ -69,8 +69,6 @@ namespace nthp {
                                 dataSize = 0;
                         }
 
-                        ~SoftwareTexture();
-
 
                         
                         NTHPST_COLOR_WIDTH* pixelData;

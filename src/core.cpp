@@ -3,16 +3,16 @@
 std::vector<std::string> nthp::audio::audioDeviceNames;
 
 
-nthp::EngineCore::EngineCore(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering) {
+nthp::EngineCore::EngineCore(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering, bool windowResizable) {
         window = nullptr;
         renderer = nullptr;
         running = false;
         initSuccess = false;
 
-        if(this->init(settings, title, fullscreen, softwareRendering)) { }
+        if(this->init(settings, title, fullscreen, softwareRendering, windowResizable)) { }
 }
 
-int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering) {
+int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool fullscreen, bool softwareRendering, bool windowResizable) {
         p_coreDisplay = settings;
         SDL_StopTextInput();
 
@@ -37,12 +37,16 @@ int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool
         }
         PRINT_DEBUG("Setting up window and renderer...\t");
 
-        int fullscreenFlag = 0;
+        int windowFlags = 0;
         if(fullscreen) {
-                fullscreenFlag = SDL_WINDOW_FULLSCREEN;
+                windowFlags |= SDL_WINDOW_FULLSCREEN;
+        }
+        if(windowResizable) {
+                windowFlags |= SDL_WINDOW_RESIZABLE;
         }
 
-        window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, p_coreDisplay.pxlResolution_x, p_coreDisplay.pxlResolution_y, fullscreenFlag);
+
+        window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, p_coreDisplay.pxlResolution_x, p_coreDisplay.pxlResolution_y, windowFlags);
         if(window == NULL) {
                 FATAL_PRINT(nthp::FATAL_ERROR::SDL_Failure, SDL_GetError());
         }
@@ -112,6 +116,7 @@ void nthp::EngineCore::handleEvents() {
 
         while(SDL_PollEvent(&eventList)) {
                 switch(eventList.type) {
+
                 case SDL_QUIT:
                         running = false;
                         break;

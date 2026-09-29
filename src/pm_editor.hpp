@@ -4,52 +4,57 @@
 namespace nthp {
         namespace pm {
 
-                #ifdef WINDOWS
-
                 namespace editor {
                         
                         extern int editorRuntime();
                                                 
                         struct entityObject {
                                 nthp::entity::gEntity entity;
-                                nthp::script::CompilerInstance::CONST_DEF identifier;
+                                nthp::script::CompilerInstance::CONST_DEF identifier;           // the identifier is the internal name.
                                 int layer;
                         };
 
                         struct textureObject {
+                                textureObject() { texture.init(); }
                                 nthp::texture::gTexture texture;
                                 nthp::texture::Frame singleTextureFrame;
-                                nthp::script::CompilerInstance::CONST_DEF identifier;
+                                nthp::script::CompilerInstance::CONST_DEF identifier;           // the identifier is the internal name.
                         };
 
                         struct frameSetObject {
                                 std::vector<SDL_Rect> frameSet;
-                                unsigned int textureID;
-                                nthp::script::CompilerInstance::CONST_DEF identifier;
+                                int textureID;
+                                nthp::script::CompilerInstance::CONST_DEF identifier;           // the identifier is the internal name.
+                                std::string searchTextureName;
                         };
 
                         struct objectTypeSchematic {
                                 std::string name;
-                                unsigned int frameSet;
+                                void* frameSet;                 // Pointer to either the frameset target or textureObject.
+                                bool usingTextureFrame;         // Denotes use of texture or frameset. (false=frameset, true=texture)
 
-                                nthp::vectFixed renderSize;
-                                nthp::vectFixed hitboxSize;
-                                nthp::vectFixed hitboxOffset;
-                                nthp::vectFixed position;
+                                nthp::vectf64 renderSize;
+                                nthp::vectf64 hitboxSize;
+                                nthp::vectf64 hitboxOffset;
+                                nthp::vectf64 position;
                         };
 
 
                         class Scene {
                         public:
                                 Scene(std::string newName) { name = newName; }
-                                typedef enum {
-                                        TYPE_ENTITY,
-                                        TYPE_TEXTURE,
-                                        TYPE_FRAMESET,
-                                        TYPE_SCHEMATIC
-                                } typeID;
-                                
-                                
+                                int importNewTexture(std::string filename, std::string nameInternal);
+                                void deleteTexture(unsigned int target);
+
+                                void regenAllTextures();
+                                unsigned int createSchematic(std::string name, void* frameTarget, bool usingTextureFrame);
+
+                                void addNewFrameset();
+                                void deleteFrameset(unsigned int index);
+
+                                int addEntity(unsigned int schematicID);
+                                int deleteEntity(size_t index);
+
 
 
 
@@ -59,8 +64,6 @@ namespace nthp {
                                 std::vector<textureObject> textureList;
                                 std::vector<frameSetObject> frameSetList;
                                 std::vector<objectTypeSchematic> schematicList;
-
-                                typeID selectedType;
                         };
 
 
@@ -68,24 +71,28 @@ namespace nthp {
                         public:
                                 
                                 
-                                int newEmptyProject();
+                                int newEmptyProject(const char* name, const char* src);
+                                int addNewScene();
 
-                                int importNewTexture(std::string filename, std::string nameInternal);
-                                int createSchematic(std::string name, size_t frameSet);
+                                Scene& activeScene() { return sceneList[currentScene]; }
                                 
-                                int addEntity(unsigned int schematicID);
-                                int deleteEntity(size_t index);
+
+                                
+                                
+                                
 
                                 std::string projectName;
+                                std::string sourceDirectory;
+                                bool allowModification = false;
+
 
                                 std::vector<Scene> sceneList;
-                                size_t currentScene;
+                                int currentScene = 0;
 
                                 
                         };
 
                 }
 
-                #endif
         }
 }

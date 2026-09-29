@@ -20,46 +20,6 @@ using namespace nthp::pm;
 
 
 
-
-
-
-SDL_SysWMinfo windowsInfo;
-
-const char* textureFileFilters = "NTHP Texture File (.st)\0*.st\0Compressed Texture File (.cst)\0*.cst\0All Files (*.*)\0*.*\0";
-const char* paletteFileFilters = "NTHP Texture Palette (.pal)\0*.pal\0All Files (*.*)\0*.*\0";
-const char* projectFileFilters = "Editor Project Files (.ep)\0*.ep\0All Files (*.*)\0*.*\0";
-const char* allFileFilter = "All Files (*.*)\0*.*\0";
-
-std::string filePicker(const char* filters) {
-        char fileString[500] = {0};
-
-        OPENFILENAMEA ofn;
-        memset(&ofn, 0, sizeof(ofn));
-
-        ofn.lStructSize = sizeof(ofn);
-        ofn.hwndOwner = windowsInfo.info.win.window;
-        ofn.lpstrFile = fileString;
-        ofn.nMaxFile = 500;
-
-        ofn.lpstrFilter = filters;
-        ofn.nFilterIndex = 1;
-        ofn.lpstrFileTitle = NULL;
-        ofn.nMaxFileTitle = 0;
-        ofn.lpstrInitialDir = NULL;
-
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_EXPLORER;
-        if(GetOpenFileNameA(&ofn)) {
-                return std::string(fileString);
-        }
-        else {
-                return "";
-        }
-
-}
-
-
-
-
 bool mouse1;
 bool mouse2;
 
@@ -131,6 +91,15 @@ void eventHandler(SDL_Event* eventList) {
                                 break;
                         }
                         break;
+                case SDL_WINDOWEVENT:
+                        if(eventList->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                                nthp::core.p_coreDisplay.pxlResolution_x = eventList->window.data1;
+                                nthp::core.p_coreDisplay.pxlResolution_y = eventList->window.data2;
+
+                                nthp::core.p_coreDisplay.updateScaleFactor();
+                        }
+                        break;
+
         }
 
 }
@@ -141,9 +110,10 @@ void eventHandler(SDL_Event* eventList) {
 int nthp::pm::editor::editorRuntime() {
 
 
-        if(nthp::core.init(nthp::RenderRuleSet(1080, 609, nthp::intToFixed(800), nthp::intToFixed(800), nthp::vectFixed(0,0)), "PM Editor", false, false)) {
+        if(nthp::core.init(nthp::RenderRuleSet(1080, 609, nthp::intToFixed(800), nthp::intToFixed(800), nthp::vectFixed(0,0)), "PM Editor", false, false, true)) {
                 return 1;
         }
+        SDL_StartTextInput();
 
 
         IMGUI_CHECKVERSION();
@@ -171,12 +141,10 @@ int nthp::pm::editor::editorRuntime() {
 
 
 
-
-
-
-
-
-
+        char inputString_1[50] = {0};
+        char inputString_2[50] = {0};
+        std::string windowTitle;
+        int sceneChange = 0;
 
         nthp::vectFixed mouseRect;
 
@@ -189,7 +157,7 @@ int nthp::pm::editor::editorRuntime() {
 
         // Shown window states.
 
-        bool win_setCurrentScene = false;
+        bool win_sceneControl = false;
         bool win_setActivePalette = false;
 
         bool win_newProjectConfig = false;
@@ -198,7 +166,18 @@ int nthp::pm::editor::editorRuntime() {
         bool win_deleteCurrentScene = false;
 
         bool win_loadTextureFile = false;
+        bool win_textureList = false;
 
+        bool win_editFrameset = false;
+        bool win_framesetList = false;
+
+        bool win_editSchematic = false;
+        unsigned int selectedSchematic = 0;
+
+        bool popup_confirmRegen = false;
+        unsigned int selectedFrameset = 0;
+
+        
         
         
         // Anyone would agree an infinite loop here is acceptable.
@@ -223,6 +202,9 @@ int nthp::pm::editor::editorRuntime() {
                                 if(ImGui::BeginMenu("Project")) {
                                         if (ImGui::MenuItem("New Project")) { 
                                                 // New Project code.
+                                                win_newProjectConfig = true;
+                                                inputString_1[0] = '\000';
+                                                inputString_2[0] = '\000';
                                         }
                                         if (ImGui::MenuItem("Open Project")) { 
                                                 // Open Project code.
@@ -234,30 +216,71 @@ int nthp::pm::editor::editorRuntime() {
                                         ImGui::EndMenu();
                                 }
                                 if(ImGui::BeginMenu("Scene")) {
-                                        if(ImGui::MenuItem("New Scene")) {
-
-                                        }
-                                        if(ImGui::MenuItem("Delete Scene")) {
-                                               
+                                        
+                                        if(ImGui::MenuItem("Show Scene Control", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                win_sceneControl = true;
                                         }
                                         ImGui::Separator();
-
-                                        if(ImGui::MenuItem("Set Current Scene")) {
-
+                                        if(ImGui::MenuItem("New Scene", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                currentProject.addNewScene();
+                                                win_sceneControl = true;
                                         }
+                                        if(ImGui::MenuItem("Delete Scene", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                               
+                                        }
+                                        
 
                                         ImGui::EndMenu();
                                 }
                                 if(ImGui::BeginMenu("Texture")) {
-                                        if(ImGui::MenuItem("Show Texture List")) {
+                                        if(ImGui::MenuItem("Show Texture List", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                win_textureList = true;
+                                        }
+                                        ImGui::Separator();
+                                        if(ImGui::MenuItem("Set Active Palette", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                win_setActivePalette = true;
+                                                inputString_1[0] = '\000';
+                                        }
+                                        if(ImGui::MenuItem("Load Texture File", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                win_loadTextureFile = true;
+                                                inputString_1[0] = '\000';
+                                                inputString_2[0] = '\000';
+                                        }
+                                        if(ImGui::MenuItem("Regenerate Scene Textures", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                popup_confirmRegen = true;
+                                        }
+
+                                        ImGui::EndMenu();
+                                }
+                                if(ImGui::BeginMenu("Animation")) {
+
+                                        if(ImGui::MenuItem("Show Frameset List", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                win_framesetList = true;
+                                        }
+                                        ImGui::Separator();
+                                        if(ImGui::MenuItem("Create Frameset", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                currentProject.activeScene().addNewFrameset();
+                                                win_editFrameset = true;
+                                                selectedFrameset = currentProject.activeScene().frameSetList.size() - 1;
+                                        }
+
+
+                                        ImGui::EndMenu();
+                                }
+
+                                if(ImGui::BeginMenu("Entity")) {
+
+                                        if(ImGui::MenuItem("Show Entity List", NULL, (bool*)nullptr, currentProject.allowModification)) {
+
+                                        }
+                                        if(ImGui::MenuItem("Show Schematic List", NULL, (bool*)nullptr, currentProject.allowModification)) {
 
                                         }
                                         ImGui::Separator();
-                                        if(ImGui::MenuItem("Set Active Palette")) {
-
-                                        }
-                                        if(ImGui::MenuItem("Load Texture File")) {
-
+                                        if(ImGui::MenuItem("Create Entity Schematic", NULL, (bool*)nullptr, currentProject.allowModification)) {
+                                                currentProject.activeScene().createSchematic(std::string("newShematic") + std::to_string(currentProject.activeScene().schematicList.size()), NULL, false);
+                                                selectedSchematic = currentProject.activeScene().schematicList.size() - 1;
+                                                win_editSchematic = true;
                                         }
 
                                         ImGui::EndMenu();
@@ -267,19 +290,286 @@ int nthp::pm::editor::editorRuntime() {
                         }
 
 
+                        // Mutually exclusive block with cascading priority. They all share input strings, so be warned.
+                        do {
+                        if(popup_confirmRegen) {
+                                if(ImGui::Begin("Confirm Texture Regen", &popup_confirmRegen)) {
+                                        ImGui::Text("Regenerate all texture currently loaded in the scene with the active palette?");
+                                        if(ImGui::Button("Confirm")) {
+                                                currentProject.activeScene().regenAllTextures();
+                                                popup_confirmRegen = false;
+                                        }
+                                        ImGui::SameLine();
+                                        if(ImGui::Button("Cancel")) {
+                                                popup_confirmRegen = false;
+                                        }
+                                        
+                                }
+                                ImGui::End();
+                                break;
+                        }
+
+                        if(win_newProjectConfig) {
+                                ImGui::Begin("New Project", &win_newProjectConfig);
+
+                                ImGui::Text("Create new empty project");
+                                ImGui::InputTextWithHint("##Project Name", "Project Name", inputString_1, 50);
+                                ImGui::InputTextWithHint("##Source Location", "Source Location", inputString_2, 50);
+                                if(ImGui::Button("Create")) {
+                                        currentProject.newEmptyProject(inputString_1, inputString_2);
+                                        SDL_SetWindowTitle(nthp::core.getWindow(), std::string(std::string("PM Editor - ") + std::string(inputString_1)).c_str());
+                                        win_newProjectConfig = false;
+                                        win_sceneControl = true;
+                                }
+                                ImGui::End();
+                                break;
+                        }
+
+                        if(win_setActivePalette) {
+                                ImGui::Begin("Set Active Palette", &win_setActivePalette);
+
+                                ImGui::Text("Import palette file");
+                                ImGui::InputTextWithHint("##Palettefile", "Palette File Path", inputString_1, 50);
+                                ImGui::Separator();
+                                if(ImGui::Button("Import")) {
+                                        nthp::script::activePalette.importPaletteFromFile(inputString_1);
+                                        win_setActivePalette = false;
+                                }
+
+                                ImGui::End();
+                                break;
+                        }
+
+                        if(win_loadTextureFile) {
+                                ImGui::Begin("Load Texture File", &win_loadTextureFile);
+
+                                ImGui::Text("Add texture file to current scene [%d]", currentProject.currentScene);
+                                ImGui::InputTextWithHint("##texturename", "Name", inputString_1, 50);
+                                ImGui::InputTextWithHint("##textureFile", "Texture File Path", inputString_2, 50);
+                                ImGui::Separator();
+                                if(ImGui::Button("Add")) {
+                                        currentProject.activeScene().importNewTexture(inputString_2, inputString_1);
+                                        win_loadTextureFile = false;
+                                }
+
+                                ImGui::End();
+                                break;
+                        }
+                        
+
+
+                        } while(0);
+
+                        if(win_sceneControl) {
+                                ImGui::Begin("Scene Control", &win_sceneControl);
+                                ImGui::Text("Currently loaded scene ID: [%d]", currentProject.currentScene);
+                                ImGui::Separator();
+                                if(ImGui::ArrowButton("prev" ,ImGuiDir::ImGuiDir_Left)) {
+                                        --sceneChange;
+                                }
+                                ImGui::SameLine();
+                                ImGui::InputInt("##Current Scene", &sceneChange, 0, 0);
+                                ImGui::SameLine();
+                                if(ImGui::ArrowButton("next", ImGuiDir::ImGuiDir_Right)) {
+                                        ++sceneChange;
+                                }
+
+                                
+                                if(ImGui::Button("Switch Scene")) {
+                                        if(sceneChange >= 0 && sceneChange < currentProject.sceneList.size())
+                                                currentProject.currentScene = sceneChange;
+                                }
+                                ImGui::Separator();
+                                ImGui::Text("Current Scene Info:");
+                                ImGui::Text("Name: "); ImGui::SameLine();
+                                ImGui::InputText("##scenename", &currentProject.sceneList[currentProject.currentScene].name);
+                                ImGui::Text("Object Count: %d total", 
+                                        currentProject.activeScene().entityList.size() + 
+                                        currentProject.activeScene().textureList.size() +
+                                        currentProject.activeScene().frameSetList.size());
+                                ImGui::Text("Schema count: ", currentProject.activeScene().schematicList.size());
+                                ImGui::End();
+                        }
+
+                        if(win_editFrameset) {
+                                do {
+                                if(selectedFrameset >= currentProject.activeScene().frameSetList.size() || selectedFrameset < 0) { win_editFrameset = false; break; }
+                                if(ImGui::Begin("Edit Frameset", &win_editFrameset)) {
+                                        
+                                        ImGui::Text("Frameset Index %d: %s, ID=%s", selectedFrameset, currentProject.activeScene().frameSetList[selectedFrameset].identifier.constName.c_str(), currentProject.activeScene().frameSetList[selectedFrameset].identifier.value.c_str());
+                                        ImGui::Text("Name: "); ImGui::SameLine(); ImGui::InputText("##framesetname", &(currentProject.activeScene().frameSetList[selectedFrameset].identifier.constName));
+                                        ImGui::Separator();
+                                        ImGui::Text("Target Texture Name: "); 
+                                        ImGui::SameLine(); 
+                                        ImGui::SetNextItemWidth(80);
+                                        if(ImGui::InputText("##targetexture", &(currentProject.activeScene().frameSetList[selectedFrameset].searchTextureName))) {
+                                                bool matchedTexture = false;
+                                                for(size_t i = 0; i < currentProject.activeScene().textureList.size(); ++i) {
+                                                        if(currentProject.activeScene().textureList[i].identifier.constName ==  currentProject.activeScene().frameSetList[selectedFrameset].searchTextureName) {
+                                                                currentProject.activeScene().frameSetList[selectedFrameset].textureID = i;
+                                                                matchedTexture = true;
+                                                                break;
+                                                        }
+                                                }
+                                                if(!matchedTexture) { currentProject.activeScene().frameSetList[selectedFrameset].textureID = -1; }
+                                        }
+                                        if(currentProject.activeScene().frameSetList[selectedFrameset].textureID > -1 && currentProject.activeScene().frameSetList[selectedFrameset].textureID < currentProject.activeScene().textureList.size()) {
+                                                ImGui::Image((ImTextureRef)currentProject.activeScene().textureList[currentProject.activeScene().frameSetList[selectedFrameset].textureID].texture.getTextureData().getTexture(), ImVec2(64, 64));
+                                        }
+                                        
+
+                                        ImGui::Separator();
+                                        ImGui::Text("Frame Data (x, y, w, h):");
+                                        for(size_t i = 0; i < currentProject.activeScene().frameSetList[selectedFrameset].frameSet.size(); ++i) {
+                                                ImGui::PushID(i);
+                                                ImGui::Text("Frame #%zu", i);
+                                                ImGui::SameLine();
+
+                                                ImGui::SetNextItemWidth(40);
+                                                ImGui::InputInt("##framedatax", &(currentProject.activeScene().frameSetList[selectedFrameset].frameSet[i].x), 0, 0);
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(40);
+                                                ImGui::InputInt("##framedatay", &(currentProject.activeScene().frameSetList[selectedFrameset].frameSet[i].y), 0, 0);
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(40);
+                                                ImGui::InputInt("##framedataw", &(currentProject.activeScene().frameSetList[selectedFrameset].frameSet[i].w), 0, 0);
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(40);
+                                                ImGui::InputInt("##framedatah", &(currentProject.activeScene().frameSetList[selectedFrameset].frameSet[i].h), 0, 0);
+                                                ImGui::SameLine();
+                                                if(ImGui::Button("Delete")) {
+                                                        ImGui::OpenPopup("confirmframedelete");
+                                                }
+                                                if(ImGui::BeginPopup("confirmframedelete")) {
+                                                        ImGui::Text("Delete frame #%zu?", i);
+                                                        if(ImGui::Button("Confirm")) {
+                                                                currentProject.activeScene().frameSetList[selectedFrameset].frameSet.erase(currentProject.activeScene().frameSetList[selectedFrameset].frameSet.begin()+i);
+                                                                ImGui::CloseCurrentPopup();
+                                                        }
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Cancel")) {
+                                                                ImGui::CloseCurrentPopup();
+                                                        }
+
+                                                        ImGui::EndPopup();
+                                                }
+
+                                                ImGui::PopID();
+                                        }
+
+                                        if(ImGui::Button("Add Frame")) {
+                                                currentProject.activeScene().frameSetList[selectedFrameset].frameSet.push_back({0,0,0,0});
+                                        }
+                                
+                                }
+                                
+                                ImGui::End();
+                                } while(0);      // do, while0
+                                
+                        }
+
+                        if(win_textureList) {
+                                if(ImGui::Begin("Texture List", &win_textureList)) {
+                                        ImGui::Text("Total Textures Imported in Scene: %zu", currentProject.sceneList[currentProject.currentScene].textureList.size());
+                                        if(ImGui::BeginListBox("##Texture List", ImGui::GetContentRegionAvail())) {
+                                                ImGui::Separator();
+                                                for(size_t i = 0; i < currentProject.sceneList[currentProject.currentScene].textureList.size(); ++i) {
+                                                        auto& targetTexture = (currentProject.sceneList[currentProject.currentScene].textureList[i].texture);
+                                                        const ImVec2 thumbSize(64, 64);
+                                                        
+                                                        ImGui::PushID(i);
+
+                                                        ImGui::BeginGroup();
+                                                        ImGui::Image((ImTextureRef)targetTexture.getTextureData().getTexture(), thumbSize);
+                                                        ImGui::Text("Name: %s | ID: %s (%u x %u)", currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.constName.c_str(), currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.value, targetTexture.getTextureData().getMetaData().x, targetTexture.getTextureData().getMetaData().y);
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Delete")) {
+                                                                ImGui::OpenPopup("confirmTextureDelete");
+                                                        }
+                                                        ImGui::EndGroup();
+
+
+                                                        if(ImGui::BeginPopup("confirmTextureDelete")) {
+                                                                ImGui::Text("Delete texture [%s], ID: %s?", currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.constName.c_str(), currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.value.c_str());
+                                                                if(ImGui::Button("Confirm")) {
+                                                                        currentProject.sceneList[currentProject.currentScene].deleteTexture(i);
+                                                                        ImGui::CloseCurrentPopup();
+
+                                                                } ImGui::SameLine(); 
+                                                                if(ImGui::Button("Cancel")) {
+                                                                        ImGui::CloseCurrentPopup();
+                                                                }
+
+                                                                ImGui::EndPopup();
+                                                        }
+
+                                                        ImGui::Separator();
+
+                                                        ImGui::PopID();
+                                                }
+
+                                                ImGui::EndListBox();
+                                        }
+                                }
+
+                                ImGui::End();
+
+                        }
+
+                        if(win_framesetList) {
+                                if(ImGui::Begin("Frameset List", &win_framesetList)) {
+                                        ImGui::Text("Total Scene frameset Count: %zu", currentProject.activeScene().frameSetList.size());
+                                        ImGui::Separator();
+                                        if(ImGui::BeginListBox("##Frameset List", ImGui::GetContentRegionAvail())) {
+
+                                                for(size_t i = 0; i < currentProject.activeScene().frameSetList.size(); ++i) {
+                                                        ImGui::PushID(i);
+                                                        
+                                                        ImGui::Text("Frameset ID:%zu | #%s | %u total frames", i, currentProject.activeScene().frameSetList[i].identifier.constName.c_str(), currentProject.activeScene().frameSetList[i].frameSet.size());
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Edit")) {
+                                                                win_editFrameset = true;
+                                                                selectedFrameset = i;
+                                                        }
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Delete")) {
+                                                                ImGui::OpenPopup("deleteframeset");
+                                                        }
+
+                                                        if(ImGui::BeginPopup("deleteframeset")) {
+                                                                ImGui::Text("Delete frameset [#%s]?", currentProject.activeScene().frameSetList[i].identifier.constName.c_str());
+                                                                
+                                                                if(ImGui::Button("Confirm")) {
+                                                                        currentProject.activeScene().deleteFrameset(i);
+                                                                        ImGui::CloseCurrentPopup();
+                                                                }
+                                                                if(ImGui::Button("Cancel")) {
+                                                                        ImGui::CloseCurrentPopup();
+                                                                }
+                                                                ImGui::EndPopup();
+                                                        }
+
+                                                        ImGui::Separator();
+                                                        ImGui::PopID();
+                                                }
 
 
 
+                                                ImGui::EndListBox();
+                                        }
+                                }
 
+                                ImGui::End();
+                        }
 
+                        if(win_editSchematic) {
+                                if(ImGui::Begin("Edit Entity Schematic", &win_editSchematic)) {
+                                        
+                                }
 
-
-
-
-
-
-
-
+                                ImGui::End();
+                        }
+                
 
 
 

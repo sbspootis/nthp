@@ -1,41 +1,105 @@
-#ifdef WINDOWS
-
-
 
 #include "pm_editor.hpp"
 using namespace nthp::pm::editor;
 
 
-int Project::newEmptyProject() {
-        projectName = "new_project1";
-        sceneList.clear();
 
-        sceneList.push_back(Scene("scene1"));
-        currentScene = 0;
-        
-}
-
-
-int Project::importNewTexture(std::string filename, std::string nameInternal) {
-        sceneList[currentScene].textureList.push_back(textureObject());
-        if(sceneList[currentScene].textureList.back().texture.autoLoadTextureFile(filename.c_str(), &nthp::script::activePalette, nthp::core.getRenderer())) {
+int Scene::importNewTexture(std::string filename, std::string nameInternal) {
+        textureList.push_back(textureObject());
+        if(textureList.back().texture.autoLoadTextureFile(filename.c_str(), &nthp::script::activePalette, nthp::core.getRenderer())) {
+                textureList.pop_back();
                 return 1;
         }
 
-        sceneList[currentScene].textureList.back().identifier.constName = "#" + nameInternal;
-        sceneList[currentScene].textureList.back().identifier.value = std::to_string(sceneList[currentScene].textureList.size() - 1);
-        sceneList[currentScene].textureList.back().singleTextureFrame.texture = sceneList[currentScene].textureList.back().texture.getTextureData().texture;
-        sceneList[currentScene].textureList.back().singleTextureFrame.src = { 0, 0, (int)sceneList[currentScene].textureList.back().texture.getTextureData().getMetaData().x, (int)sceneList[currentScene].textureList.back().texture.getTextureData().getMetaData().y };
+        textureList.back().identifier.constName = "#" + nameInternal;
+        textureList.back().identifier.value = std::to_string(textureList.size() - 1);
+        textureList.back().singleTextureFrame.texture = textureList.back().texture.getTextureData().texture;
+        textureList.back().singleTextureFrame.src = { 0, 0, (int)textureList.back().texture.getTextureData().getMetaData().x, (int)textureList.back().texture.getTextureData().getMetaData().y };
+
+        return 0;
+}
+
+void Scene::deleteTexture(unsigned int target) {
+        textureList[target].texture.clean();
+        textureList.erase(textureList.begin()+target);
+
+        for(size_t i = 0; i < textureList.size(); ++i) {
+                textureList[i].identifier.value = std::to_string(i);
+        }
+
+}
+
+void Scene::regenAllTextures() {
+        for(size_t i = 0; i < textureList.size(); ++i) {
+                textureList[i].texture.getTextureData().regenerateTexture(&nthp::script::activePalette, nthp::core.getRenderer());
+        }
+}
+
+
+void Scene::addNewFrameset() {
+        frameSetList.push_back(frameSetObject());
+        frameSetList.back().frameSet.clear();
+
+        frameSetList.back().identifier.constName = std::string("newFrameset") + std::to_string(frameSetList.size() - 1);
+        frameSetList.back().identifier.value = std::to_string(frameSetList.size() - 1);
+
+        frameSetList.back().textureID = -1;
+        frameSetList.back().frameSet.push_back({0, 0, 0, 0});
+}
+
+void Scene::deleteFrameset(unsigned int index) {
+        if(index >= frameSetList.size()) { return; }
+
+        frameSetList.erase(frameSetList.begin()+index);
+        for(size_t i = 0; i < frameSetList.size(); ++i) {
+                frameSetList[i].identifier.value = std::to_string(i);
+        }
+}
+
+
+unsigned int Scene::createSchematic(std::string name, void* frameTarget, bool usingTextureFrame) {
+        schematicList.push_back(objectTypeSchematic());
+
+        schematicList.back().name = name;
+        schematicList.back().frameSet = frameTarget;
+        schematicList.back().renderSize = nthp::vectf64(0,0);
+        schematicList.back().hitboxSize = nthp::vectf64(0,0);
+        schematicList.back().hitboxOffset = nthp::vectf64(0,0);
+        schematicList.back().position = nthp::vectf64(0,0);
+
+        return schematicList.size() - 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+int Project::newEmptyProject(const char* name, const char* src) {
+        projectName = name;
+        sourceDirectory = src;
+        sceneList.clear();
+
+        sceneList.push_back(Scene("scene0"));
+        currentScene = 0;
+        allowModification = true;
+        
+        return 0;
+}
+
+int Project::addNewScene() {
+        std::string name = "scene" + std::to_string(sceneList.size());
+
+        sceneList.push_back(Scene(name.c_str()));
+        currentScene = sceneList.size() - 1;
 
         return 0;
 }
 
 
 
-
-
-
-
-
-
-#endif
