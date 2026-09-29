@@ -10,13 +10,13 @@ namespace nthp {
                 class characterMap {
                 public:
                         characterMap();
-                        void init() { charWidth = 0; memset(map, 0, CHAR_MAX); };
+                        void init() { charWidth = 0; memset(map, 0, 127); };
 
                         int exportToFile(const char* output);
                         int import(const char* file);
 
                         uint32_t charWidth;
-                        int8_t map[CHAR_MAX];
+                        int8_t map[127];
                 };
 
 

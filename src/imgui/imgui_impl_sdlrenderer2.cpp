@@ -56,8 +56,14 @@
 #endif
 
 // SDL
+#ifdef WINDOWS
 #include <SDL_render.h>
 #include <SDL_version.h>
+#endif
+#ifdef LINUX
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_version.h>
+#endif
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif

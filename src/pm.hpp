@@ -8,17 +8,21 @@
         #include "imgui/imgui_impl_sdl2.h"
         #include "imgui/imgui_impl_sdlrenderer2.h"
         #include "imgui/imgui_stdlib.h"
+        #include <SDL2/SDL_syswm.h>
         
         #define PM
 #endif
 
 #ifdef LINUX
         #undef PM
+        
         #include "imgui/imgui.h"
         #include "imgui/imgui_impl_sdl2.h"
         #include "imgui/imgui_impl_sdlrenderer2.h"
+        #include "imgui/imgui_stdlib.h"
         #include <SDL2/SDL_syswm.h>
-
+        
+        #define PM
 #endif
 
 #include "s_linker.hpp"
