@@ -33,6 +33,7 @@ namespace nthp {
                                 std::string name;
                                 int framesetIndex;
                                 std::string searchFramesetName;
+                                std::vector<nthp::texture::Frame> constructedFrameset;
 
                                 nthp::vectf64 renderSize;
                                 nthp::vectf64 hitboxSize;
@@ -48,12 +49,17 @@ namespace nthp {
 
                                 void regenAllTextures();
                                 unsigned int createSchematic(std::string name);
+                                void deleteSchematic(unsigned int ID);
 
                                 void addNewFrameset();
                                 void deleteFrameset(unsigned int index);
 
-                                int addEntity(unsigned int schematicID);
+                                void addEntity(unsigned int schematicID, nthp::worldPosition position);
+                                void updateEntitySchematicData(unsigned int entityID);
+                                void updateAllEntitySchematicData();
                                 int deleteEntity(size_t index);
+
+                                void constructSchematicFrameset(unsigned int schematicID);
 
 
 
@@ -64,7 +70,7 @@ namespace nthp {
                                 std::vector<textureObject> textureList;
                                 std::vector<frameSetObject> frameSetList;
                                 std::vector<objectTypeSchematic> schematicList;
-                                unsigned int selectedEntity;
+                                nthp::entity::gEntity* selectedEntity;
                         };
 
 

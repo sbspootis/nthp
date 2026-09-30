@@ -28,6 +28,7 @@ namespace nthp {
                 void setCurrentFrame(size_t cf);
                 inline size_t getCurrentFrameIndex() { return currentFrame; }
                 inline nthp::texture::Frame getCurrentFrameTexture() { return frameData[currentFrame]; }
+                inline nthp::texture::Frame* getEntityFrameData() { return frameData; }
 
 		inline nthp::entity::cRect getHitbox() { return hitbox; }
 		void setHtiboxSize(nthp::vectFixed newSize);

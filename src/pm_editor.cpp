@@ -24,7 +24,6 @@ bool mouse1;
 bool mouse2;
 
 bool inEditor = false;
-int cursorMode = 0;
 
 editor::Project currentProject;
 
@@ -146,11 +145,14 @@ int nthp::pm::editor::editorRuntime() {
         std::string windowTitle;
         int sceneChange = 0;
 
-        std::string schema_texture_target;
-
         nthp::vectFixed mouseRect;
 
         int x,y;
+
+        typedef enum { DISABLED, PLACE, DELETE } cursormode;
+        int cursorMode = cursormode::DISABLED;
+        int cursorPlaceSchematic = -1;
+
 
         std::chrono::steady_clock tickTimer;
         std::chrono::microseconds frameTime;
@@ -159,7 +161,7 @@ int nthp::pm::editor::editorRuntime() {
 
         // Shown window states.
 
-        bool win_sceneControl = false;
+        bool win_sceneControl = false;                          // control menu
         bool win_setActivePalette = false;
 
         bool win_newProjectConfig = false;
@@ -168,13 +170,13 @@ int nthp::pm::editor::editorRuntime() {
         bool win_deleteCurrentScene = false;
 
         bool win_loadTextureFile = false;
-        bool win_textureList = false;
+        bool win_textureList = false;                           // control menu
 
         bool win_editFrameset = false;
-        bool win_framesetList = false;
+        bool win_framesetList = false;                          // control menu
 
         bool win_editSchematic = false;
-        bool win_schematicList = false;
+        bool win_schematicList = false;                         // control menu
         unsigned int selectedSchematic = 0;
 
         bool popup_confirmRegen = false;
@@ -283,7 +285,6 @@ int nthp::pm::editor::editorRuntime() {
                                         if(ImGui::MenuItem("Create Entity Schematic", NULL, (bool*)nullptr, currentProject.allowModification)) {
                                                 currentProject.activeScene().createSchematic(std::string("newShematic") + std::to_string(currentProject.activeScene().schematicList.size()));
                                                 selectedSchematic = currentProject.activeScene().schematicList.size() - 1;
-                                                schema_texture_target = "";
                                                 win_editSchematic = true;
                                         }
 
@@ -392,7 +393,8 @@ int nthp::pm::editor::editorRuntime() {
                                         currentProject.activeScene().entityList.size() + 
                                         currentProject.activeScene().textureList.size() +
                                         currentProject.activeScene().frameSetList.size());
-                                ImGui::Text("Schema count: ", currentProject.activeScene().schematicList.size());
+                                ImGui::Text("Schema count: %zu", currentProject.activeScene().schematicList.size());
+                                ImGui::Text("Entity count: %zu", currentProject.activeScene().entityList.size());
                                 ImGui::End();
                         }
 
@@ -626,15 +628,41 @@ int nthp::pm::editor::editorRuntime() {
                                                         ImGui::Separator();
                                                         ImGui::Text("Name: %s", currentProject.activeScene().schematicList[i].name.c_str());
                                                         if(currentProject.activeScene().schematicList[i].framesetIndex >= 0) {
-                                                                ImGui::Image((ImTextureRef)currentProject.activeScene().textureList[currentProject.activeScene().frameSetList[currentProject.activeScene().schematicList[i].framesetIndex].textureID].texture.getTextureData().getTexture(), ImVec2(64, 64));
+                                                                auto& textureData = currentProject.activeScene().textureList[currentProject.activeScene().frameSetList[currentProject.activeScene().schematicList[i].framesetIndex].textureID].texture.getTextureData();
+                                                                auto& frameData = currentProject.activeScene().frameSetList[currentProject.activeScene().schematicList[i].framesetIndex];
+                                                                
+                                                                const ImVec2 uv0((float)frameData.frameSet[0].x / (float)textureData.getMetaData().x, (float)frameData.frameSet[0].y / (float)textureData.getMetaData().y);                  // Top-left UV
+                                                                const ImVec2 uv1((float)(frameData.frameSet[0].x + frameData.frameSet[0].w) / (float)textureData.getMetaData().x, (float)(frameData.frameSet[0].y + frameData.frameSet[0].h) / (float)textureData.getMetaData().y);      // Bottom-right UV
+                                                                ImGui::Image((ImTextureRef)currentProject.activeScene().textureList[currentProject.activeScene().frameSetList[currentProject.activeScene().schematicList[i].framesetIndex].textureID].texture.getTextureData().getTexture(), ImVec2(64, 64), uv0, uv1);
+                                                                
                                                         }
                                                         if(ImGui::Button("+")) {
-
+                                                                cursorMode = cursormode::PLACE;
+                                                                cursorPlaceSchematic = i;
+                                                                currentProject.activeScene().constructSchematicFrameset(i);
                                                         }
                                                         ImGui::SameLine();
                                                         if(ImGui::Button("Edit")) {
                                                                 selectedSchematic = i;
                                                                 win_editSchematic = true;
+                                                        }
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Delete")) {
+                                                                ImGui::OpenPopup("confirmschemadelete");
+                                                        }
+
+                                                        if(ImGui::BeginPopup("confirmschemadelete")) {
+                                                                ImGui::Text("Delete Entity Schematic %s?", currentProject.activeScene().schematicList[i].name.c_str());
+                                                                if(ImGui::Button("Confirm")) {
+                                                                        currentProject.activeScene().deleteSchematic(i);
+                                                                        ImGui::CloseCurrentPopup();
+                                                                }
+                                                                ImGui::SameLine();
+                                                                if(ImGui::Button("Cancel")) {
+                                                                        ImGui::CloseCurrentPopup();
+                                                                }
+
+                                                                ImGui::EndPopup();
                                                         }
                                                         
 
@@ -649,6 +677,29 @@ int nthp::pm::editor::editorRuntime() {
                                 ImGui::End();
                         }
 
+                        if(!io.WantCaptureMouse) {
+                                switch(cursorMode) {
+                                        case PLACE:
+                                        {
+                                                if(mouse1) {
+                                                
+                                                        currentProject.activeScene().addEntity(cursorPlaceSchematic, nthp::mousePosition);
+                                                        currentProject.activeScene().selectedEntity = &(currentProject.activeScene().entityList.back().entity);
+                                                        mouse1 = false;
+                                                }
+
+                                        }
+                                        break;
+
+
+
+                                                
+
+                                        case DISABLED:
+                                                break;
+                                };
+                        }
+
 
 
 
@@ -656,15 +707,12 @@ int nthp::pm::editor::editorRuntime() {
                         ImGui::Render();
                         nthp::core.clear();
 
-
-
-
-
-
-
-
-
-
+                        // Only render entity list if a scene is loaded.
+                        if(currentProject.allowModification) {
+                                for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) { 
+                                        nthp::core.render(currentProject.activeScene().entityList[i].entity.getUpdateRenderPacket(&nthp::core.p_coreDisplay));
+                                }
+                        }
 
                         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), nthp::core.getRenderer());
 

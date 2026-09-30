@@ -3,14 +3,11 @@
         #define WIN32_LEAN_AND_MEAN
         #define _WIN32_WINNT 0x0A00
 
-        #undef PM
         #include "imgui/imgui.h"
         #include "imgui/imgui_impl_sdl2.h"
         #include "imgui/imgui_impl_sdlrenderer2.h"
         #include "imgui/imgui_stdlib.h"
-        #include <SDL2/SDL_syswm.h>
         
-        #define PM
 #endif
 
 #ifdef LINUX

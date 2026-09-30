@@ -70,6 +70,76 @@ unsigned int Scene::createSchematic(std::string name) {
 }
 
 
+void Scene::constructSchematicFrameset(unsigned int schematicID) {
+        auto& schematic = schematicList[schematicID];
+        auto& frameset = frameSetList[schematic.framesetIndex];
+        if(frameset.textureID < 0) { return; }
+
+        schematic.constructedFrameset.clear();
+
+        for(size_t i = 0; i < frameset.frameSet.size(); ++i) {
+                schematic.constructedFrameset.push_back(nthp::texture::Frame(textureList[frameset.textureID].texture.getTextureData().getTexture(), frameset.frameSet[i]));
+        }
+
+}
+
+
+void Scene::deleteSchematic(unsigned int ID) {
+        if(ID >= schematicList.size()) { return; }
+
+        schematicList.erase(schematicList.begin()+ID);
+
+        // Schematics have no nessesary order for script purposes.
+}
+
+
+
+
+void Scene::addEntity(unsigned int schematicID, nthp::worldPosition position) {
+        entityList.push_back(entityObject());
+        entityList.back().entity.init();
+
+        auto& schema = schematicList[schematicID];
+        
+        entityList.back().targetSchema = schematicID;
+        entityList.back().identifier.constName = std::string("new") + schema.name + std::to_string(entityList.size() - 1);
+        entityList.back().identifier.value = std::to_string(entityList.size() - 1);
+        entityList.back().layer = 0;
+
+        entityList.back().entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
+        entityList.back().entity.setRenderSize(nthp::vectFixed(nthp::doubleToFixed(schema.renderSize.x), nthp::doubleToFixed(schema.renderSize.y)));
+        entityList.back().entity.setHtiboxSize(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxSize.x), nthp::doubleToFixed(schema.hitboxSize.y)));
+        entityList.back().entity.setHitboxOffset(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxOffset.x), nthp::doubleToFixed(schema.hitboxOffset.y)));
+        entityList.back().entity.setCurrentFrame(0);
+        entityList.back().entity.setPosition(position);
+}
+
+
+void Scene::updateEntitySchematicData(unsigned int entityID) {
+        entityObject& entityTarget = entityList[entityID];
+        objectTypeSchematic& schema = schematicList[entityTarget.targetSchema];
+        
+
+        if(frameSetList[schema.framesetIndex].textureID >= 0 && (schema.constructedFrameset.size()))
+                entityTarget.entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
+        else
+                entityTarget.entity.importFrameData(NULL, 0, false);
+
+
+        entityTarget.entity.setRenderSize(nthp::vectFixed(nthp::doubleToFixed(schema.renderSize.x), nthp::doubleToFixed(schema.renderSize.y)));
+        entityTarget.entity.setHtiboxSize(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxSize.x), nthp::doubleToFixed(schema.hitboxSize.y)));
+        entityTarget.entity.setHitboxOffset(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxOffset.x), nthp::doubleToFixed(schema.hitboxOffset.y)));
+        entityTarget.entity.setCurrentFrame(0);
+}
+
+void Scene::updateAllEntitySchematicData() {
+        
+        for(size_t i = 0; i < entityList.size(); ++i) {
+                updateEntitySchematicData(i);
+        }
+}
+
+
 
 
 
