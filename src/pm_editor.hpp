@@ -70,7 +70,7 @@ namespace nthp {
                                 std::vector<textureObject> textureList;
                                 std::vector<frameSetObject> frameSetList;
                                 std::vector<objectTypeSchematic> schematicList;
-                                nthp::entity::gEntity* selectedEntity;
+                                unsigned int selectedEntity;
                         };
 
 
