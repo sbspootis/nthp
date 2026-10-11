@@ -72,6 +72,8 @@ unsigned int Scene::createSchematic(std::string name) {
 
 void Scene::constructSchematicFrameset(unsigned int schematicID) {
         auto& schematic = schematicList[schematicID];
+        if(schematic.framesetIndex < 0 || schematic.framesetIndex >= frameSetList.size()) { return; }
+
         auto& frameset = frameSetList[schematic.framesetIndex];
         if(frameset.textureID < 0) { return; }
 
@@ -106,7 +108,11 @@ void Scene::addEntity(unsigned int schematicID, nthp::worldPosition position) {
         entityList.back().identifier.value = std::to_string(entityList.size() - 1);
         entityList.back().layer = 0;
 
-        entityList.back().entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
+        if(schema.framesetIndex >= 0 && schema.framesetIndex < frameSetList.size())
+                entityList.back().entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
+        else
+                entityList.back().entity.importFrameData(nullptr, 0, false);
+
         entityList.back().entity.setRenderSize(nthp::vectFixed(nthp::doubleToFixed(schema.renderSize.x), nthp::doubleToFixed(schema.renderSize.y)));
         entityList.back().entity.setHtiboxSize(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxSize.x), nthp::doubleToFixed(schema.hitboxSize.y)));
         entityList.back().entity.setHitboxOffset(nthp::vectFixed(nthp::doubleToFixed(schema.hitboxOffset.x), nthp::doubleToFixed(schema.hitboxOffset.y)));
@@ -114,16 +120,30 @@ void Scene::addEntity(unsigned int schematicID, nthp::worldPosition position) {
         entityList.back().entity.setPosition(position);
 }
 
+void Scene::deleteEntity(unsigned int ID) {
+        if(ID < entityList.size()) {
+                entityList.erase(entityList.begin()+ID);
+
+                for(size_t i = 0; i < entityList.size(); ++i) {
+                        entityList[i].identifier.value = std::to_string(i);
+                }
+        }
+}
+
 
 void Scene::updateEntitySchematicData(unsigned int entityID) {
         entityObject& entityTarget = entityList[entityID];
         objectTypeSchematic& schema = schematicList[entityTarget.targetSchema];
         
-
-        if(frameSetList[schema.framesetIndex].textureID >= 0 && (schema.constructedFrameset.size()))
-                entityTarget.entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
-        else
+        if(schema.framesetIndex >= 0 && schema.framesetIndex < frameSetList.size()) {
+                if(frameSetList[schema.framesetIndex].textureID < 0 || (frameSetList[schema.framesetIndex].textureID >= textureList.size()))
+                        entityTarget.entity.importFrameData(NULL, 0, false);
+                else
+                        entityTarget.entity.importFrameData(schema.constructedFrameset.data(), schema.constructedFrameset.size(), false);
+        }
+        else {
                 entityTarget.entity.importFrameData(NULL, 0, false);
+        }
 
 
         entityTarget.entity.setRenderSize(nthp::vectFixed(nthp::doubleToFixed(schema.renderSize.x), nthp::doubleToFixed(schema.renderSize.y)));

@@ -57,7 +57,7 @@ namespace nthp {
                                 void addEntity(unsigned int schematicID, nthp::worldPosition position);
                                 void updateEntitySchematicData(unsigned int entityID);
                                 void updateAllEntitySchematicData();
-                                int deleteEntity(size_t index);
+                                void deleteEntity(unsigned int ID);
 
                                 void constructSchematicFrameset(unsigned int schematicID);
 

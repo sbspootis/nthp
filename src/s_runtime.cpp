@@ -222,7 +222,7 @@ void nthp::script::Runtime::handleEvents() {
         }
         SDL_GetMouseState(&x, &y);
         nthp::mousePosition = nthp::generateWorldPosition(nthp::vectGeneric(x, y), &nthp::core.p_coreDisplay);
-        nthp::mousePosition -= nthp::core.p_coreDisplay.cameraWorldPosition;
+        nthp::mousePosition += nthp::core.p_coreDisplay.cameraWorldPosition;
         
         data.inputBuffer[data.inputBufferPtr] = 0; // Mark end of buffer with 0
 }

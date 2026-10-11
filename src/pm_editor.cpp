@@ -23,11 +23,15 @@ using namespace nthp::pm;
 bool mouse1;
 bool mouse2;
 bool escapePressed;
-bool wKey, sKey, aKey, dKey, gKey;
+bool wKey, sKey, aKey, dKey, gKey, eKey, deleteKey, mouseWheelUp, mouseWheelDown;
 
 bool inEditor = false;
 
 editor::Project currentProject;
+nthp::vectFixed zoomScale;
+
+ImGuiIO& io;
+
 
 
 
@@ -54,9 +58,16 @@ void eventHandler(SDL_Event* eventList) {
                         if(eventList->key.keysym.sym == SDLK_g) {
                                 gKey = true;
                         }
+                        if(eventList->key.keysym.sym == SDLK_e) {
+                                eKey = true;
+                        }
                         if(eventList->key.keysym.sym == SDLK_ESCAPE) {
                                 escapePressed = true;
                         }
+                        if(eventList->key.keysym.sym == SDLK_DELETE) {
+                                deleteKey = true;
+                        }
+                        
 
                         break;
                 case SDL_KEYUP:
@@ -79,10 +90,15 @@ void eventHandler(SDL_Event* eventList) {
                         if(eventList->key.keysym.sym == SDLK_g) {
                                 gKey = false;
                         }
+                        if(eventList->key.keysym.sym == SDLK_e) {
+                                eKey = false;
+                        }
                         if(eventList->key.keysym.sym == SDLK_ESCAPE) {
                                 escapePressed = false;
                         }
-
+                        if(eventList->key.keysym.sym == SDLK_DELETE) {
+                                deleteKey = false;
+                        }
                         break;
 
                 case SDL_MOUSEBUTTONDOWN:
@@ -114,6 +130,14 @@ void eventHandler(SDL_Event* eventList) {
                                 nthp::core.p_coreDisplay.updateScaleFactor();
                         }
                         break;
+                case SDL_MOUSEWHEEL:
+                        if(!io.WantCaptureMouse) {
+                                nthp::core.p_coreDisplay.tunitResolution_x += nthp::f_fixedProduct(nthp::intToFixed(eventList->wheel.y), zoomScale.x);
+                                nthp::core.p_coreDisplay.tunitResolution_y += nthp::f_fixedProduct(nthp::intToFixed(eventList->wheel.y), zoomScale.y);
+
+                                nthp::core.p_coreDisplay.updateScaleFactor();
+                        }
+                        break;
 
         }
 
@@ -133,7 +157,7 @@ int nthp::pm::editor::editorRuntime() {
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
+        io = ImGui::GetIO();
         io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
         
 
@@ -145,6 +169,7 @@ int nthp::pm::editor::editorRuntime() {
 
 
         nthp::texture::text::RenderText mouseXPosition;
+        nthp::worldPosition lastMousePosition;
 
 
 
@@ -158,6 +183,12 @@ int nthp::pm::editor::editorRuntime() {
 
         char inputString_1[50] = {0};
         char inputString_2[50] = {0};
+        char statusBuffer[64] = {0};
+
+        const auto* statusBar = "x:%lf | y:%lf";
+        snprintf(statusBuffer, 64, statusBar, (double)0, (double)0);
+        
+
         std::string windowTitle;
         int sceneChange = 0;
         bool grabSelectedEntity = false;
@@ -172,9 +203,12 @@ int nthp::pm::editor::editorRuntime() {
         nthp::vectf64 entityHitboxOffsetField;
 
         int x,y;
+        nthp::vectGeneric absoluteZeroPosition;
+
+        nthp::vectFixed cameraSpeed(nthp::intToFixed(1), nthp::intToFixed(1));
 
         typedef enum { DISABLED, PLACE, SELECT, EDIT, DELETE } cursormode;
-        int cursorMode = cursormode::DISABLED;
+        int cursorMode = cursormode::SELECT;
         int cursorPlaceSchematic = -1;
 
 
@@ -182,6 +216,7 @@ int nthp::pm::editor::editorRuntime() {
         std::chrono::microseconds frameTime;
         auto frameStart = tickTimer.now();
 
+        vectf64 virtualRes = vectf64(800,800);
 
         // Shown window states.
 
@@ -201,9 +236,11 @@ int nthp::pm::editor::editorRuntime() {
 
         bool win_editSchematic = false;
         bool win_schematicList = false;                         // control menu
+        bool win_entityList = false;                            // control menu
+        bool win_editentityparameters = false;
         unsigned int selectedSchematic = 0;
 
-        bool win_editSelectedEntity = false;
+        double entityParameters[2];
 
         bool popup_confirmRegen = false;
         unsigned int selectedFrameset = 0;
@@ -304,7 +341,7 @@ int nthp::pm::editor::editorRuntime() {
                                 if(ImGui::BeginMenu("Entity")) {
 
                                         if(ImGui::MenuItem("Show Entity List", NULL, (bool*)nullptr, currentProject.allowModification)) {
-
+                                                win_entityList = true;
                                         }
                                         if(ImGui::MenuItem("Show Schematic List", NULL, (bool*)nullptr, currentProject.allowModification)) {
                                                 win_schematicList = true;
@@ -318,6 +355,15 @@ int nthp::pm::editor::editorRuntime() {
 
                                         ImGui::EndMenu();
                                 }
+                                        
+                                snprintf(statusBuffer, 64, statusBar,nthp::fixedToDouble(nthp::mousePosition.x), nthp::fixedToDouble(nthp::mousePosition.y));
+
+                                const auto textSize = ImGui::CalcTextSize(statusBuffer).x;
+                                const auto margin = ImGui::GetStyle().ItemSpacing.x;
+
+                                ImGui::SetCursorPosX(ImGui::GetWindowSize().x - textSize - margin);
+
+                                ImGui::Text(statusBuffer);
                                 
                                 ImGui::EndMainMenuBar();
                         }
@@ -343,17 +389,30 @@ int nthp::pm::editor::editorRuntime() {
                         }
 
                         if(win_newProjectConfig) {
-                                ImGui::Begin("New Project", &win_newProjectConfig);
+                                if(ImGui::Begin("New Project", &win_newProjectConfig)) {
+                                        ImGui::Text("Create new empty project");
+                                        ImGui::InputTextWithHint("##Project Name", "Project Name", inputString_1, 50);
+                                        ImGui::InputTextWithHint("##Source Location", "Source Location", inputString_2, 50);
+                                        ImGui::Text("Virtual Camera Size (x,y):");
+                                        ImGui::SameLine();
+                                        ImGui::SetNextItemWidth(150);
+                                        ImGui::InputDouble("##resx", &virtualRes.x);
+                                        ImGui::SameLine();
+                                        ImGui::SetNextItemWidth(150);
+                                        ImGui::InputDouble("##resy", &virtualRes.y);
+                                        ImGui::Separator();
+                                        if(ImGui::Button("Create")) {
+                                                currentProject.newEmptyProject(inputString_1, inputString_2);
+                                                SDL_SetWindowTitle(nthp::core.getWindow(), std::string(std::string("PM Editor - ") + std::string(inputString_1)).c_str());
+                                                win_newProjectConfig = false;
+                                                win_sceneControl = true;
+                                                cursorMode = cursormode::SELECT;
+                                                nthp::core.p_coreDisplay.tunitResolution_x = nthp::doubleToFixed(virtualRes.x);
+                                                nthp::core.p_coreDisplay.tunitResolution_y = nthp::doubleToFixed(virtualRes.y);
 
-                                ImGui::Text("Create new empty project");
-                                ImGui::InputTextWithHint("##Project Name", "Project Name", inputString_1, 50);
-                                ImGui::InputTextWithHint("##Source Location", "Source Location", inputString_2, 50);
-                                if(ImGui::Button("Create")) {
-                                        currentProject.newEmptyProject(inputString_1, inputString_2);
-                                        SDL_SetWindowTitle(nthp::core.getWindow(), std::string(std::string("PM Editor - ") + std::string(inputString_1)).c_str());
-                                        win_newProjectConfig = false;
-                                        win_sceneControl = true;
-                                        cursorMode = cursormode::SELECT;
+                                                nthp::core.p_coreDisplay.updateScaleFactor();
+                                                zoomScale = nthp::vectFixed(nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_x, nthp::doubleToFixed(0.05)), nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_y, nthp::doubleToFixed(0.05)));
+                                        }
                                 }
                                 ImGui::End();
                                 break;
@@ -400,12 +459,13 @@ int nthp::pm::editor::editorRuntime() {
                                 ImGui::Text("Currently loaded scene ID: [%d]", currentProject.currentScene);
                                 ImGui::Separator();
                                 if(ImGui::ArrowButton("prev" ,ImGuiDir::ImGuiDir_Left)) {
-                                        if(currentProject.currentScene)
+                                        if(currentProject.currentScene > 0)
                                                 --currentProject.currentScene;
                                 }
                                 ImGui::SameLine();
                                 if(ImGui::InputInt("##Current Scene", &currentProject.currentScene, 0, 0)) {
                                         if(currentProject.currentScene >= currentProject.sceneList.size()) currentProject.currentScene = currentProject.sceneList.size() - 1;
+                                        else if(currentProject.currentScene < 0) { currentProject.currentScene = 0; }
                                 }
                                 ImGui::SameLine();
                                 if(ImGui::ArrowButton("next", ImGuiDir::ImGuiDir_Right)) {
@@ -516,7 +576,7 @@ int nthp::pm::editor::editorRuntime() {
 
                                                         ImGui::BeginGroup();
                                                         ImGui::Image((ImTextureRef)targetTexture.getTextureData().getTexture(), thumbSize);
-                                                        ImGui::Text("Name: %s | ID: %s (%u x %u)", currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.constName.c_str(), currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.value, targetTexture.getTextureData().getMetaData().x, targetTexture.getTextureData().getMetaData().y);
+                                                        ImGui::Text("Name: %s | ID: %s (%u x %u)", currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.constName.c_str(), currentProject.sceneList[currentProject.currentScene].textureList[i].identifier.value.c_str(), targetTexture.getTextureData().getMetaData().x, targetTexture.getTextureData().getMetaData().y);
                                                         ImGui::SameLine();
                                                         if(ImGui::Button("Delete")) {
                                                                 ImGui::OpenPopup("confirmTextureDelete");
@@ -705,103 +765,229 @@ int nthp::pm::editor::editorRuntime() {
                                 ImGui::End();
                         }
 
-
-
-                        if(!io.WantCaptureMouse) {
-                                switch(cursorMode) {
-                                        case PLACE:
-                                        {
-                                                if(mouse1) {
-                                                
-                                                        currentProject.activeScene().addEntity(cursorPlaceSchematic, nthp::mousePosition);
-                                                        currentProject.activeScene().selectedEntity = (currentProject.activeScene().entityList.size() - 1);
-                                                        mouse1 = false;
-                                                }
-                                                if(escapePressed) {
-                                                        cursorMode = cursormode::SELECT;
-                                                        escapePressed = false;
-                                                }
-
+                        if(win_entityList) {
+                                if(ImGui::Begin("Entity List", &win_entityList)) {
+                                        ImGui::Text("Total Scene Entity Count: %zu", currentProject.activeScene().entityList.size());
+                                        if(ImGui::Button("Update/Reapply Schematic Data")) {
+                                                currentProject.activeScene().updateAllEntitySchematicData();
                                         }
-                                        break;
+                                        if(ImGui::BeginListBox("##entityList", ImGui::GetContentRegionAvail())) {
+                                                for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
+                                                        ImGui::PushID(i);
+                                                        ImGui::Separator();
+                                                        ImGui::Text("Name:");
+                                                        ImGui::SameLine();
+                                                        ImGui::InputText("##entityname", &currentProject.activeScene().entityList[i].identifier.constName);
+                                                        ImGui::Text("ID: %zu", i);
+                                                        if(ImGui::Button("Select")) {
+                                                                currentProject.activeScene().selectedEntity = i;
+                                                                cursorMode = cursormode::EDIT;
+                                                        }
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Edit")) {
+                                                                currentProject.activeScene().selectedEntity = i;
+                                                                cursorMode = cursormode::EDIT;
+                                                                win_editentityparameters = true;
+                                                        }
+                                                        ImGui::SameLine();
+                                                        if(ImGui::Button("Delete")) {
+                                                                ImGui::OpenPopup("confirmentitydelete");
+                                                        }
 
-                                        case SELECT:
-                                        {
-                                                if(mouse1) {
-                                                        
-                                                        for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
-                                                                if(nthp::entity::checkRectCollision(mouseRect, currentProject.activeScene().entityList[i].entity.getHitbox())) {
-                                                                        currentProject.activeScene().selectedEntity = i;
-                                                                        cursorMode = cursormode::EDIT;
-                                                                        break;
+                                                        if(ImGui::BeginPopup("confirmentitydelete")) {
+                                                                ImGui::Text("Delete Entity [%s] ID:%zu?", currentProject.activeScene().entityList[i].identifier.constName.c_str(), i);
+                                                                if(ImGui::Button("Confirm")) {
+                                                                        currentProject.activeScene().deleteEntity(i);
+                                                                        if(i == currentProject.activeScene().selectedEntity || i >= currentProject.activeScene().entityList.size()) {
+                                                                                currentProject.activeScene().selectedEntity = -1;
+                                                                        }
+                                                                        ImGui::CloseCurrentPopup();
                                                                 }
-                                                        }
-                                                        mouse1 = false;
-                                                }
-                                        }
-                                                break;
-                                        case EDIT:
-                                        {
-                                                auto& selectedEntity = currentProject.activeScene().entityList[currentProject.activeScene().selectedEntity].entity;
-                                                if(wKey) {
-                                                        selectedEntity.move(nthp::vectFixed(0, -nudgeStep.y));
-                                                        wKey = false;
-                                                }
-                                                if(sKey) {
-                                                        selectedEntity.move(nthp::vectFixed(0, nudgeStep.y));
-                                                        sKey = false;
-                                                }
-                                                if(aKey) {
-                                                        selectedEntity.move(nthp::vectFixed(-nudgeStep.x, 0));
-                                                        aKey = false;
-                                                }
-                                                if(dKey) {
-                                                        selectedEntity.move(nthp::vectFixed(nudgeStep.x, 0));
-                                                        dKey = false;
-                                                }
-                                                if(gKey) {
-                                                        if(grabSelectedEntity) {
-                                                                grabSelectedEntity = false;
-                                                        }
-                                                        else {
-                                                                grabSelectedEntity = true;
-                                                        }
-                                                        gKey = false;
-                                                }
-                                                if(mouse1) {
-                                                        for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
-                                                                if(nthp::entity::checkRectCollision(mouseRect, currentProject.activeScene().entityList[i].entity.getHitbox())) {
-                                                                        currentProject.activeScene().selectedEntity = i;
-                                                                        cursorMode = cursormode::EDIT;
-                                                                        break;
+                                                                if(ImGui::Button("Cancel")) {
+                                                                        ImGui::CloseCurrentPopup();
                                                                 }
+
+                                                                ImGui::EndPopup();
                                                         }
-                                                        mouse1 = false;
+
+
+                                                        ImGui::PopID();
                                                 }
-
-
-                                                if(escapePressed) {
-                                                        cursorMode = cursormode::SELECT;
-                                                        currentProject.activeScene().selectedEntity = -1;
-                                                        escapePressed = false;
-                                                }
-
-
-
-                                                if(grabSelectedEntity) {
-                                                        selectedEntity.setPosition(nthp::mousePosition);
-                                                }
-
-
-                                                break;
+                                                ImGui::EndListBox();
                                         }
 
-                                                
-
-                                        case DISABLED:
-                                                break;
-                                };
+                                }
+                                ImGui::End();
                         }
+                        if(win_editentityparameters) {
+                                if(ImGui::Begin("Configure Entity", &win_editentityparameters)) {
+                                        if(currentProject.activeScene().selectedEntity < 0 || currentProject.activeScene().selectedEntity >= currentProject.activeScene().entityList.size()) {
+                                                ImGui::Text("No Entity Selected.");
+                                        }
+                                        else {
+                                                auto& selectedEntity = currentProject.activeScene().entityList[currentProject.activeScene().selectedEntity];
+                                                entityParameters[0] = nthp::fixedToDouble(selectedEntity.entity.getPosition().x);
+                                                entityParameters[1] = nthp::fixedToDouble(selectedEntity.entity.getPosition().y);
+
+                                                ImGui::Text("Name:");
+                                                ImGui::SameLine();
+                                                ImGui::InputText("##label", &selectedEntity.identifier.constName);
+
+                                                ImGui::Text("Position (x,y):");
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(150);
+                                                if(ImGui::InputDouble("##px" , entityParameters)) {
+                                                        selectedEntity.entity.setPosition(nthp::vectFixed(nthp::doubleToFixed(entityParameters[0]), nthp::doubleToFixed(entityParameters[1])));
+                                                }
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(150);
+                                                if(ImGui::InputDouble("##py", entityParameters + 1)) {
+                                                        selectedEntity.entity.setPosition(nthp::vectFixed(nthp::doubleToFixed(entityParameters[0]), nthp::doubleToFixed(entityParameters[1])));
+                                                }
+                                                ImGui::Text("Layer:");
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(150);
+                                                ImGui::InputInt("##entitylayer", &selectedEntity.layer);
+
+                                        }
+                                }
+                                ImGui::End();
+                        }
+
+
+
+                        if(currentProject.allowModification) {
+                                if((!io.WantCaptureMouse) && (!io.WantCaptureKeyboard)) {
+                                        switch(cursorMode) {
+                                                case PLACE:
+                                                {
+                                                        if(mouse1) {
+                                                        
+                                                                currentProject.activeScene().addEntity(cursorPlaceSchematic, nthp::mousePosition);
+                                                                currentProject.activeScene().selectedEntity = (currentProject.activeScene().entityList.size() - 1);
+                                                                mouse1 = false;
+                                                        }
+
+                                                }
+                                                break;
+
+                                                case SELECT:
+                                                {
+                                                        if(mouse1) {
+                                                                
+                                                                for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
+                                                                        if(nthp::entity::checkRectCollision(mouseRect, currentProject.activeScene().entityList[i].entity.getHitbox())) {
+                                                                                currentProject.activeScene().selectedEntity = i;
+                                                                                cursorMode = cursormode::EDIT;
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                mouse1 = false;
+                                                        }
+                                                        if(wKey) {
+                                                                nthp::core.p_coreDisplay.cameraWorldPosition.y -= cameraSpeed.y;
+
+                                                        }
+                                                        if(sKey) {
+                                                                nthp::core.p_coreDisplay.cameraWorldPosition.y += cameraSpeed.y;
+
+                                                        }
+                                                        if(aKey) {
+                                                                nthp::core.p_coreDisplay.cameraWorldPosition.x -= cameraSpeed.x;
+
+                                                        }
+                                                        if(dKey) {
+                                                                nthp::core.p_coreDisplay.cameraWorldPosition.x += cameraSpeed.x;
+                                                        }
+                                                }
+                                                        break;
+                                                case EDIT:
+                                                {
+                                                        auto& selectedEntity = currentProject.activeScene().entityList[currentProject.activeScene().selectedEntity].entity;
+                                                        if(wKey) {
+                                                                selectedEntity.move(nthp::vectFixed(0, -nudgeStep.y));
+                                                                wKey = false;
+                                                        }
+                                                        if(sKey) {
+                                                                selectedEntity.move(nthp::vectFixed(0, nudgeStep.y));
+                                                                sKey = false;
+                                                        }
+                                                        if(aKey) {
+                                                                selectedEntity.move(nthp::vectFixed(-nudgeStep.x, 0));
+                                                                aKey = false;
+                                                        }
+                                                        if(dKey) {
+                                                                selectedEntity.move(nthp::vectFixed(nudgeStep.x, 0));
+                                                                dKey = false;
+                                                        }
+                                                        if(gKey) {
+                                                                if(grabSelectedEntity) {
+                                                                        grabSelectedEntity = false;
+                                                                }
+                                                                else {
+                                                                        grabSelectedEntity = true;
+                                                                }
+                                                                gKey = false;
+                                                        }
+                                                        if(eKey) {
+                                                                win_editentityparameters = true;
+                                                        }
+
+                                                        if(mouse1) {
+                                                                for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
+                                                                        if(nthp::entity::checkRectCollision(mouseRect, currentProject.activeScene().entityList[i].entity.getHitbox())) {
+                                                                                currentProject.activeScene().selectedEntity = i;
+                                                                                cursorMode = cursormode::EDIT;
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                mouse1 = false;
+                                                        }
+
+
+                                                        if(deleteKey) {
+                                                                currentProject.activeScene().deleteEntity(currentProject.activeScene().selectedEntity);
+                                                                currentProject.activeScene().selectedEntity = -1;
+                                                                deleteKey = false;
+                                                                cursorMode = cursormode::SELECT;
+                                                                break;
+                                                        }
+
+
+
+                                                        if(grabSelectedEntity) {
+                                                                selectedEntity.setPosition(nthp::mousePosition);
+                                                        }
+
+
+                                                        break;
+                                                }
+
+                                                        
+
+                                                case DISABLED:
+                                                 
+                                                        break;
+                                        };
+
+
+                                } // io.wantCapture
+
+                                if(escapePressed) {
+                                        cursorMode = cursormode::SELECT;
+                                        escapePressed = false;
+                                        currentProject.activeScene().selectedEntity = -1;
+                                }
+        
+                        } // allowModification
+
+                        if(mouse2) {
+                                nthp::core.p_coreDisplay.cameraWorldPosition += lastMousePosition - nthp::mousePosition;
+                                nthp::core.updateWorldMousePosition();
+                                
+                        }
+                        absoluteZeroPosition = nthp::generatePixelPosition(nthp::worldPosition(nthp::core.p_coreDisplay.cameraWorldPosition.x, nthp::core.p_coreDisplay.cameraWorldPosition.y), &nthp::core.p_coreDisplay);
+                        
 
 
 
@@ -814,7 +1000,9 @@ int nthp::pm::editor::editorRuntime() {
                         if(currentProject.allowModification) {
                                 for(size_t i = 0; i < currentProject.activeScene().entityList.size(); ++i) {
                                         if(i == currentProject.activeScene().selectedEntity) {
-                                                const auto renderPacket = currentProject.activeScene().entityList[currentProject.activeScene().selectedEntity].entity.getUpdateRenderPacket(&nthp::core.p_coreDisplay);
+                                                auto renderPacket = currentProject.activeScene().entityList[currentProject.activeScene().selectedEntity].entity.getUpdateRenderPacket(&nthp::core.p_coreDisplay);
+                                                renderPacket.dstRect.x -= absoluteZeroPosition.x;
+                                                renderPacket.dstRect.y -= absoluteZeroPosition.y;
                                                 SDL_SetRenderDrawColor(nthp::core.getRenderer(), 17, 255, 0, 150);
                                                 SDL_RenderDrawRect(nthp::core.getRenderer(), &renderPacket.dstRect);
                                                 SDL_SetRenderDrawColor(nthp::core.getRenderer(), DEFAULT_RENDER_COLOR);
@@ -824,10 +1012,18 @@ int nthp::pm::editor::editorRuntime() {
                                 }
                         }
 
+                        SDL_SetRenderDrawColor(nthp::core.getRenderer(), 0, 0, 0, 255);
+                        SDL_RenderDrawLine(nthp::core.getRenderer(), -absoluteZeroPosition.x - 15, -absoluteZeroPosition.y, -absoluteZeroPosition.x + 15, -absoluteZeroPosition.y);
+                        SDL_RenderDrawLine(nthp::core.getRenderer(), -absoluteZeroPosition.x, -absoluteZeroPosition.y - 15, -absoluteZeroPosition.x, -absoluteZeroPosition.y + 15);
+                        SDL_SetRenderDrawColor(nthp::core.getRenderer(), DEFAULT_RENDER_COLOR);
+
+
+
                         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), nthp::core.getRenderer());
 
                         nthp::core.display();
 
+                        lastMousePosition = nthp::mousePosition;
 
 
                         frameTime = std::chrono::duration_cast<std::chrono::microseconds>(tickTimer.now() - frameStart);

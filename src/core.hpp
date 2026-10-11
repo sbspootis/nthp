@@ -34,6 +34,7 @@ namespace nthp {
 
                 void handleEvents();
                 void handleEvents(void (*handler)(SDL_Event*));
+                void updateWorldMousePosition();
 
 
                 int render(nthp::RenderPacket packet);

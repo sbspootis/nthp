@@ -107,13 +107,15 @@ int nthp::EngineCore::init(nthp::RenderRuleSet settings, const char* title, bool
         return 0;
 }
 
-
-void nthp::EngineCore::handleEvents() {
+void nthp::EngineCore::updateWorldMousePosition() {
         int x,y;
         SDL_GetMouseState(&x, &y);
         nthp::mousePosition = nthp::generateWorldPosition(nthp::vectGeneric(x, y), &p_coreDisplay);
-        nthp::mousePosition -= p_coreDisplay.cameraWorldPosition;
+        nthp::mousePosition += p_coreDisplay.cameraWorldPosition;
+}
 
+
+void nthp::EngineCore::handleEvents() {
         while(SDL_PollEvent(&eventList)) {
                 switch(eventList.type) {
 
@@ -122,13 +124,10 @@ void nthp::EngineCore::handleEvents() {
                         break;
                 }
         }
+        updateWorldMousePosition();
 }
 
 void nthp::EngineCore::handleEvents(void (*handler)(SDL_Event*)) {
-        int x,y;
-        SDL_GetMouseState(&x, &y);
-        nthp::mousePosition = nthp::generateWorldPosition(nthp::vectGeneric(x, y), &p_coreDisplay);
-        nthp::mousePosition -= p_coreDisplay.cameraWorldPosition;
 
         while(SDL_PollEvent(&eventList)) {
                 switch(eventList.type) {
@@ -140,6 +139,8 @@ void nthp::EngineCore::handleEvents(void (*handler)(SDL_Event*)) {
                         break;
                 }
         }
+
+        updateWorldMousePosition();
 }
 
 
