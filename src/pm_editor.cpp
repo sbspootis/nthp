@@ -11,9 +11,8 @@ using namespace nthp::pm;
 //      setting layering and other things
 //      testing textures
 
-// The program will generate a T_HIDDEN translation unit that will contain program
-// data to set up the entities and textures imported and created in the editor,
-// as well as the unit's symbols so they can be included in other scripts.
+// The program will generate a script file with functions to initalize each scene
+// created in the project.
 
 
 
@@ -30,7 +29,7 @@ bool inEditor = false;
 editor::Project currentProject;
 nthp::vectFixed zoomScale;
 
-ImGuiIO& io;
+ImGuiIO io;
 
 
 
@@ -216,7 +215,6 @@ int nthp::pm::editor::editorRuntime() {
         std::chrono::microseconds frameTime;
         auto frameStart = tickTimer.now();
 
-        vectf64 virtualRes = vectf64(800,800);
 
         // Shown window states.
 
@@ -294,7 +292,17 @@ int nthp::pm::editor::editorRuntime() {
                                         if(ImGui::MenuItem("New Scene", NULL, (bool*)nullptr, currentProject.allowModification)) {
                                                 currentProject.addNewScene();
                                                 win_sceneControl = true;
+                                                currentProject.activeScene().xVirtualRes = currentProject.defaultVirtualRes.x;
+                                                currentProject.activeScene().yVirtualRes = currentProject.defaultVirtualRes.y;
+
+                                                nthp::core.p_coreDisplay.tunitResolution_x = nthp::doubleToFixed(currentProject.activeScene().xVirtualRes);
+                                                nthp::core.p_coreDisplay.tunitResolution_y = nthp::doubleToFixed(currentProject.activeScene().yVirtualRes);
+                                        
+
+                                                nthp::core.p_coreDisplay.updateScaleFactor();
+                                                zoomScale = nthp::vectFixed(nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_x, nthp::doubleToFixed(0.05)), nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_y, nthp::doubleToFixed(0.05)));
                                         }
+                                        
                                         if(ImGui::MenuItem("Delete Scene", NULL, (bool*)nullptr, currentProject.allowModification)) {
                                                
                                         }
@@ -396,10 +404,10 @@ int nthp::pm::editor::editorRuntime() {
                                         ImGui::Text("Virtual Camera Size (x,y):");
                                         ImGui::SameLine();
                                         ImGui::SetNextItemWidth(150);
-                                        ImGui::InputDouble("##resx", &virtualRes.x);
+                                        ImGui::InputDouble("##resx", &currentProject.defaultVirtualRes.x);
                                         ImGui::SameLine();
                                         ImGui::SetNextItemWidth(150);
-                                        ImGui::InputDouble("##resy", &virtualRes.y);
+                                        ImGui::InputDouble("##resy", &currentProject.defaultVirtualRes.y);
                                         ImGui::Separator();
                                         if(ImGui::Button("Create")) {
                                                 currentProject.newEmptyProject(inputString_1, inputString_2);
@@ -407,8 +415,12 @@ int nthp::pm::editor::editorRuntime() {
                                                 win_newProjectConfig = false;
                                                 win_sceneControl = true;
                                                 cursorMode = cursormode::SELECT;
-                                                nthp::core.p_coreDisplay.tunitResolution_x = nthp::doubleToFixed(virtualRes.x);
-                                                nthp::core.p_coreDisplay.tunitResolution_y = nthp::doubleToFixed(virtualRes.y);
+                                                currentProject.activeScene().xVirtualRes = currentProject.defaultVirtualRes.x;
+                                                currentProject.activeScene().yVirtualRes = currentProject.defaultVirtualRes.y;
+
+                                                nthp::core.p_coreDisplay.tunitResolution_x = nthp::doubleToFixed(currentProject.activeScene().xVirtualRes);
+                                                nthp::core.p_coreDisplay.tunitResolution_y = nthp::doubleToFixed(currentProject.activeScene().yVirtualRes);
+                                                
 
                                                 nthp::core.p_coreDisplay.updateScaleFactor();
                                                 zoomScale = nthp::vectFixed(nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_x, nthp::doubleToFixed(0.05)), nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_y, nthp::doubleToFixed(0.05)));
@@ -472,7 +484,25 @@ int nthp::pm::editor::editorRuntime() {
                                         ++sceneChange;
                                         if(currentProject.currentScene >= currentProject.sceneList.size()) currentProject.currentScene = currentProject.sceneList.size() - 1;
                                 }
+                                ImGui::Text("Default Camera Size (x,y):");
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(150);
+                                if(ImGui::InputDouble("##scenexres", &currentProject.activeScene().xVirtualRes)) {
+                                        nthp::core.p_coreDisplay.tunitResolution_x = nthp::doubleToFixed(currentProject.activeScene().xVirtualRes);                                        
 
+                                        nthp::core.p_coreDisplay.updateScaleFactor();
+                                        zoomScale = nthp::vectFixed(nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_x, nthp::doubleToFixed(0.05)), nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_y, nthp::doubleToFixed(0.05)));
+                                }
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(150);
+                                if(ImGui::InputDouble("##sceneyres", &currentProject.activeScene().yVirtualRes)) {
+                                        nthp::core.p_coreDisplay.tunitResolution_y = nthp::doubleToFixed(currentProject.activeScene().yVirtualRes);
+                                        
+
+                                        nthp::core.p_coreDisplay.updateScaleFactor();
+                                        zoomScale = nthp::vectFixed(nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_x, nthp::doubleToFixed(0.05)), nthp::f_fixedProduct(nthp::core.p_coreDisplay.tunitResolution_y, nthp::doubleToFixed(0.05)));
+                                }
+                                
                                 ImGui::Separator();
                                 ImGui::Text("Current Scene Info:");
                                 ImGui::Text("Name: "); ImGui::SameLine();

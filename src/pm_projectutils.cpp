@@ -192,3 +192,45 @@ int Project::addNewScene() {
 
 
 
+
+// Not gonna overcomplicate with binary or super structured output. Everything here is developer side
+// anyway, so plain text is nice in case you want to edit something without having to open the entire project.
+void Project::writeProjectFile(const char* filename) {
+        std::fstream file(filename, std::ios::out);
+
+        if(file.fail()) {
+                PRINT_DEBUG_ERROR("Failed to save project file.\n");
+                return;
+        }
+
+        // Project pararmeters / defaults.
+
+        file << projectName << std::endl;
+        file << sourceDirectory << std::endl;
+        file << defaultVirtualRes.x << std::endl;
+        file << defaultVirtualRes.y << std::endl;
+
+        // Scene-specific Values.
+        for(size_t scene_i = 0; scene_i < sceneList.size(); ++scene_i) {
+                // Output (in plain text) the data structures in hierarchical order.
+                // textures->framesets->schematics->entities.
+                // The project import function will read everything in order.
+                file << sceneList[scene_i].name << std::endl;
+                file << sceneList[scene_i].xVirtualRes << std::endl;
+                file << sceneList[scene_i].yVirtualRes << std::endl;
+
+                for(size_t texture_i = 0; texture_i < sceneList[scene_i].textureList.size(); ++texture_i) {
+
+
+                }
+
+
+
+
+
+
+
+
+        }
+
+}

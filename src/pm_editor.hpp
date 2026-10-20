@@ -61,6 +61,7 @@ namespace nthp {
 
                                 void constructSchematicFrameset(unsigned int schematicID);
 
+                                void writeSceneToProjectFile(std::fstream& outputFile);
 
 
 
@@ -71,6 +72,7 @@ namespace nthp {
                                 std::vector<frameSetObject> frameSetList;
                                 std::vector<objectTypeSchematic> schematicList;
                                 unsigned int selectedEntity;
+                                double xVirtualRes, yVirtualRes;
                         };
 
 
@@ -83,7 +85,7 @@ namespace nthp {
 
                                 Scene& activeScene() { return sceneList[currentScene]; }
                                 
-
+                                void writeProjectFile(const char* filename);
                                 
                                 
                                 
@@ -91,6 +93,7 @@ namespace nthp {
                                 std::string projectName;
                                 std::string sourceDirectory;
                                 bool allowModification = false;
+                                vectf64 defaultVirtualRes = vectf64(800,800);
 
 
                                 std::vector<Scene> sceneList;
