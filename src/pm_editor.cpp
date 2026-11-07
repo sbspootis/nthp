@@ -24,12 +24,13 @@ bool mouse2;
 bool escapePressed;
 bool wKey, sKey, aKey, dKey, gKey, eKey, deleteKey, mouseWheelUp, mouseWheelDown;
 
+bool navigationGrabbed = false;
+
 bool inEditor = false;
 
 editor::Project currentProject;
 nthp::vectFixed zoomScale;
 
-ImGuiIO io;
 
 
 
@@ -130,7 +131,7 @@ void eventHandler(SDL_Event* eventList) {
                         }
                         break;
                 case SDL_MOUSEWHEEL:
-                        if(!io.WantCaptureMouse) {
+                        if(!navigationGrabbed) {
                                 nthp::core.p_coreDisplay.tunitResolution_x += nthp::f_fixedProduct(nthp::intToFixed(eventList->wheel.y), zoomScale.x);
                                 nthp::core.p_coreDisplay.tunitResolution_y += nthp::f_fixedProduct(nthp::intToFixed(eventList->wheel.y), zoomScale.y);
 
@@ -156,7 +157,7 @@ int nthp::pm::editor::editorRuntime() {
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        io = ImGui::GetIO();
+        ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
         
 
@@ -223,6 +224,7 @@ int nthp::pm::editor::editorRuntime() {
 
         bool win_newProjectConfig = false;
         bool win_openProjectConfig = false;
+        bool win_saveAs = false;
 
         bool win_deleteCurrentScene = false;
 
@@ -236,6 +238,7 @@ int nthp::pm::editor::editorRuntime() {
         bool win_schematicList = false;                         // control menu
         bool win_entityList = false;                            // control menu
         bool win_editentityparameters = false;
+
         unsigned int selectedSchematic = 0;
 
         double entityParameters[2];
@@ -255,6 +258,7 @@ int nthp::pm::editor::editorRuntime() {
                 
                 while(nthp::core.isRunning()) {
                         frameStart = tickTimer.now();
+                        navigationGrabbed = (io.WantCaptureMouse) || (io.WantCaptureKeyboard);
 
                         nthp::core.handleEvents(eventHandler);
                         SDL_GetMouseState(&x, &y);
@@ -264,6 +268,8 @@ int nthp::pm::editor::editorRuntime() {
                         ImGui_ImplSDLRenderer2_NewFrame();
                         ImGui_ImplSDL2_NewFrame();
                         ImGui::NewFrame();
+
+                       
 
                         
                         if(ImGui::BeginMainMenuBar()) {
@@ -276,6 +282,9 @@ int nthp::pm::editor::editorRuntime() {
                                         }
                                         if (ImGui::MenuItem("Open Project")) { 
                                                 // Open Project code.
+                                        }
+                                        if(ImGui::MenuItem("Save As")) {
+                                                win_saveAs = true;
                                         }
                                         ImGui::Separator();
                                         if (ImGui::MenuItem("Exit")) { 
@@ -396,6 +405,7 @@ int nthp::pm::editor::editorRuntime() {
                                 break;
                         }
 
+
                         if(win_newProjectConfig) {
                                 if(ImGui::Begin("New Project", &win_newProjectConfig)) {
                                         ImGui::Text("Create new empty project");
@@ -430,6 +440,19 @@ int nthp::pm::editor::editorRuntime() {
                                 break;
                         }
 
+                        if(win_saveAs) {
+                                if(ImGui::Begin("Save As", &win_saveAs)) {
+                                        ImGui::Text("Save Project?");
+                                        ImGui::InputText("File", &currentProject.saveLocation);
+                                        ImGui::Separator();
+                                        if(ImGui::Button("Save")) {
+                                                currentProject.writeProjectFile(currentProject.saveLocation.c_str());
+                                                win_saveAs = false;
+                                        }
+                                }
+                                ImGui::End();
+                        }
+
                         if(win_setActivePalette) {
                                 ImGui::Begin("Set Active Palette", &win_setActivePalette);
 
@@ -461,6 +484,7 @@ int nthp::pm::editor::editorRuntime() {
                                 break;
                         }
 
+
                 
                 
 
@@ -468,7 +492,7 @@ int nthp::pm::editor::editorRuntime() {
 
                         if(win_sceneControl) {
                                 ImGui::Begin("Scene Control", &win_sceneControl);
-                                ImGui::Text("Currently loaded scene ID: [%d]", currentProject.currentScene);
+                                ImGui::Text("Currently loaded scene ID: [%d] ; [%s]", currentProject.currentScene, currentProject.activeScene().name.c_str());
                                 ImGui::Separator();
                                 if(ImGui::ArrowButton("prev" ,ImGuiDir::ImGuiDir_Left)) {
                                         if(currentProject.currentScene > 0)
@@ -481,7 +505,7 @@ int nthp::pm::editor::editorRuntime() {
                                 }
                                 ImGui::SameLine();
                                 if(ImGui::ArrowButton("next", ImGuiDir::ImGuiDir_Right)) {
-                                        ++sceneChange;
+                                        ++currentProject.currentScene;
                                         if(currentProject.currentScene >= currentProject.sceneList.size()) currentProject.currentScene = currentProject.sceneList.size() - 1;
                                 }
                                 ImGui::Text("Default Camera Size (x,y):");

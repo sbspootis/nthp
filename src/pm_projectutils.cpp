@@ -15,6 +15,7 @@ int Scene::importNewTexture(std::string filename, std::string nameInternal) {
         textureList.back().identifier.value = std::to_string(textureList.size() - 1);
         textureList.back().singleTextureFrame.texture = textureList.back().texture.getTextureData().texture;
         textureList.back().singleTextureFrame.src = { 0, 0, (int)textureList.back().texture.getTextureData().getMetaData().x, (int)textureList.back().texture.getTextureData().getMetaData().y };
+        textureList.back().filePath = filename;
 
         return 0;
 }
@@ -219,18 +220,48 @@ void Project::writeProjectFile(const char* filename) {
                 file << sceneList[scene_i].xVirtualRes << std::endl;
                 file << sceneList[scene_i].yVirtualRes << std::endl;
 
+                file << "EDITOR_TEXTURES" << std::endl;
                 for(size_t texture_i = 0; texture_i < sceneList[scene_i].textureList.size(); ++texture_i) {
-
-
+                        const auto& t_list = sceneList[scene_i].textureList[texture_i];
+                        file << t_list.identifier.constName << std::endl;
+                        file << t_list.filePath << std::endl;
                 }
 
+                file << "EDITOR_FRAMESETS" << std::endl;
+                for(size_t frameset_i = 0; frameset_i < sceneList[scene_i].frameSetList.size(); ++frameset_i) {
+                        const auto& f_list = sceneList[scene_i].frameSetList[frameset_i];
 
+                        file << f_list.identifier.constName << std::endl;
+                        file << f_list.textureID << std::endl;
+                        file << f_list.frameSet.size() << std::endl;
 
+                        for(size_t i = 0; i < f_list.frameSet.size(); ++i) {
+                                file << f_list.frameSet[i].x << ' ' << f_list.frameSet[i].y << ' ' << f_list.frameSet[i].w << ' ' << f_list.frameSet[i].h << std::endl;
+                        }
+                }
 
+                file << "EDITOR_SCHEMATICS" << std::endl;
+                for(size_t schematic_i = 0; schematic_i < sceneList[scene_i].schematicList.size(); ++schematic_i) {
+                        const auto& s_list = sceneList[scene_i].schematicList[schematic_i];
 
+                        file << s_list.name << std::endl;
+                        file << s_list.framesetIndex << std::endl;
 
+                        file << s_list.renderSize.x << ' ' << s_list.renderSize.y << std::endl;
+                        file << s_list.hitboxSize.x << ' ' << s_list.hitboxSize.y << std::endl;
+                        file << s_list.hitboxOffset.x << ' ' << s_list.hitboxOffset.y << std::endl;
+                        
+                }
 
+                file << "EDITOR_ENTITIES" << std::endl;
+                for(size_t entity_i = 0; entity_i < sceneList[scene_i].entityList.size(); ++entity_i) {
+                        auto& e_list = sceneList[scene_i].entityList[entity_i];
 
+                        file << e_list.identifier.constName << std::endl;
+                        file << e_list.targetSchema << std::endl;
+                        file << e_list.layer << std::endl;
+                        file << nthp::fixedToDouble(e_list.entity.getPosition().x) << ' ' << nthp::fixedToDouble(e_list.entity.getPosition().y) << std::endl;
+                }
         }
 
 }

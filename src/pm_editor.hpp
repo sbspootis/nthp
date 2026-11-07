@@ -20,6 +20,7 @@ namespace nthp {
                                 nthp::texture::gTexture texture;
                                 nthp::texture::Frame singleTextureFrame;
                                 nthp::script::CompilerInstance::CONST_DEF identifier;           // the identifier is the internal name.
+                                std::string filePath;
                         };
 
                         struct frameSetObject {
@@ -33,7 +34,7 @@ namespace nthp {
                                 std::string name;
                                 int framesetIndex;
                                 std::string searchFramesetName;
-                                std::vector<nthp::texture::Frame> constructedFrameset;
+                                std::vector<nthp::texture::Frame> constructedFrameset;          // Loaded from frameset, DNI
 
                                 nthp::vectf64 renderSize;
                                 nthp::vectf64 hitboxSize;
@@ -94,6 +95,7 @@ namespace nthp {
                                 std::string sourceDirectory;
                                 bool allowModification = false;
                                 vectf64 defaultVirtualRes = vectf64(800,800);
+                                std::string saveLocation;
 
 
                                 std::vector<Scene> sceneList;
